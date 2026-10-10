@@ -159,6 +159,32 @@ refused. A free plan keeps one assignee per issue, which is why the result lists
 milestone is given by its id, not its title. And a comment's answer carries no address, so the link
 returned is built from the project path, and is left out for a project given by id.
 
+### Merge requests
+
+A merge request is named by its number in the project, the `!7` people write, which GitLab calls the
+`iid`. It is numbered apart from issues, so `issue_read` cannot read a merge request: `pr_read` takes
+`comments: true` for its discussion. `pr_open` takes a branch of the same project; a branch of a fork is
+not supported. A draft is a title that starts with `Draft:`, which `pr_open` adds.
+
+| Tool | Kind | Does |
+|---|---|---|
+| `pr_open` | write | Open a merge request from a branch into a base (default: the default branch), optionally as a draft. |
+| `pr_read` | read | Read one merge request: state, draft, whether it can be merged and if not why, branches, labels, reviewers, description. `files: true` adds the first 100 changed files with line counts; `comments: true` the first 30 comments. |
+| `pr_comment` | write | Add a general comment to the discussion. |
+| `pr_close` | update | Close a merge request without merging, optionally leaving a comment first. There is no tool to reopen it. |
+| `pr_merge` | destroy | Merge a merge request, optionally squashing, and optionally only if the branch is still at a given commit. |
+| `pr_review_request` | update | Add reviewers, by username, to those already asked. Reports any person GitLab did not add. |
+| `pr_approve` | update | Approve as the token's user, optionally only for a given commit. Reports who has approved and how many approvals are left. |
+
+GitLab differs from GitHub here in four ways that show in these tools. How a merge lands (a merge
+commit, a fast-forward or a rebase) is a setting of the project, so `pr_merge` has `squash` and no
+`method`. An approval carries no message and a reviewer cannot be a team, so `pr_approve` has no `body`
+and `pr_review_request` no `team_reviewers`. Whether a request can be merged is the single verdict
+GitLab computes from conflicts, pipelines, approvals and drafts, in the background, so `pr_read` leaves
+`mergeable` out while that is running and gives the reason when it is false. And what happened to a
+request (a push, a label) is recorded in the same list as its comments, as system notes, which
+`pr_read` and `issue_read` leave out.
+
 ## What this server does not expose
 
 | Not exposed | Why |
@@ -167,5 +193,6 @@ returned is built from the project path, and is left out for a project given by 
 | Local files and commands | That is `cli`'s job; this server touches GitLab only. |
 | HTTP | The token can delete projects. See [Security model](../security/security-model.md). |
 | Self-managed GitLab | The API base is a constant, and another host would need a second setting. |
+| Rebasing a merge request's branch, and merging when its pipeline succeeds | GitLab has endpoints for both; neither is among the tools this server was built to. |
 | `clone`, `push` and other git transport | File tools commit through the API instead. |
 | `issue_list`, `pr_list`, `tag_create`, `issue_reopen`, inline review comments | Outside the tool list this server was built to. A tag is created by `release_create`. |

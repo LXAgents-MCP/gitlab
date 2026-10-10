@@ -9,7 +9,7 @@ export const TOOL = {
   name: "issue_lock",
   description:
     "Lock the discussion of an issue in a GitLab project so only project members can comment, or unlock it. " +
-    "GitLab takes no reason. Needs at least the Reporter role.",
+    "GitLab takes no reason. Needs permission to edit the issue.",
   inputSchema: {
     repo: repoArg,
     number: z.number().int().describe("Issue number in the project."),

@@ -70,7 +70,12 @@ only what the tools you will use need.
 | `branch_merge` | `api` | Developer or more to open the request, and a role allowed to merge into the base, which is Maintainer for a protected branch |
 | `issue_read` | `read_api` | Any role that can see the project |
 | `issue_open`, `issue_comment` | `api` | Guest or more; on a locked issue only a member can comment |
-| `issue_close`, `issue_assign`, `issue_label`, `issue_lock` | `api` | Reporter or more |
+| `issue_close`, `issue_assign`, `issue_label`, `issue_lock` | `api` | Planner or more; a Guest can close only an issue they wrote or are assigned to |
+| `pr_read` | `read_api` | Any role that can see the project |
+| `pr_comment` | `api` | Planner or more; not if merge requests are limited to project members |
+| `pr_open`, `pr_close`, `pr_review_request` | `api` | Developer or more |
+| `pr_approve` | `api` | Developer or more; a Reporter or Planner only where the project allows it |
+| `pr_merge` | `api` | Developer or more, and a role allowed to merge into the target, which is Maintainer for a protected branch |
 
 The requirements are those GitLab documents for each endpoint. When a token is short of one, GitLab
 refuses and this server repeats what it said, so the refusal is the authority if it disagrees with

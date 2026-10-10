@@ -48,6 +48,13 @@ export const SURFACE = {
   issue_assign: "update",
   issue_label: "update",
   issue_lock: "update",
+  pr_open: "write",
+  pr_read: "read",
+  pr_comment: "write",
+  pr_close: "update",
+  pr_merge: "destroy",
+  pr_review_request: "update",
+  pr_approve: "update",
 };
 
 /** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */

@@ -2,10 +2,9 @@
 import { z } from "zod";
 import { gitlab, parseRepo } from "../api.js";
 import { optionalFlag, requiredInt } from "../args.js";
+import { MAX_COMMENTS_SHOWN } from "../config.js";
 import { READ, repoArg } from "../schemas.js";
-import { expectBody, issueFields, issueShape } from "../shapes.js";
-
-const COMMENTS_SHOWN = 30;
+import { commentShape, commentsFrom, expectBody, issueFields, issueShape } from "../shapes.js";
 
 export const TOOL = {
   name: "issue_read",
@@ -21,9 +20,7 @@ export const TOOL = {
   },
   outputSchema: {
     ...issueShape,
-    comments: z
-      .array(z.object({ id: z.number(), author: z.string().optional(), created_at: z.string().optional(), body: z.string() }))
-      .optional(),
+    comments: z.array(commentShape).optional(),
   },
   annotations: READ,
 };
@@ -43,19 +40,12 @@ export async function handle(args) {
   let comments;
   if (withComments && fields.comment_count > 0) {
     const answer = await gitlab("GET", `${repo.path}/issues/${number}/notes`, {
-      query: { activity_filter: "only_comments", order_by: "created_at", sort: "asc", per_page: COMMENTS_SHOWN },
+      query: { activity_filter: "only_comments", order_by: "created_at", sort: "asc", per_page: MAX_COMMENTS_SHOWN },
       what: `read the comments of issue #${number} of ${repo.full}`,
     });
-    // `only_comments` is GitLab's own filter; a note marked `system` is dropped as well, in case a
+    // `only_comments` is GitLab's own filter; `commentsFrom` drops a system note as well, in case a
     // version of GitLab ignores the filter.
-    comments = (Array.isArray(answer.body) ? answer.body : [])
-      .filter((note) => note?.system !== true)
-      .map((note) => ({
-        id: note.id,
-        ...(note.author?.username ? { author: note.author.username } : {}),
-        ...(note.created_at ? { created_at: note.created_at } : {}),
-        body: note.body ?? "",
-      }));
+    comments = commentsFrom(answer.body);
   }
 
   const more = comments !== undefined && fields.comment_count > comments.length ? `; showing the first ${comments.length} comments` : "";

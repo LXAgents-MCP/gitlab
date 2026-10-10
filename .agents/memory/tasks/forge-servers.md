@@ -72,6 +72,7 @@ recommendation and use the recommended one. Each row names the option taken and 
 | D11 | GitLab has no direct branch merge, so `branch_merge` opens a merge request from `head` into `base` and accepts it; the merged request stays as the record, and if it cannot be merged the request it opened is closed again. Declined: a local git merge, which the server cannot do. |
 | D12 | Where GitLab has no counterpart of a GitHub argument — draft releases, generated release notes, close and lock reasons — the argument is absent and the documentation says so. Declined: accepting it and ignoring it. |
 | D13 | GitLab.com only, with a personal, project or group access token. It is sent as `Authorization: Bearer`, which GitLab accepts for all three: the runtime drops that header when a redirect changes host, and would forward GitLab's own `PRIVATE-TOKEN`. Declined: `PRIVATE-TOKEN`, which `cli` used, and a configurable base URL for self-managed instances, which would be a second setting and a second trust decision. |
+| D14 | Where a merge request differs from a pull request in what can be asked, the argument follows GitLab: `pr_merge` takes `squash` and no `method`, because how a merge lands is the project's setting; `pr_approve` has no message and `pr_review_request` no team reviewers, which GitLab does not have (D12); `pr_open` takes a branch of the same project only. `pr_read` takes `comments`, because the issue tools cannot read a merge request. Declined: a `method` that is accepted and ignored, and a refused `rebase`. |
 
 ## Out of scope
 
@@ -359,3 +360,31 @@ and a comment's answer carries no address, so `issue_comment` builds one from th
 `opened` and `closed`.
 
 Tests: 230 passing, none failing.
+
+### Task 11 — feat/pr-tools
+
+Landed. `pr_open`, `pr_read`, `pr_comment`, `pr_close`, `pr_merge`, `pr_review_request` and
+`pr_approve`, pinned in `test/surface.js` and documented in the surface page and the token table. D14.
+
+Checked against GitLab's REST documentation for merge requests, notes and approvals: a merge request
+is at `/projects/:id/merge_requests/:merge_request_iid`, creation takes `source_branch`,
+`target_branch`, `title` and `description`, update takes `state_event` (`close`) and `reviewer_ids`,
+the merge is `PUT .../merge` with `squash`, `squash_commit_message`, `merge_commit_message` and `sha`,
+approval is `POST .../approve` with an optional `sha`, and a merge request's files are at `.../diffs`.
+The merge page documents 401, 405, 406, 409 and 422; `pr_merge` takes 405, 406 and 422 as answers,
+reads the request to find out why, and refuses in words that name the cause (a draft, a pipeline, an
+approval, a conflict), through the same `mergeability` that `branch_merge` uses. 401 is GitLab's word
+for a user who may not merge, and the message says it can also be a bad token.
+
+Where GitLab differs. A draft is a title prefix, so `pr_open` adds `Draft: ` unless the title has one.
+A merge request has no commit, addition or deletion counts in its own answer, so `pr_read` reports
+`changed_files` as the string GitLab sends (`"1000+"` when it stops counting) and gets line counts
+from `.../diffs` only for `files: true`. `mergeable` is the whole verdict (conflicts, pipeline,
+approvals, drafts) and is left out while GitLab is still working it out. A review request replaces
+the list of reviewers in GitLab, so the tool reads the current ones and sends them back with the new,
+and skips the write when nothing would change. `pr_approve` is annotated `update` where `cli`'s
+GitHub counterpart is `write`: one approval per person, so repeating it changes nothing more. Comments
+on a merge request come back through `commentsFrom`, now shared with `issue_read`, which also moved the
+limit of 30 into `MAX_COMMENTS_SHOWN`.
+
+Tests: 255 passing, none failing.

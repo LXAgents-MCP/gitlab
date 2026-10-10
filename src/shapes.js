@@ -188,3 +188,29 @@ export function issueFields(issue) {
     ...(issue.description ? { body: issue.description } : {}),
   };
 }
+
+/** A comment, as `issue_read` and `pr_read` list it. */
+export const commentShape = z.object({
+  id: z.number(),
+  author: z.string().optional(),
+  created_at: z.string().optional(),
+  body: z.string(),
+});
+
+/**
+ * The comments people wrote, out of a list of notes. GitLab keeps its own account of what happened
+ * (a label added, a branch pushed) in the same list, marked `system`; those are not comments.
+ *
+ * @param {unknown} notes The notes as GitLab returns them.
+ * @returns {z.infer<typeof commentShape>[]}
+ */
+export function commentsFrom(notes) {
+  return (Array.isArray(notes) ? notes : [])
+    .filter((note) => note?.system !== true)
+    .map((note) => ({
+      id: note.id,
+      ...(note.author?.username ? { author: note.author.username } : {}),
+      ...(note.created_at ? { created_at: note.created_at } : {}),
+      body: note.body ?? "",
+    }));
+}
