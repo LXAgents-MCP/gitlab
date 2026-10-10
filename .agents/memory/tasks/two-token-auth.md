@@ -5,7 +5,7 @@ description: Separating the token a client presents to the GitLab MCP server (MC
 
 # Two tokens — GitLab
 
-## 2026-10-10 — in progress
+## 2026-10-10 — complete
 
 **Goal.** Two secrets with two jobs. One authenticates a client to this server; the other authenticates this
 server to GitLab. 0.2.0 had one: over HTTP the client's bearer token was the GitLab token itself, and over stdio
@@ -22,7 +22,7 @@ both up.
 this one, with `GITHUB_API_KEY`. The 45 tools do not change. The reference is `shared-instruction`'s `src/auth.js`.
 The names `GITHUB_API_KEY` and `GITLAB_API_KEY` are the owner's. This record supersedes `http-token-auth.md` in part.
 
-**Status:** in progress.
+**Status:** complete. Released as `0.3.0`; the pull requests, merged in order by rebase, are in the table.
 
 ## Tasks
 
@@ -121,3 +121,18 @@ released `0.2.0` changelog and its logs-index row are left as written; correctio
 
 Checked: no relative link in any `.md` file is broken. Code is untouched in this task, so `npm test` is as task 2
 left it.
+
+### Task 4 — release/0.3.0
+
+Landed. The version is `0.3.0` in `package.json` and the lockfile's own two entries (T7: chosen under the standing
+instruction, not approved by the owner in so many words, and stated to them with the plan). `wiki/logs/0/3/0/CHANGELOG.md`
+says first what changed and that `MCP_AUTH_TOKEN` now means something different from 0.2.0, then the cost (every
+holder of the access token acts as the key's owner), then what clients must do over stdio and over HTTP. Its row is
+first in `index/logs-index.md`. The `0.2.0` changelog and its row are left as written. The smoke test's HTTP walk
+was rewritten in task 3. `memory/state/repository-state.md` describes `0.3.0`.
+
+Checked from a clean export of the index, with `npm ci`: 300 tests pass and none fail, and
+`node src/index.js --version` prints `lxagents-gitlab 0.3.0`. No git tag was made and nothing was published.
+
+The `PR` column of the table is filled by a closing commit once the pull requests exist, so no earlier branch needs
+a rebase.
