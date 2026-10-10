@@ -52,3 +52,23 @@ Landed: this record and its row in `memory-index.md`. Nothing outside `.agents/`
 column is filled by a closing commit, not here, so no later branch needs a rebase.
 
 Baseline before any change: `npm test` ran 300 passing and none failing.
+
+### Task 2 — feat/http-defaults
+
+Landed. `DEFAULT_PORT` is 3000 and `DEFAULT_HOST` is `0.0.0.0` in `src/config.js` (H1), so with neither variable set
+the HTTP transport listens on all interfaces on port 3000, as `shared-instruction` does. `httpSettings` is
+otherwise unchanged: unset, empty or blank `PORT` and `HOST` take the defaults, `PORT` and `HOST` override, `PORT=0`
+asks the system for a free port, and a `PORT` that is set but not a whole number from 0 to 65535 exits 2 (H2). The
+start-up line says `serving over http on :3000/mcp (all interfaces)` when the host is `0.0.0.0`, and the full URL
+otherwise. The usage text and the headers of `src/http.js` and `src/index.js` no longer say loopback. The
+fail-closed start without a usable `MCP_AUTH_TOKEN` is untouched and is the guard (H4). The decision is recorded in
+`.agents/memory/decisions/http-bind-defaults.md`, with what it costs and the one place `PORT` parsing is not copied.
+
+Tests: 302 passing, none failing (300 before). `httpSettings` is checked for the defaults (unset, empty, blank),
+for overrides, for `0`, and for five values that are not ports. A real process with no `HOST` is shown to listen
+and answer, with the start-up line saying `(all interfaces)`, and with `HOST=127.0.0.1` it says the URL; the port
+comes from a free-port probe because the real default, 3000, may be taken on the machine running the tests. Putting
+the default host back to loopback fails three tests, which was confirmed. By hand: with `PORT` set and no `HOST`
+the server logs `(all interfaces)` and answers `/healthz`, and `PORT=abc` exits 2 with the message.
+
+Left for task 3: every page that says loopback by default or port 3001.
