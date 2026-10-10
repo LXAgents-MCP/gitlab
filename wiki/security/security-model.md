@@ -116,7 +116,7 @@ Nothing in this repository has been run with a GitLab token: the environment the
 had none. Every request shape is checked against GitLab's documentation and against mocks, and a
 read shape against public data on `gitlab.com` where that was possible. What a given token is actually
 allowed to do is only visible in a real call, so a first smoke test against a throwaway project is the
-owner's.
+owner's; the walk is in [Smoke test](../guides/smoke-test.md).
 
 ## Reporting something
 

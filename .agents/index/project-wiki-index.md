@@ -37,6 +37,7 @@ the same commit.
 | File | Purpose |
 |---|---|
 | [`../../wiki/guides/connect-a-client.md`](../../wiki/guides/connect-a-client.md) | Registering the server with Claude Desktop or Claude Code, with a token. |
+| [`../../wiki/guides/smoke-test.md`](../../wiki/guides/smoke-test.md) | The first live run: a walk through every tool on a throwaway project, and what the documentation leaves open. |
 
 ## security/
 

@@ -70,9 +70,10 @@ code rather than an uninstalled tree. Install first, then trust the number.
 ## Testing
 
 Every behavioural change ships with a test in `test/`, using `node:test` and
-`node:assert/strict`. The suite must pass before any commit, and **no test touches the network**:
-`fetch` is replaced by `mockApi` in `test/helpers.js`, which fails the test on any request it was
-not told to expect.
+`node:assert/strict`. The suite must pass before any commit, and **no test reaches GitLab or any host beyond this
+machine**: `fetch` is replaced by `mockApi` in `test/helpers.js`, which fails the test on any request
+it was not told to expect. The one exception is the redirect test in `test/api.test.js`, which uses the
+real `fetch` against two servers on loopback, to show that the token is not sent to a second host.
 
 Each tool is tested for: a success that asserts the exact request — method, URL, query, body — and
 checks the payload against the tool's own output schema with `expectOutput`; at least one failure
