@@ -48,7 +48,7 @@ in front of you *before* the reasoning that would violate it, not after.
 | A destructive tool, or any tool's annotations | Its kind in `test/surface.js` is `destroy`, its description tells the client to confirm with the owner, and `repo_delete` still refuses without a matching `confirm`. |
 | Dependencies in `package.json` | Still the MCP SDK and zod only (`npm ls --omit=dev --depth=0`). A third needs a decision record first. |
 | Anything under `src/` that could open a socket or serve | ``grep -rn -e "node:http" -e "node:net" -e "node:cluster" -e express src`` still prints nothing. |
-| The `Dockerfile`, once it exists | `--ignore-scripts` survives, the runtime stage still ends as `USER node`, and no `ENV` line carries a token. |
+| The `Dockerfile` or `.dockerignore` | `--ignore-scripts` survives, the file still ends as `USER node`, and there is still no `ENV`, `EXPOSE` or `ENTRYPOINT` line (``grep -n -e '^ENV' -e '^EXPOSE' -e '^ENTRYPOINT' Dockerfile`` prints nothing). `.env*` and `.mcp.json` stay in `.dockerignore`. |
 
 ## C. What to escalate rather than decide
 

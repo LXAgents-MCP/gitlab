@@ -29,6 +29,7 @@ Nothing from the shared set is copied here.
 | `test/` | The server's tests. |
 | `.agents/` | This repository's own rules, indexes, agent wiki and memory. |
 | `wiki/` | Human documentation, and the release logs under `wiki/logs/`. |
+| `Dockerfile`, `.dockerignore` | The stdio image. See [`wiki/environments/docker.md`](../../wiki/environments/docker.md). |
 
 Full orientation: [`../wiki/context/repository-map.md`](../wiki/context/repository-map.md).
 
@@ -43,6 +44,7 @@ introduce TypeScript, a bundler, or a transpiler without agreement.
 | Test | `npm test` |
 | Run (stdio) | `npm start` |
 | Inspect the MCP surface | `npm run inspect` |
+| Build the image | `docker build -t "lxagents-gitlab:$VERSION" .` — it has never been built here |
 
 **`npm install` before `npm test`, once per checkout.** A fresh clone has no `node_modules`, and
 the suite does not say so: the test files fail with `ERR_MODULE_NOT_FOUND`, which reads as broken
@@ -87,6 +89,7 @@ which define no tests, so the runner's total includes them.
   third needs its own record under `.agents/memory/decisions/` before it lands, not after.
 * A transport other than stdio, a listener, or a route. See
   [`../memory/decisions/stdio-only-transport.md`](../memory/decisions/stdio-only-transport.md).
+  The image follows: no `EXPOSE`, no `ENTRYPOINT`, no `ENV` line holding a token, no compose file.
 * An environment variable, flag or configuration file without the owner's say-so. The server reads
   one variable and takes `--help` and `--version`; a second of either is a change to a public
   surface, not an implementation detail.
@@ -100,4 +103,6 @@ which define no tests, so the runner's total includes them.
 
 Not published: `package.json` is `private`, and the client runs the server by path
 (`node src/index.js`) with the token in the `env` block of its own configuration. Making it
-installable from npm is a one-line change the owner approves, and not one to make in passing.
+installable from npm is a one-line change the owner approves, and not one to make in passing. A
+`Dockerfile` builds a stdio image for a client that runs `docker run -i`; publishing it to a registry
+is the owner's decision as well.

@@ -1,0 +1,29 @@
+# Installed inside the image, never copied in
+node_modules
+
+# Version control and CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Not needed at runtime
+test
+wiki
+.agents
+.claude
+AGENTS.md
+README.md
+LICENSE
+Dockerfile
+.dockerignore
+
+# Local noise, and anything that could hold a secret
+.env
+.env.*
+.mcp.json
+*.log
+.DS_Store
+.idea
+.vscode
+coverage

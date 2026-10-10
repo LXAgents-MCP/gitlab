@@ -50,8 +50,9 @@ hoists one to module scope.
 by decision — see [Security model](../security/security-model.md). Because stdout is the protocol
 channel, nothing in `src/` writes to it; diagnostics go to stderr through `src/log.js`.
 
-The process exits by itself when its client goes away, since stdin closes. `SIGINT` closes the
-server and exits cleanly.
+The process exits by itself when its client goes away, since stdin closes. `SIGINT` and `SIGTERM`
+close the server and exit cleanly; the second matters in a container, where the server is the first
+process and would otherwise ignore it.
 
 ## No local path is ever read from a caller
 
