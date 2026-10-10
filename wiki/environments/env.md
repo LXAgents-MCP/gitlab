@@ -1,46 +1,50 @@
 # Environment
 
-**Four variables, and exactly one of them is a secret.** One carries the GitLab token over stdio; three
-choose and place the HTTP transport. A client that spawns the server over stdio sets only the first.
+**Five variables, and two of them are secrets.** One is the GitLab key, which every tool uses; one is the
+access token that guards the HTTP transport; three choose and place the HTTP transport. A client that spawns
+the server over stdio sets only the key.
 
 | Variable | Default | What it does |
 |---|---|---|
-| `MCP_AUTH_TOKEN` | none | The GitLab token every tool uses **over stdio**. Read when a tool is called, trimmed, and never taken as an argument. **HTTP never reads it.** |
+| `GITLAB_API_KEY` | none | The GitLab token every tool uses, **on both transports**. Read when a tool is called, trimmed, and never taken as an argument. |
+| `MCP_AUTH_TOKEN` | none, **required for HTTP** | The server's own access token: what a client must send as `Authorization: Bearer <token>` to use the HTTP transport. At least 32 characters. **HTTP will not start without it.** stdio never reads it, and it is never sent to GitLab. |
 | `MCP_TRANSPORT` | `stdio` | Which transport `src/index.js` speaks: `stdio`, or `http` (`streamable-http` is accepted too). Anything else exits 2. |
 | `PORT` | `3002` | The port the HTTP transport listens on. Not a port exits 2. |
-| `HOST` | `127.0.0.1` | The interface it listens on. Loopback by default, because what crosses the wire is a GitLab token. |
+| `HOST` | `127.0.0.1` | The interface it listens on. Loopback by default, because the process holds a GitLab key. |
 
-There is no configuration file, and the only flags are `--help` and `--version`. A second variable that
-takes a secret is a decision for the owner, not an implementation detail: it widens what a leaked
-environment gives away. `LXAGENTS_MCP_GITLAB_API_KEY` was the variable before `0.2.0` and is gone.
+There is no configuration file, and the only flags are `--help` and `--version`. A further variable that takes
+a secret is a decision for the owner, not an implementation detail: it widens what a leaked environment gives
+away. `LXAGENTS_MCP_GITLAB_API_KEY` was the variable before `0.2.0` and is gone; in `0.2.0` the GitLab token was
+`MCP_AUTH_TOKEN`, which now means something else (see [If you used 0.2.0](../guides/setup-http-token.md#if-you-used-020)).
 
-## Where the token comes from
+## Two secrets, two jobs
 
-| Transport | Source | Set in |
+| | `GITLAB_API_KEY` | `MCP_AUTH_TOKEN` |
 |---|---|---|
-| stdio | `MCP_AUTH_TOKEN` | The `env` block of this server's entry in the client's configuration |
-| HTTP | `Authorization: Bearer <token>` on every request | The client's configuration of its HTTP entry, under `headers` |
+| Direction | server → GitLab | client → server |
+| Used on | stdio and HTTP | HTTP only |
+| Set in | The server's environment: the `env` block of its entry in the client's configuration over stdio, the process environment over HTTP | The server's environment, and the client's `headers` for its HTTP entry |
+| Who sees it | Only the server | The server and each client you give it to |
+| Missing | The server starts; a tool refuses and names the variable | HTTP refuses to start |
 
-Over HTTP the bearer token **is** the GitLab token. The server stores no secret of its own, uses the
-token for the GitLab calls of that one request, and does not read `MCP_AUTH_TOKEN` at all: a request
-without a token is refused, never run with the environment's. [Set up HTTP with a token](../guides/setup-http-token.md)
-walks through it.
+The access token says "this client may use the server"; the key is what the server then does GitLab's work
+with. A client never sees the key, and the access token is never sent to GitLab.
+[Set up HTTP with two tokens](../guides/setup-http-token.md) walks through it.
 
-**`MCP_AUTH_TOKEN` is also the name `shared-instruction` uses, for a different secret.** The two servers
-are separate processes, so there is no clash as long as each gets its own value: set it in a server's
-own `env` block, and do not export it in a shell, where a stdio process would inherit a value meant for
-the other and send it to GitLab.
+**`MCP_AUTH_TOKEN` is also the name `shared-instruction` uses, for its own token.** Give each server its own
+value: two servers on one value let whoever holds it use both.
 
-## Why it is read per call
+## Why the key is read per call
 
-A server without a token still starts. A tool then refuses with a message that names the variable
-and says where to put it, and every tool that does not need a token is unaffected. Reading at
-startup would make a missing token a crash the client reports as "server failed to start", which
-hides the cause.
+A server without the key still starts. A tool then refuses with a message that names the variable and says
+where to put it, and every tool that does not need it is unaffected. Reading at startup would make a missing
+key a crash the client reports as "server failed to start", which hides the cause. The access token is the
+opposite on purpose: HTTP without it would be an open door, so that is the one missing secret that stops the
+server.
 
-## Where to put it
+## Where to put them
 
-Over stdio, in the `env` block of this server's entry in the client's configuration, then restart the
+The key, over stdio, in the `env` block of this server's entry in the client's configuration, then restart the
 client:
 
 ```json
@@ -49,21 +53,21 @@ client:
     "lxagents-gitlab": {
       "command": "node",
       "args": ["/absolute/path/to/gitlab/src/index.js"],
-      "env": { "MCP_AUTH_TOKEN": "<your GitLab token>" }
+      "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }
 }
 ```
 
-Over HTTP, in the `headers` of the client's entry; see [Set up HTTP with a token](../guides/setup-http-token.md).
+Over HTTP the server is started by you, with both variables in its environment, and each client sends the access
+token in the `headers` of its entry; see [Set up HTTP with two tokens](../guides/setup-http-token.md).
 
-Under Docker the `env` block reaches the `docker` process and `-e MCP_AUTH_TOKEN` passes it into the
-container for stdio; see [Docker](docker.md).
+Under Docker the `env` block reaches the `docker` process and `-e GITLAB_API_KEY` passes the key into the
+container; for HTTP add `-e MCP_AUTH_TOKEN`. See [Docker](docker.md).
 
-Keep it out of the repository, the command line and any file that is committed. It is never logged,
-never echoed in an error and never put in a result; the test suite asserts that neither a real-looking
-token nor one GitLab echoes back reaches the output, over stdio and over HTTP. `.env` and `.env.*` are
-gitignored.
+Keep both out of the repository, the command line and any file that is committed. Neither is ever logged, echoed
+in an error or put in a result; the test suite asserts that neither a real-looking key nor one GitLab echoes back
+reaches the output, and that the access token never reaches GitLab. `.env` and `.env.*` are gitignored.
 
 ## What the token needs
 
@@ -123,4 +127,4 @@ page sizes.
 
 * [Security model](../security/security-model.md) — where the token can and cannot go.
 * [Connect a client](../guides/connect-a-client.md)
-* [Set up HTTP with a token](../guides/setup-http-token.md)
+* [Set up HTTP with two tokens](../guides/setup-http-token.md)

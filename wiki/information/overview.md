@@ -3,7 +3,7 @@
 `LXAgents-MCP/gitlab` is an MCP server, `lxagents-gitlab`, that lets an LLM work with GitLab.com
 through its REST API: read and change projects, branches, files, commits, tags, releases, issues,
 merge requests and CI/CD pipelines. It speaks stdio, where the client starts it as a
-subprocess, or HTTP, where each request carries the GitLab token as a bearer token.
+subprocess, or HTTP, where each request carries the server's access token as a bearer token.
 
 ## Why it is its own server
 
@@ -52,14 +52,14 @@ operation an agent needs on a project, each with its own tool prefix:
 Which of these exist in a given version is listed, tool by tool, in
 [MCP surface](../reference/mcp-surface.md).
 
-## Where the token comes from
+## Where the tokens come from
 
-A tool that took the token as an argument would put it in a prompt and a transcript. So over stdio this
-server reads `MCP_AUTH_TOKEN` from its own environment, set by the client's configuration, when a tool is
-called rather than at startup, so a server without one still starts and says what is missing when asked.
-Over HTTP the client sends the token as `Authorization: Bearer <token>` with every request and the
-server keeps none. See [Environment](../environments/env.md) and
-[Set up HTTP with a token](../guides/setup-http-token.md).
+A tool that took the GitLab token as an argument would put it in a prompt and a transcript. So the server reads
+it, as `GITLAB_API_KEY`, from its own environment, set by the client's configuration over stdio, when a tool is
+called rather than at startup, so a server without one still starts and says what is missing when asked. Over
+HTTP a second secret appears: the access token, `MCP_AUTH_TOKEN`, which a client sends as
+`Authorization: Bearer <token>` to be allowed in. It never reaches GitLab, and HTTP will not start without it.
+See [Environment](../environments/env.md) and [Set up HTTP with two tokens](../guides/setup-http-token.md).
 
 ## What it is not
 

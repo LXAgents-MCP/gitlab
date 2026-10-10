@@ -38,15 +38,15 @@ and `latest` is the one tag that cannot be.
 ## Run
 
 ```bash
-docker run --rm -i -e MCP_AUTH_TOKEN "lxagents-gitlab:$VERSION"
+docker run --rm -i -e GITLAB_API_KEY "lxagents-gitlab:$VERSION"
 ```
 
 **`-i` is not optional.** Without it Docker attaches no stdin, the server sees it closed and exits
 at once, which reads as a broken image rather than a missing flag. **Do not add `-t`:** a terminal
 rewrites line endings on the protocol channel.
 
-`-e MCP_AUTH_TOKEN` with no value passes the variable through from the environment of the
-`docker` process, so the token is not on the command line, in shell history or in the image. Never put
+`-e GITLAB_API_KEY` with no value passes the variable through from the environment of the
+`docker` process, so the key is not on the command line, in shell history or in the image. Never put
 it in an `ENV` line: a value baked into the image ships to everyone who pulls it.
 
 Over stdio there is nothing to publish. To serve HTTP from the same image, see [Over HTTP](#over-http) below.
@@ -58,8 +58,8 @@ Over stdio there is nothing to publish. To serve HTTP from the same image, see [
   "mcpServers": {
     "lxagents-gitlab": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "-e", "MCP_AUTH_TOKEN", "lxagents-gitlab:<version>"],
-      "env": { "MCP_AUTH_TOKEN": "<your GitLab token>" }
+      "args": ["run", "--rm", "-i", "-e", "GITLAB_API_KEY", "lxagents-gitlab:<version>"],
+      "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }
 }
@@ -75,18 +75,20 @@ would otherwise ignore it and be killed after the grace period.
 
 ## Over HTTP
 
-The image's default is stdio, so serving HTTP is a matter of selecting the transport and publishing the
-port. No token is passed, because over HTTP each client sends its own:
+The image's default is stdio, so serving HTTP is a matter of selecting the transport, publishing the port, and
+passing both secrets by name, so the values are not on the command line:
 
 ```bash
-docker run --rm -p 127.0.0.1:3002:3002 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 "lxagents-gitlab:$VERSION"
+docker run --rm -p 127.0.0.1:3002:3002 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 \
+  -e GITLAB_API_KEY -e MCP_AUTH_TOKEN "lxagents-gitlab:$VERSION"
 ```
 
-`HOST=0.0.0.0` is for the inside of the container, where a published port cannot reach loopback;
-`127.0.0.1:` in `-p` keeps the port reachable from this host only. Clients then connect to
-`http://127.0.0.1:3002/mcp` with `Authorization: Bearer <GitLab token>`; see
-[Set up HTTP with a token](../guides/setup-http-token.md). Put TLS in front before publishing the port
-beyond the host. **This path, like the rest of the image, has not been run in a container.**
+`GITLAB_API_KEY` is the GitLab token the server uses; `MCP_AUTH_TOKEN` is the access token, at least 32
+characters, which the container refuses to start HTTP without. `HOST=0.0.0.0` is for the inside of the
+container, where a published port cannot reach loopback; `127.0.0.1:` in `-p` keeps the port reachable from this
+host only. Clients then connect to `http://127.0.0.1:3002/mcp` with `Authorization: Bearer <MCP_AUTH_TOKEN>`; see
+[Set up HTTP with two tokens](../guides/setup-http-token.md). Put TLS in front before publishing the port beyond
+the host. **This path, like the rest of the image, has not been run in a container.**
 
 ## What is in the image
 
@@ -126,6 +128,6 @@ a client at the image as above and list them, or run `npm test` in a checkout.
 
 * [Local setup](setup.md) — running the server without a container.
 * [Environment](env.md) — the variables.
-* [Set up HTTP with a token](../guides/setup-http-token.md)
+* [Set up HTTP with two tokens](../guides/setup-http-token.md)
 * [Connect a client](../guides/connect-a-client.md)
 * [Security model](../security/security-model.md) — what a container does and does not change.

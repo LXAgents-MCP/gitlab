@@ -40,9 +40,9 @@ in front of you *before* the reasoning that would violate it, not after.
 
 | About to touch… | Verify before committing |
 |---|---|
-| `src/auth.js`, `requireToken`, `gitlab()`, `callApi` or `failure()` in `src/api.js` | The token still goes only into the `Authorization` header built in `gitlab()`. Every message built from GitLab's text or a network error still passes `redact`. The tests that make GitLab, the network and a handler echo the token still pass — and fail when you remove the redaction, which is worth trying once. The token still travels as `Authorization: Bearer`, never as GitLab's own `PRIVATE-TOKEN` header, which the runtime would forward to another host on a redirect; redirects are still followed by the runtime and not by hand (nothing sets `redirect` to `manual`), and the redirect test still shows a second host receiving no token. |
-| `callTool` in `src/server.js` | The crash path still redacts both the log line and the returned text, with the active token. |
-| `src/http.js` or `src/auth.js` | A request with no token is still a 401 before any body is read or path matched; a process that serves HTTP still never reads `MCP_AUTH_TOKEN` (`enterHttpMode`); the token still lives in the per-request store and is stored nowhere; `tools/call` with a token and the environment set still reaches GitLab with the request's token (`test/http.test.js`); the default bind is still `127.0.0.1`. |
+| `src/auth.js`, `requireToken`, `gitlab()`, `callApi` or `failure()` in `src/api.js` | The GitLab key still goes only into the `Authorization` header built in `gitlab()`, and is never a caller's bearer. Every message built from GitLab's text or a network error still passes `redact`. The tests that make GitLab, the network and a handler echo the token still pass — and fail when you remove the redaction, which is worth trying once. The token still travels as `Authorization: Bearer`, never as GitLab's own `PRIVATE-TOKEN` header, which the runtime would forward to another host on a redirect; redirects are still followed by the runtime and not by hand (nothing sets `redirect` to `manual`), and the redirect test still shows a second host receiving no token. |
+| `callTool` in `src/server.js` | The crash path still redacts both the log line and the returned text, with the GitLab key. |
+| `src/http.js` or `src/auth.js` | A request without the access token is still a 401 before any body is read or path matched; the comparison is still over SHA-256 digests with `timingSafeEqual`; HTTP still refuses to start without `MCP_AUTH_TOKEN` of 32 characters or more; the access token still appears in no request to GitLab (`test/http.test.js` searches for it) and `MCP_AUTH_TOKEN` is still never read over stdio; the default bind is still `127.0.0.1`. Try the mutation once: make the comparison always true and watch five tests fail. |
 | `parseRepo`, `refName`, `refPath`, `filePath`, or how any tool builds a path | Every path segment still comes from these; empty, `.` and `..` segments are still refused; `gitlab()` still refuses a path with `?` or `#`. |
 | A tool's `inputSchema` | No key names a credential (the registry test fails it), and nothing lets a caller choose the host. |
 | `API_BASE` in `src/config.js`, or any new constant that looks like a host | It is still a constant. |
@@ -56,10 +56,11 @@ in front of you *before* the reasoning that would violate it, not after.
 Ask the user; do not resolve these on your own initiative.
 
 * **Any transport other than stdio and the HTTP one, any listener outside `src/http.js`, any route
-  beyond `POST /mcp` and `GET /healthz`, any fallback to the environment's token over HTTP, any
-  storage of tokens between requests.** See
-  [`../../memory/decisions/http-token-transport.md`](../../memory/decisions/http-token-transport.md).
-* **A second secret variable, a base-URL setting, or any real token in a file, a fixture or a
+  beyond `POST /mcp` and `GET /healthz`, HTTP that starts without an access token or accepts a
+  caller's own GitLab token, any use of the access token against GitLab, any storage of tokens between
+  requests.** See
+  [`../../memory/decisions/two-token-auth.md`](../../memory/decisions/two-token-auth.md).
+* **A third secret variable, a base-URL setting, or any real token in a file, a fixture or a
   commit.** There are none; adding one is a decision, not an edit.
 * **Loosening a guard to make something work** — accepting a raw URL from a caller, bypassing
   `parseRepo`, dropping `confirm` from `repo_delete`, relaxing a redaction. The guard is the
@@ -79,10 +80,12 @@ Named because each one has cost, or would cost, a round of investigation:
   session, not a broken or hijacked server.
 * **stdio having no authentication.** Deliberate. Asking for a token on stdio is a design change to
   argue, not a gap.
-* **`GET /healthz` answering without a token.** The one open route; it says only that a server is
+* **`GET /healthz` answering without the access token.** The one open route; it says only that a server is
   there.
-* **`MCP_AUTH_TOKEN` having the same name as `shared-instruction`'s variable.** By the owner's
-  instruction, and recorded in the decision; the hazard is a value exported in a shell, which the
-  setup guide says not to do.
+* **`MCP_AUTH_TOKEN` having the same name as `shared-instruction`'s variable.** It means the same
+  thing there: the secret that guards an HTTP door. Recorded in the decision; the hazard left is one
+  value on two servers, which the setup guide says not to do.
+* **Every holder of the access token acting as the key's owner.** The accepted cost of the two-token
+  design, stated in the security model and the decision.
 * **A 404 for a project that exists.** GitLab answers 404 for a private project the token
   cannot see.

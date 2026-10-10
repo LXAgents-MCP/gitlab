@@ -1,6 +1,6 @@
 # Local Setup
 
-An MCP server over stdio, or over HTTP with a bearer token. The only flags are `--help` and `--version`;
+An MCP server over stdio, or over HTTP behind an access token. The only flags are `--help` and `--version`;
 the transport is chosen by `MCP_TRANSPORT`.
 
 ## Requirements
@@ -27,19 +27,20 @@ A client normally starts the server, so "running" it means pointing the client a
 [Connect a client](../guides/connect-a-client.md). To run it by hand:
 
 ```bash
-MCP_AUTH_TOKEN=<token> npm start
+GITLAB_API_KEY=<token> npm start
 ```
 
 It then waits on stdin for a client. Press Ctrl-C to stop it, or close its stdin. Without the
 variable it still starts; a tool then refuses and names the variable.
 
-To serve HTTP instead, with the token sent by each client rather than set here:
+To serve HTTP instead, give it the GitLab key and an access token for clients (at least 32 characters; it will
+not start without one):
 
 ```bash
-npm run start:http          # http://127.0.0.1:3002/mcp
+GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # http://127.0.0.1:3002/mcp
 ```
 
-See [Set up HTTP with a token](../guides/setup-http-token.md). The two flags:
+See [Set up HTTP with two tokens](../guides/setup-http-token.md). The two flags:
 
 ```bash
 node src/index.js --help       # usage, on stderr
@@ -49,7 +50,7 @@ node src/index.js --version    # name and version, on stderr
 ## Inspect it
 
 ```bash
-MCP_AUTH_TOKEN=<token> npm run inspect
+GITLAB_API_KEY=<token> npm run inspect
 ```
 
 opens the MCP Inspector against the stdio server, so you can list the tools and call one by hand.
@@ -69,6 +70,6 @@ restart the client or the server.
 ## Related pages
 
 * [Environment](env.md) — the variables.
-* [Set up HTTP with a token](../guides/setup-http-token.md)
+* [Set up HTTP with two tokens](../guides/setup-http-token.md)
 * [Docker](docker.md) — the same server in a container.
 * [Architecture](../information/architecture.md)

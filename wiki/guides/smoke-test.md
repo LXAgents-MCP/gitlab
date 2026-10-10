@@ -74,19 +74,22 @@ fail:
 
 ## Over HTTP
 
-Run this once if you will use the HTTP transport. It needs only the server and a token; the walk above
-then works unchanged through a client registered as in
-[Set up HTTP with a token](setup-http-token.md).
+Run this once if you will use the HTTP transport. It needs only the server, a GitLab key and an access token;
+the walk above then works unchanged through a client registered as in
+[Set up HTTP with two tokens](setup-http-token.md). Start the server with both variables set:
+`GITLAB_API_KEY=<key> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http`, and keep the access token.
 
 | # | Do | Expect |
 |---|---|---|
-| H1 | `npm run start:http`, then `curl http://127.0.0.1:3002/healthz` | `{"status":"ok","server":"lxagents-gitlab","version":"…"}` with no token. |
-| H2 | `curl -i -X POST http://127.0.0.1:3002/mcp` | 401 with `WWW-Authenticate: Bearer realm="mcp"`. |
-| H3 | `tools/list` with `Authorization: Bearer $GITLAB_TOKEN` (the curl in the guide) | The 45 tools. |
-| H4 | `tools/call` `repo_read` on a project your token can read, with that header | The project, read as the token's owner. |
-| H5 | The same call with a valid but unrelated GitLab token for another account | A 404 for a private project the second account cannot see — each request acts as its own token. |
-| H6 | The same call with a revoked or mistyped token | A message that GitLab rejected the token (401) and names the `Authorization: Bearer` header; the token is not in it. |
-| H7 | Start the server with `MCP_AUTH_TOKEN` set and repeat H2 | A line on stderr saying it is ignored, and still a 401: the environment is never a fallback. |
+| H1 | Start the server with `MCP_AUTH_TOKEN` unset, then with `MCP_AUTH_TOKEN=short` | It exits 1 both times, saying `will not start the HTTP transport` and naming the variable, and listens on nothing. |
+| H2 | Start it properly, then `curl http://127.0.0.1:3002/healthz` | `{"status":"ok","server":"lxagents-gitlab","version":"…"}` with no token. |
+| H3 | `curl -i -X POST http://127.0.0.1:3002/mcp` | 401 with `WWW-Authenticate: Bearer realm="mcp"`. |
+| H4 | The same with `Authorization: Bearer wrong` | 401 with `error="invalid_token"`. |
+| H5 | The same with the GitLab key as the bearer | 401 as well: the key is not an access token. |
+| H6 | `tools/list` with `Authorization: Bearer $MCP_AUTH_TOKEN` (the curl in the guide) | The 45 tools. |
+| H7 | `tools/call` `repo_read` on a project the key can read, with that header | The project, read as the key's owner. |
+| H8 | Restart the server with a revoked or mistyped `GITLAB_API_KEY` and repeat H7 | A message that GitLab rejected the token (401) naming `GITLAB_API_KEY`; neither secret is in it. |
+| H9 | Restart the server without `GITLAB_API_KEY` and repeat H7 | The server said so on stderr at start; the tool is refused naming `GITLAB_API_KEY`. |
 
 ## What the documentation leaves open
 
@@ -119,8 +122,8 @@ differently, the tool named is the one to fix.
 | `workflow_run` | `POST /pipeline` with `ref` and `variables: [{key, value}]` in a JSON body answers 201; the 400 text for a missing ref, for a configuration with no jobs and for variables a role may not set. |
 | `workflow_status` | A private project's pipeline reads the same as a public one's, and `include_retried` is off by default. |
 | `workflow_logs` | `GET /jobs/:id/trace` answers `text/plain` with a token (an anonymous call is a 401, so this has never been seen); an erased or unstarted job answers 404 or 410; `section_start` markers are removed. |
-| HTTP, any tool | The token in the `Authorization` header reaches `gitlab.com` as the bearer credential of that request, and two interleaved requests with different tokens act as their own users. |
-| the image | Build it, run `node src/index.js --version` in it, connect a client with `docker run --rm -i -e MCP_AUTH_TOKEN`, and check that `docker stop` returns at once. See [Docker](../environments/docker.md). |
+| HTTP, any tool | `GITLAB_API_KEY` reaches `gitlab.com` as the bearer credential of every call, and the client's access token appears in none of them. |
+| the image | Build it, run `node src/index.js --version` in it, connect a client with `docker run --rm -i -e GITLAB_API_KEY`, and check that `docker stop` returns at once. See [Docker](../environments/docker.md). |
 
 ## Reporting what differs
 
@@ -132,6 +135,6 @@ in this one.
 ## Related pages
 
 * [Connect a client](connect-a-client.md)
-* [Set up HTTP with a token](setup-http-token.md)
+* [Set up HTTP with two tokens](setup-http-token.md)
 * [Environment](../environments/env.md) — what each tool needs from the token.
 * [Security model](../security/security-model.md) — why nothing has been run live.

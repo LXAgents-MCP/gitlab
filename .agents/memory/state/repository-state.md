@@ -21,9 +21,10 @@ tags and releases, issues, merge requests and pipelines. A tool count is deliber
 here: it goes stale at the next module. `repo_create` was moved here from the `cli` server, where it
 was `create_gitlab_repo`.
 
-**Token.** The GitLab token: `MCP_AUTH_TOKEN` over stdio, read when a tool is called, or the bearer token
-of each request over HTTP, which never reads it. `MCP_TRANSPORT`, `PORT` and `HOST` are the only other variables, and
-the only flags are `--help` and `--version`.
+**Tokens.** Two. `GITLAB_API_KEY` is the GitLab token, read when a tool is called, on both transports.
+`MCP_AUTH_TOKEN` is the access token HTTP requires of a client (32 characters or more; HTTP exits 1 without it) and
+is never read over stdio or sent to GitLab. `MCP_TRANSPORT`, `PORT` and `HOST` are the only other variables, and the
+only flags are `--help` and `--version`.
 
 **Verified.** The suite (292 tests) replaces `fetch` and reaches no host beyond loopback. Every request shape is
 checked against GitLab's documentation and against mocks, and a read shape against public data on
