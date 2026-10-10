@@ -107,6 +107,16 @@ it was given.
 GitLab's files API does not return the commit it made, only the path and branch, so a write does not
 report a commit sha; `commit_list` finds it.
 
+### Commits
+
+| Tool | Kind | Does |
+|---|---|---|
+| `commit_read` | read | Read one commit: message, author, date, parents, and the files it changed with line counts. `diff: true` adds its diff, cut at 20,000 characters. Defaults to the default branch's tip. Makes two requests, because GitLab keeps a commit's files in its diff. |
+| `commit_list` | read | List commits, newest first, from a branch, tag or sha; optionally only those touching a path, by an author, or within a date range. Paged. |
+| `commit_compare` | read | Compare two refs: ahead and behind, the most recent 50 commits between them, and the changed files (the first 100) with line counts. GitLab compares in one direction, so ahead and behind are two requests. |
+
+GitLab sends a file's diff without counts, so the line counts are read off its hunks.
+
 ## What this server does not expose
 
 | Not exposed | Why |

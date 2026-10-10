@@ -188,7 +188,9 @@ export function pageQuery(args) {
  * @returns {{ page: number, per_page: number, has_more: boolean }}
  */
 export function paging(query, headers) {
-  return { page: query.page, per_page: query.per_page, has_more: (headers["x-next-page"] ?? "") !== "" };
+  // Most answers carry `x-next-page`; the commits API, which sends no totals, is read by its link header too.
+  const next = (headers["x-next-page"] ?? "") !== "" || /rel="next"/.test(headers.link ?? "");
+  return { page: query.page, per_page: query.per_page, has_more: next };
 }
 
 /* ------------------------------------------------------------------ requests */
@@ -282,7 +284,11 @@ export async function callApi(url, { method = "GET", headers = {}, json, token =
  * @returns {string}
  */
 export function apiDetail(body) {
-  if (typeof body === "string") return body ? `: ${body}` : "";
+  if (typeof body === "string") {
+    // A security check or an outage answers with a page of HTML, which says nothing a reader can use.
+    if (/^\s*<(!doctype|html)/i.test(body)) return ": the answer was a web page and not the API's, such as a security check or an outage";
+    return body ? `: ${body}` : "";
+  }
   if (!body || typeof body !== "object") return "";
 
   const { message, error, error_description: description } = body;
