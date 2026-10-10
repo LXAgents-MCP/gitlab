@@ -2,12 +2,26 @@
  * Every knob this server has, in one place.
  *
  * There are no command-line flags and no configuration file. The only input from outside the
- * tool arguments is the token, read from the environment at call time (`requireToken` in
- * `api.js`), so a server without a token still starts and says what is missing when asked.
+ * tool arguments is the token and, to serve HTTP, three variables: `MCP_AUTH_TOKEN` over stdio,
+ * the `Authorization` header over HTTP (`src/auth.js`), and `MCP_TRANSPORT`, `PORT` and `HOST`
+ * (`src/http.js`). A server without a token still starts and says what is missing when asked.
  */
 
-/** The environment variable that holds the token. Never an argument, so it never appears in a prompt. */
-export const TOKEN_ENV = "LXAGENTS_MCP_GITLAB_API_KEY";
+/**
+ * The environment variable that holds the token over stdio, named as `shared-instruction` names its
+ * own token. Never an argument, so it never appears in a prompt. HTTP never reads it.
+ */
+export const TOKEN_ENV = "MCP_AUTH_TOKEN";
+
+/** The port and interface of the HTTP transport when `PORT` and `HOST` are not set. Loopback, because the token is a GitLab credential. */
+export const DEFAULT_PORT = 3002;
+export const DEFAULT_HOST = "127.0.0.1";
+
+/** Characters. The longest bearer token accepted; GitLab's longest format is well under it. */
+export const MAX_TOKEN_LENGTH = 512;
+
+/** Bytes. The largest request body the HTTP transport reads: a 1 MB file write is about 1.4 MB as base64. */
+export const MAX_BODY_BYTES = 4_000_000;
 
 /** The site, for a link to a page the API does not hand back. gitlab.com only; self-managed instances are not supported. */
 export const WEB_BASE = "https://gitlab.com";

@@ -1,9 +1,12 @@
 ---
 name: memory-decisions-stdio-only-transport
-description: Why this server is stdio only, when a sibling repository serves HTTP — the token it holds can delete repositories.
+description: Superseded by http-token-transport.md. Why this server was stdio only — the token it holds can delete projects.
 ---
 
 # This server is stdio only
+
+> **Superseded on 2026-10-10** by [`http-token-transport.md`](http-token-transport.md): the owner reopened
+> this, and the bearer token passed through per request answers the objections below. Kept as history.
 
 ## 2026-10-10
 

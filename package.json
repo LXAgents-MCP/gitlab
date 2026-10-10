@@ -1,7 +1,7 @@
 {
   "name": "@lxagents-mcp/gitlab",
   "version": "0.1.0",
-  "description": "MCP server that gives an LLM access to GitLab — projects, branches, files, commits, tags, releases, issues, merge requests and CI/CD pipelines — through the GitLab REST API. Stdio only.",
+  "description": "MCP server that gives an LLM access to GitLab — projects, branches, files, commits, tags, releases, issues, merge requests and CI/CD pipelines — through the GitLab REST API. Stdio, or HTTP with a bearer token.",
   "private": true,
   "type": "module",
   "main": "src/index.js",
@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "start": "node src/index.js",
+    "start:http": "node src/http.js",
     "test": "node --test",
     "inspect": "npx @modelcontextprotocol/inspector node src/index.js"
   },

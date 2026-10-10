@@ -22,7 +22,8 @@ same commit that creates it.
 
 | File | Purpose |
 |---|---|
-| [`../memory/decisions/stdio-only-transport.md`](../memory/decisions/stdio-only-transport.md) | Why this server is stdio only, when a sibling repository serves HTTP. |
+| [`../memory/decisions/stdio-only-transport.md`](../memory/decisions/stdio-only-transport.md) | Superseded: why this server was stdio only. |
+| [`../memory/decisions/http-token-transport.md`](../memory/decisions/http-token-transport.md) | Why this server also serves HTTP, how the GitLab token reaches it there, and what answers the objections that kept it stdio only. |
 
 ## tasks/
 

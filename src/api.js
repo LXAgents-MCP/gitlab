@@ -8,6 +8,7 @@
  * Nothing here writes to stdout: on stdio, stdout is the protocol channel.
  */
 import { optionalInt, rawText, requiredText } from "./args.js";
+import { currentToken, isHttpMode, tokenHome } from "./auth.js";
 import {
   API_BASE,
   API_TIMEOUT_MS,
@@ -24,25 +25,25 @@ const JSON_ACCEPT = "application/json";
 /* ------------------------------------------------------------------ the token */
 
 /**
- * Read the API token from the environment, at call time.
+ * The token a call is made with, read when the call is made.
  *
  * Read per call and not at startup, so a server without a token still starts and says what is
- * missing when a tool is used. The token comes from the `env` block of the client's
- * configuration for this server; it is never an argument, so it never appears in a prompt or a
- * transcript.
+ * missing when a tool is used. Over stdio it comes from `MCP_AUTH_TOKEN`, set in the `env` block of
+ * the client's configuration for this server; over HTTP it is the bearer token of the request being
+ * answered, and the environment is never consulted (`src/auth.js`). It is never a tool argument, so
+ * it never appears in a prompt or a transcript.
  *
- * @param {string} [envName]
  * @returns {string}
  */
-export function requireToken(envName = TOKEN_ENV) {
-  const token = process.env[envName]?.trim();
-  if (!token) {
-    throw new Refused(
-      `${envName} is not set. Add it to the \`env\` block of this server's entry in the ` +
-        "client configuration, then restart the client.",
-    );
-  }
-  return token;
+export function requireToken() {
+  const token = currentToken();
+  if (token !== null) return token;
+  throw new Refused(
+    isHttpMode()
+      ? "This request carried no token. Send your GitLab token as `Authorization: Bearer <token>`."
+      : `${TOKEN_ENV} is not set. Add it to the \`env\` block of this server's entry in the ` +
+          "client configuration, then restart the client.",
+  );
 }
 
 /**
@@ -330,7 +331,7 @@ function failure({ status, body, headers, what, explain, token }) {
 
   if (message === undefined) {
     if (status === 401) {
-      message = `GitLab rejected the token (401). Check that ${TOKEN_ENV} holds a valid token that has not expired.`;
+      message = `GitLab rejected the token (401). Check that ${tokenHome()} holds a valid token that has not expired.`;
     } else if (status === 429) {
       message = `GitLab is rate limiting this token (429)${detail}. ${whenToRetry(headers)}`;
     } else if (status === 403) {
