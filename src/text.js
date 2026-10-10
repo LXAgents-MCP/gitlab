@@ -69,3 +69,19 @@ export function head(text, max) {
 export function tail(text, max) {
   return text.length > max ? [`(truncated) ...\n${text.slice(text.length - max)}`, true] : [text, false];
 }
+
+/**
+ * A job's log as text to read: one kind of line break, and none of the colour codes that tools
+ * write for a terminal, or of the `section_start` and `section_end` markers GitLab's runner adds to
+ * fold a log in its web page, which only add noise.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function cleanLog(text) {
+  return text
+    .replace(/^\uFEFF/, "")
+    .replace(/section_(?:start|end):\d+:[^\r\n\u001b]*\r?/g, "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\u001b\[[0-9;]*[A-Za-z]/g, "");
+}

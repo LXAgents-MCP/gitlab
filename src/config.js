@@ -54,3 +54,13 @@ export const MAX_COMMITS_SHOWN = 50;
 
 /** Comments returned with an issue or a merge request when they are asked for. The count is always reported. */
 export const MAX_COMMENTS_SHOWN = 30;
+
+/**
+ * Characters of job logs shown by one `workflow_logs` call, shared between the jobs it reads, and
+ * the most jobs it reads at once. A failing job's log ends with the reason, so the end is kept.
+ */
+export const MAX_LOG_CHARS = 20_000;
+export const MAX_LOG_JOBS = 5;
+
+/** CI/CD variables one `workflow_run` may carry. A bound of this server's; GitLab and the project set their own. */
+export const MAX_PIPELINE_VARIABLES = 25;

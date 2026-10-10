@@ -214,3 +214,32 @@ export function commentsFrom(notes) {
       body: note.body ?? "",
     }));
 }
+
+/** What the workflow tools report about a job of a pipeline. */
+export const jobShape = {
+  id: z.number(),
+  name: z.string(),
+  stage: z.string().optional(),
+  status: z.string(),
+  allow_failure: z.boolean(),
+  failure_reason: z.string().optional(),
+  duration: z.number().optional(),
+};
+
+/**
+ * @param {any} job A job as GitLab returns it.
+ * @returns {z.infer<z.ZodObject<typeof jobShape>>} `failure_reason` is GitLab's word for why a job
+ *   failed (`script_failure`, `stuck_or_timeout_failure`, `runner_system_failure`), and `allow_failure`
+ *   says the pipeline does not fail with it. A job has no steps; the log says where.
+ */
+export function jobFields(job) {
+  return {
+    id: job.id,
+    name: job.name ?? "",
+    ...(job.stage ? { stage: job.stage } : {}),
+    status: job.status ?? "unknown",
+    allow_failure: Boolean(job.allow_failure),
+    ...(job.failure_reason ? { failure_reason: job.failure_reason } : {}),
+    ...(typeof job.duration === "number" ? { duration: Math.round(job.duration) } : {}),
+  };
+}
