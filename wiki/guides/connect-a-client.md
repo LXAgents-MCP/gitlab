@@ -56,6 +56,9 @@ Or commit a project `.mcp.json` that reads the token from the environment instea
 }
 ```
 
+**In a container** instead of on the host: the same entry with `docker` as the command. See
+[Docker](../environments/docker.md).
+
 ## 3. Restart the client
 
 **Registering a server does not reach a session that is already running.** The client loads its
@@ -81,3 +84,4 @@ permission comes back as a 403 that says so.
 
 * [Environment](../environments/env.md)
 * [Local setup](../environments/setup.md)
+* [Docker](../environments/docker.md)

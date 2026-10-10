@@ -81,6 +81,12 @@ transport**, because over a network the same token would be usable by anyone hol
 bearer token, with no identity per caller and no way to revoke one. Adding one is a separate
 decision with its own security record.
 
+A container changes where the process runs and not what it can do. The image
+([Docker](../environments/docker.md)) runs as a non-root user, declares no port, and holds no token in
+any layer: the token is passed at run time with `-e`, which puts it in the container's environment,
+where anyone who can `docker inspect` the container sees it. The same token reaches the same API
+either way.
+
 ## Verifying
 
 | Check | How | Passing looks like |
@@ -92,6 +98,7 @@ decision with its own security record.
 | stdout stays silent | `npm test` — the stdio tests for `--help`, `--version` and a bad flag | stdout empty |
 | No listener or HTTP library | ``grep -rn -e "node:http" -e "node:net" -e "node:cluster" -e express src`` | no output |
 | Only two runtime dependencies | `npm ls --omit=dev --depth=0` | the MCP SDK and zod |
+| The image bakes in no secret and opens no port | ``grep -n -e '^ENV' -e '^EXPOSE' -e '^ENTRYPOINT' Dockerfile`` | no output |
 
 ## Not a finding here
 

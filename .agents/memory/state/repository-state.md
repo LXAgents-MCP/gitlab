@@ -28,4 +28,4 @@ is checked against GitLab's documentation and against mocks, and a read shape ag
 `gitlab.com` where that was possible. A first smoke test is the owner's.
 
 **Not built.** No CI. No HTTP transport (decision `stdio-only-transport.md`). No self-managed GitLab instances.
-Not published to npm (`private: true`). No container image yet.
+Not published to npm (`private: true`). A `Dockerfile` for a stdio image exists and has never been built.

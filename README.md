@@ -85,6 +85,7 @@ from the tool surface until the session restarts. See
 - [Architecture](wiki/information/architecture.md) — how a call becomes a request and a result.
 - [MCP surface](wiki/reference/mcp-surface.md) — every tool, and what the server does not expose.
 - [Local setup](wiki/environments/setup.md) — running and testing it.
+- [Docker](wiki/environments/docker.md) — the stdio image, which has not yet been built.
 - [Environment](wiki/environments/env.md) — the one variable, and what the token needs.
 - [Connect a client](wiki/guides/connect-a-client.md) — Claude Desktop and Claude Code.
 - [Security model](wiki/security/security-model.md) — the token, the surfaces that touch it, and

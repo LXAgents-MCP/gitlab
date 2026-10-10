@@ -30,6 +30,7 @@ the same commit.
 |---|---|
 | [`../../wiki/environments/setup.md`](../../wiki/environments/setup.md) | Installing, running, inspecting and testing it. |
 | [`../../wiki/environments/env.md`](../../wiki/environments/env.md) | The one variable, and what the token needs. |
+| [`../../wiki/environments/docker.md`](../../wiki/environments/docker.md) | Building and running the stdio image, registering it with a client, and what it has not been checked for. |
 
 ## guides/
 

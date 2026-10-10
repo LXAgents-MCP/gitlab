@@ -60,4 +60,5 @@ restart the client or the server.
 ## Related pages
 
 * [Environment](env.md) — the one variable.
+* [Docker](docker.md) — the same server in a container.
 * [Architecture](../information/architecture.md)

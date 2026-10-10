@@ -68,6 +68,26 @@ test("--version prints the name and version to stderr, leaves stdout empty and e
   assert.equal(run.stderr.trim(), `${SERVER_NAME} ${VERSION}`);
 });
 
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  test(`${signal} closes the server and exits 0, which a container's first process needs`, async () => {
+    const child = spawn(process.execPath, [ENTRY], { stdio: ["pipe", "pipe", "pipe"] });
+    const exited = new Promise((resolve) => child.on("exit", (code, by) => resolve({ code, by })));
+    // The handlers are installed before this line is written, so it is safe to signal after it.
+    await new Promise((resolve) => {
+      child.stderr.on("data", (chunk) => String(chunk).includes("serving over stdio") && resolve());
+    });
+
+    child.kill(signal);
+
+    const result = await Promise.race([
+      exited,
+      new Promise((resolve) => setTimeout(() => resolve("still running"), 5000)),
+    ]);
+    if (result === "still running") child.kill("SIGKILL");
+    assert.deepEqual(result, { code: 0, by: null });
+  });
+}
+
 test("the process exits by itself when its client goes away", async () => {
   const child = spawn(process.execPath, [ENTRY], { stdio: ["pipe", "pipe", "ignore"] });
   const exited = new Promise((resolve) => child.on("exit", (code) => resolve(code)));

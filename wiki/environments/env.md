@@ -33,6 +33,9 @@ In the `env` block of this server's entry in the client's configuration, then re
 }
 ```
 
+Under Docker the `env` block reaches the `docker` process and `-e LXAGENTS_MCP_GITLAB_API_KEY` passes
+it into the container; see [Docker](docker.md).
+
 Keep it out of the repository, the command line and any file that is committed. It is never logged,
 never echoed in an error and never put in a result; the test suite asserts that neither a real-looking
 token nor one GitLab echoes back reaches the output. `.env` and `.env.*` are gitignored.

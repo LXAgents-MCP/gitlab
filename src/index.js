@@ -61,9 +61,15 @@ if (values.version) {
 
 const server = createServer();
 await server.connect(new StdioServerTransport());
-log(`${SERVER_NAME} ${VERSION} serving over stdio`);
 
-process.on("SIGINT", async () => {
-  await server.close();
-  process.exit(0);
-});
+// SIGTERM as well as SIGINT: in a container this process is PID 1, which the kernel gives no
+// default action for a signal, so without a handler `docker stop` waits out its grace period and
+// then kills it.
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.on(signal, async () => {
+    await server.close();
+    process.exit(0);
+  });
+}
+
+log(`${SERVER_NAME} ${VERSION} serving over stdio`);
