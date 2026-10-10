@@ -27,7 +27,8 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 - **The token never leaves its header.** It is not an argument, it is read per call, and it is
   removed from every message the server can produce — refusals and crashes alike.
 - **Honest annotations.** Every tool says whether it reads, creates, changes or destroys, and a test
-  holds it to that, so a client can ask a person first before anything destructive.
+  holds it to that, so a client can ask a person first before anything destructive. `repo_delete`
+  also refuses unless it is told the project's full path.
 - **Failures that say what to do next.** A rejected token, a missing permission, a rate limit with
   its reset time, a name already taken: each is a sentence, not a status code.
 - **Bounded output.** Lists page at up to 100; a file, a log or a diff is cut at a stated limit and

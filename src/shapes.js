@@ -1,0 +1,89 @@
+/**
+ * GitLab's objects as this server reports them: a schema for a tool's output, and the function
+ * that fills it. Kept apart from the tools so every tool that returns a project (or, later, a
+ * commit or an issue) says the same things about it, and a field GitLab renames is changed once.
+ */
+import { z } from "zod";
+import { Refused } from "./errors.js";
+
+/**
+ * Check that an answer is the kind of object the tool expected, before reading fields off it.
+ *
+ * GitLab answers 2xx with a body of the shape documented, and a proxy or an outage can answer
+ * 2xx with something else. Reading `body.path_with_namespace` off a string would crash; this turns
+ * it into a refusal that says what was wrong.
+ *
+ * @param {any} body
+ * @param {string} field A string field the object must have.
+ * @param {string} what What the object should have been, for the message.
+ * @returns {any} The same body.
+ */
+export function expectBody(body, field, what) {
+  if (!body || typeof body !== "object" || typeof body[field] !== "string") {
+    throw new Refused(`GitLab answered, but the body was not ${what} this server recognizes.`);
+  }
+  return body;
+}
+
+/** What every tool that returns a project reports about it. */
+export const projectShape = {
+  id: z.number(),
+  full_name: z.string(),
+  description: z.string().optional(),
+  html_url: z.string(),
+  clone_url: z.string(),
+  visibility: z.string(),
+  default_branch: z.string().optional(),
+  fork: z.boolean(),
+  archived: z.boolean(),
+  stars: z.number(),
+  forks: z.number(),
+  open_issues: z.number(),
+  license: z.string().optional(),
+  topics: z.array(z.string()),
+  last_activity_at: z.string().optional(),
+  parent: z.string().optional(),
+  scheduled_for_deletion: z.string().optional(),
+};
+
+/**
+ * @param {any} project A project as GitLab returns it.
+ * @returns {z.infer<z.ZodObject<typeof projectShape>>}
+ */
+export function projectFields(project) {
+  const topics = Array.isArray(project.topics) ? project.topics : Array.isArray(project.tag_list) ? project.tag_list : [];
+  const deletion = project.marked_for_deletion_on ?? project.marked_for_deletion_at;
+  return {
+    id: project.id,
+    full_name: project.path_with_namespace,
+    ...(project.description ? { description: project.description } : {}),
+    html_url: project.web_url,
+    clone_url: project.http_url_to_repo,
+    visibility: project.visibility ?? "unknown",
+    ...(typeof project.default_branch === "string" ? { default_branch: project.default_branch } : {}),
+    fork: Boolean(project.forked_from_project),
+    archived: Boolean(project.archived),
+    stars: project.star_count ?? 0,
+    forks: project.forks_count ?? 0,
+    open_issues: project.open_issues_count ?? 0,
+    ...(project.license?.name ? { license: project.license.name } : {}),
+    topics,
+    ...(project.last_activity_at ? { last_activity_at: project.last_activity_at } : {}),
+    ...(project.forked_from_project?.path_with_namespace ? { parent: project.forked_from_project.path_with_namespace } : {}),
+    ...(typeof deletion === "string" && deletion !== "" ? { scheduled_for_deletion: deletion } : {}),
+  };
+}
+
+/**
+ * One line about a project, for a summary.
+ *
+ * @param {ReturnType<typeof projectFields>} fields
+ * @returns {string}
+ */
+export function describeProject(fields) {
+  const kind = fields.fork ? "fork" : "project";
+  const archived = fields.archived ? "archived " : "";
+  const branch = fields.default_branch ? `, default branch ${fields.default_branch}` : "";
+  const deletion = fields.scheduled_for_deletion ? `, scheduled for deletion on ${fields.scheduled_for_deletion}` : "";
+  return `${fields.full_name} is a ${fields.visibility} ${archived}${kind}${branch}${deletion}.`;
+}
