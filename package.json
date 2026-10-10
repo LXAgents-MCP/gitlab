@@ -1,6 +1,6 @@
 {
   "name": "@lxagents-mcp/gitlab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server that gives an LLM access to GitLab — projects, branches, files, commits, tags, releases, issues, merge requests and CI/CD pipelines — through the GitLab REST API. Stdio, or HTTP with a bearer token.",
   "private": true,
   "type": "module",
