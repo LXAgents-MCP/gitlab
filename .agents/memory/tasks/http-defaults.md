@@ -26,13 +26,13 @@ The owner asked for this and said to take the recommended option wherever a choi
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/http-defaults-plan` | |
-| 2 | Default to port 3000 on all interfaces | `feat/http-defaults` | |
-| 3 | Corrected documentation | `docs/http-defaults` | |
-| 4 | Release | `release/0.4.0` | |
+| 1 | Task record | `chore/http-defaults-plan` | [#25](https://github.com/LXAgents-MCP/gitlab/pull/25) |
+| 2 | Default to port 3000 on all interfaces | `feat/http-defaults` | [#26](https://github.com/LXAgents-MCP/gitlab/pull/26) |
+| 3 | Corrected documentation | `docs/http-defaults` | [#27](https://github.com/LXAgents-MCP/gitlab/pull/27) |
+| 4 | Release | `release/0.4.0` | [#28](https://github.com/LXAgents-MCP/gitlab/pull/28) |
 
-Branches stack: task 1 from `master`, task `k` from task `k-1`. The `PR` column is filled by a closing commit
-once the pull requests exist.
+Branches stacked: task 1 from `master`, task `k` from task `k-1`. A rebase merge rewrites commits, so
+each branch was replayed onto the new `master` before its pull request was merged, in order, by rebase.
 
 ## Decisions
 
@@ -106,3 +106,9 @@ Checked from a clean export of the index, with `npm ci`: 302 tests pass and none
 
 The `PR` column of the table is filled by a closing commit once the pull requests exist, so no earlier branch needs
 a rebase.
+
+## Closing
+
+The four pull requests were merged in order by rebase. After the last, `master` was identical in tree to the
+original `release/0.4.0` tip, and 302 tests passed from a clean install with `--version` printing `0.4.0`. The merged
+branches were not deleted, because the git proxy refuses it; the owner deletes them.
