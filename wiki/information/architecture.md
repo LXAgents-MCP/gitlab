@@ -44,15 +44,27 @@ the server carries on. Both are scrubbed of the token.
 `McpServer` holds per-connection state, so `createServer()` builds a fresh one each time and nothing
 hoists one to module scope.
 
-## Stdio only
+## Two transports
 
-`src/index.js` connects a stdio transport and nothing else. There is no HTTP code and no listener,
-by decision — see [Security model](../security/security-model.md). Because stdout is the protocol
-channel, nothing in `src/` writes to it; diagnostics go to stderr through `src/log.js`.
+`src/index.js` reads `MCP_TRANSPORT` and connects one of them. **stdio** is the default: the client
+spawns the process and speaks to it over a pipe. **HTTP** (`MCP_TRANSPORT=http`, or `src/http.js`
+directly) serves `POST /mcp` and `GET /healthz` with `node:http` and the SDK's stateless streamable-HTTP
+transport; `src/index.js` imports it only when asked, so a stdio process never loads it. There is no
+other dependency for it, and `node:http` appears in `src/http.js` and nowhere else.
 
-The process exits by itself when its client goes away, since stdin closes. `SIGINT` and `SIGTERM`
-close the server and exit cleanly; the second matters in a container, where the server is the first
-process and would otherwise ignore it.
+Because stdout is the protocol channel on stdio, nothing in `src/` writes to it; diagnostics go to stderr
+through `src/log.js`. The stdio process exits by itself when its client goes away, since stdin closes.
+`SIGINT` and `SIGTERM` close either transport and exit cleanly; the second matters in a container,
+where the server is the first process and would otherwise ignore it.
+
+## Where the token comes from
+
+One place decides, `src/auth.js`. Over stdio the token is `MCP_AUTH_TOKEN`. Over HTTP every request
+carries `Authorization: Bearer <token>`, checked for shape before the body is parsed or a path matched,
+and the token travels to the GitLab client in an `AsyncLocalStorage` for the length of that request, so
+requests that overlap each keep their own. A process that serves HTTP is marked once at startup, and from
+then on the environment is never a source: a request with no token is refused, never run with the
+owner's. The server stores no token between requests. See [Security model](../security/security-model.md).
 
 ## No local path is ever read from a caller
 

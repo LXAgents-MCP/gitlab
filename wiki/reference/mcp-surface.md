@@ -3,7 +3,7 @@
 Everything `lxagents-gitlab` exposes.
 
 **It exposes tools, and nothing else.** One per module in `src/tools/`. There are no prompts and no
-resources, and one transport: stdio. See [What this server does not expose](#what-this-server-does-not-expose).
+resources, and two transports: stdio and HTTP. See [What this server does not expose](#what-this-server-does-not-expose).
 
 ## Server identity
 
@@ -11,9 +11,9 @@ resources, and one transport: stdio. See [What this server does not expose](#wha
 |---|---|
 | `name` | `lxagents-gitlab` |
 | `version` | from `package.json`, read at import by `src/version.js` |
-| transport | stdio (`src/index.js`) |
+| transport | stdio by default (`src/index.js`); HTTP with `MCP_TRANSPORT=http` (`src/http.js`), where every route but `GET /healthz` needs `Authorization: Bearer <GitLab token>` |
 
-`initialize` also returns `instructions`: that every tool needs `LXAGENTS_MCP_GITLAB_API_KEY`, that
+`initialize` also returns `instructions`: that every tool needs a GitLab token (`MCP_AUTH_TOKEN` over stdio, the bearer header over HTTP), that
 a project is named by its full path or numeric id, and that tools which delete or merge are
 destructive and should be confirmed with the owner first.
 
@@ -212,7 +212,8 @@ a place for a secret.
 |---|---|
 | Prompts and resources | Everything an agent needs is a call with arguments. |
 | Local files and commands | That is `cli`'s job; this server touches GitLab only. |
-| HTTP | The token can delete projects. See [Security model](../security/security-model.md). |
+| Sessions, server-sent event streams and `GET /mcp` | The HTTP transport is stateless: one request, one answer, and a `GET` or `DELETE` to `/mcp` is a 405. |
+| TLS, a `Host` allow-list, rate limiting | Not done by this server. Put TLS in front before exposing the port; see [Security model](../security/security-model.md). |
 | Self-managed GitLab | The API base is a constant, and another host would need a second setting. |
 | Rebasing a merge request's branch, and merging when its pipeline succeeds | GitLab has endpoints for both; neither is among the tools this server was built to. |
 | `clone`, `push` and other git transport | File tools commit through the API instead. |

@@ -29,7 +29,7 @@ Nothing from the shared set is copied here.
 | `test/` | The server's tests. |
 | `.agents/` | This repository's own rules, indexes, agent wiki and memory. |
 | `wiki/` | Human documentation, and the release logs under `wiki/logs/`. |
-| `Dockerfile`, `.dockerignore` | The stdio image. See [`wiki/environments/docker.md`](../../wiki/environments/docker.md). |
+| `Dockerfile`, `.dockerignore` | The image: stdio by default, HTTP with `MCP_TRANSPORT=http`. See [`wiki/environments/docker.md`](../../wiki/environments/docker.md). |
 
 Full orientation: [`../wiki/context/repository-map.md`](../wiki/context/repository-map.md).
 
@@ -43,6 +43,7 @@ introduce TypeScript, a bundler, or a transpiler without agreement.
 | Install | `npm install` |
 | Test | `npm test` |
 | Run (stdio) | `npm start` |
+| Run (HTTP) | `npm run start:http` |
 | Inspect the MCP surface | `npm run inspect` |
 | Build the image | `docker build -t "lxagents-gitlab:$VERSION" .` — it has never been built here |
 
@@ -54,15 +55,17 @@ code rather than an uninstalled tree. Install first, then trust the number.
 
 * **ESM only.** `import`/`export`, `.js` extensions in relative specifiers, no `require`.
 * **Nothing writes to stdout.** On stdio, stdout *is* the JSON-RPC channel. Diagnostics go through
-  `src/log.js`, which writes to stderr. There is no `console.log` anywhere in `src/`.
+  `src/log.js`, which writes to stderr, on the HTTP transport too. There is no `console.log` anywhere
+  in `src/`.
 * **One `McpServer` per connection.** `createServer()` builds a fresh instance; never hoist one to
   module scope.
 * **Every URL is built in `src/api.js`.** A project, a reference and a file path are validated
   and percent-encoded there, and a tool never concatenates its own.
 * **Arguments are checked before the token is read**, so a bad call costs no request and the
   refusal names the argument.
-* **The token is read per call** from `LXAGENTS_MCP_GITLAB_API_KEY`, is never an argument, and is
-  scrubbed from every message — refusals and crashes alike.
+* **The token is read per call**, through `src/auth.js` and nowhere else: `MCP_AUTH_TOKEN` over stdio,
+  the request's bearer token over HTTP, where the environment is never consulted. It is never an
+  argument, and is scrubbed from every message — refusals and crashes alike.
 * **A failure is a thrown `Refused`** that says what to do next. A tool never returns an error
   payload, and never lets a bare exception reach the client as its explanation.
 * **Comments explain why, not what.**
@@ -88,12 +91,15 @@ which define no tests, so the runner's total includes them.
 * A build step, or any compiled output committed to the repository.
 * A dependency added to serve one call site. The runtime dependencies are the MCP SDK and zod; a
   third needs its own record under `.agents/memory/decisions/` before it lands, not after.
-* A transport other than stdio, a listener, or a route. See
-  [`../memory/decisions/stdio-only-transport.md`](../memory/decisions/stdio-only-transport.md).
-  The image follows: no `EXPOSE`, no `ENTRYPOINT`, no `ENV` line holding a token, no compose file.
+* A transport other than stdio and the HTTP one in `src/http.js`, a listener anywhere else, a route
+  beyond `POST /mcp` and `GET /healthz`, a way for an HTTP request to get through without its own
+  token, or a store of tokens between requests. See
+  [`../memory/decisions/http-token-transport.md`](../memory/decisions/http-token-transport.md). The
+  image follows: no `EXPOSE`, no `ENTRYPOINT`, no `ENV` line holding a token, no compose file.
 * An environment variable, flag or configuration file without the owner's say-so. The server reads
-  one variable and takes `--help` and `--version`; a second of either is a change to a public
-  surface, not an implementation detail.
+  `MCP_AUTH_TOKEN` (the secret, stdio only) and `MCP_TRANSPORT`, `PORT` and `HOST`, and takes
+  `--help` and `--version`; another of either is a change to a public surface, not an implementation
+  detail.
 * A tool argument that carries a credential, or any way for a caller to choose the host. The API
   base is a constant in `src/config.js`, which is also why self-managed GitLab instances are not supported.
 * A URL built anywhere but `src/api.js`.
@@ -103,7 +109,8 @@ which define no tests, so the runner's total includes them.
 ## Deployment
 
 Not published: `package.json` is `private`, and the client runs the server by path
-(`node src/index.js`) with the token in the `env` block of its own configuration. Making it
+(`node src/index.js`) with the token in the `env` block of its own configuration, or runs it as an
+HTTP service the client reaches with a bearer token. Making it
 installable from npm is a one-line change the owner approves, and not one to make in passing. A
-`Dockerfile` builds a stdio image for a client that runs `docker run -i`; publishing it to a registry
-is the owner's decision as well.
+`Dockerfile` builds an image that speaks stdio for a client that runs `docker run -i`, or HTTP when
+told to; publishing it to a registry is the owner's decision as well.

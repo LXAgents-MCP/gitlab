@@ -1,7 +1,8 @@
 # Docker
 
-The server runs in a container over **stdio**, the only transport it has. The image is for a client
-that can spawn `docker run -i`, and for a host that cannot run Node 20.
+The server runs in a container over **stdio** by default, and over HTTP when told to. The image is for a
+client that can spawn `docker run -i`, for one that connects to a published port, and for a host that
+cannot run Node 20.
 
 > **This image has not been built.** The environment this was written in had a Docker client and no
 > daemon, so neither the `Dockerfile` nor the commands on this page have been run as written. What was
@@ -37,18 +38,18 @@ and `latest` is the one tag that cannot be.
 ## Run
 
 ```bash
-docker run --rm -i -e LXAGENTS_MCP_GITLAB_API_KEY "lxagents-gitlab:$VERSION"
+docker run --rm -i -e MCP_AUTH_TOKEN "lxagents-gitlab:$VERSION"
 ```
 
 **`-i` is not optional.** Without it Docker attaches no stdin, the server sees it closed and exits
 at once, which reads as a broken image rather than a missing flag. **Do not add `-t`:** a terminal
 rewrites line endings on the protocol channel.
 
-`-e LXAGENTS_MCP_GITLAB_API_KEY` with no value passes the variable through from the environment of the
+`-e MCP_AUTH_TOKEN` with no value passes the variable through from the environment of the
 `docker` process, so the token is not on the command line, in shell history or in the image. Never put
 it in an `ENV` line: a value baked into the image ships to everyone who pulls it.
 
-There is nothing to publish. The server has no port, and the image declares none.
+Over stdio there is nothing to publish. To serve HTTP from the same image, see [Over HTTP](#over-http) below.
 
 ## Register it with a client
 
@@ -57,8 +58,8 @@ There is nothing to publish. The server has no port, and the image declares none
   "mcpServers": {
     "lxagents-gitlab": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "-e", "LXAGENTS_MCP_GITLAB_API_KEY", "lxagents-gitlab:<version>"],
-      "env": { "LXAGENTS_MCP_GITLAB_API_KEY": "<your GitLab token>" }
+      "args": ["run", "--rm", "-i", "-e", "MCP_AUTH_TOKEN", "lxagents-gitlab:<version>"],
+      "env": { "MCP_AUTH_TOKEN": "<your GitLab token>" }
     }
   }
 }
@@ -72,6 +73,21 @@ When the client goes away it closes the pipe and the container exits by itself. 
 at once: the server handles `SIGTERM`, which it has to, because as the container's first process it
 would otherwise ignore it and be killed after the grace period.
 
+## Over HTTP
+
+The image's default is stdio, so serving HTTP is a matter of selecting the transport and publishing the
+port. No token is passed, because over HTTP each client sends its own:
+
+```bash
+docker run --rm -p 127.0.0.1:3002:3002 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 "lxagents-gitlab:$VERSION"
+```
+
+`HOST=0.0.0.0` is for the inside of the container, where a published port cannot reach loopback;
+`127.0.0.1:` in `-p` keeps the port reachable from this host only. Clients then connect to
+`http://127.0.0.1:3002/mcp` with `Authorization: Bearer <GitLab token>`; see
+[Set up HTTP with a token](../guides/setup-http-token.md). Put TLS in front before publishing the port
+beyond the host. **This path, like the rest of the image, has not been run in a container.**
+
 ## What is in the image
 
 | Path | Why |
@@ -84,12 +100,13 @@ would otherwise ignore it and be killed after the grace period.
 `.git`, any `.env` file and local noise. **The image therefore cannot run its own test suite** —
 `npm test` needs `test/`, and the suite is a gate on the repository, not on the artifact.
 
-## No port and no compose file
+## No `EXPOSE` and no compose file
 
-There is no `EXPOSE`, because there is no listener and none should be added; see
-[Security model](../security/security-model.md). There is no compose file either: a stdio server is
-not a service, and `docker compose up` would start it with no stdin attached, so it would exit at once.
-A deployment — a registry, an orchestrator, a schedule — is the owner's decision, not this repository's.
+There is no `EXPOSE`: the default is stdio, which has no port, and the HTTP transport is opt-in with
+`MCP_TRANSPORT=http` and published with `-p`; see [Security model](../security/security-model.md). There
+is no compose file either: a stdio server is not a service, and `docker compose up` would start it with
+no stdin attached, so it would exit at once. A deployment — a registry, an orchestrator, a schedule — is
+the owner's decision, not this repository's.
 
 There is also no `ENTRYPOINT`. The whole default is `CMD ["node", "src/index.js"]`, so the base image's
 own entrypoint stays and a command after the image name runs as written. An `ENTRYPOINT` of ours would
@@ -108,6 +125,7 @@ a client at the image as above and list them, or run `npm test` in a checkout.
 ## Related pages
 
 * [Local setup](setup.md) — running the server without a container.
-* [Environment](env.md) — the one variable.
+* [Environment](env.md) — the variables.
+* [Set up HTTP with a token](../guides/setup-http-token.md)
 * [Connect a client](../guides/connect-a-client.md)
 * [Security model](../security/security-model.md) — what a container does and does not change.

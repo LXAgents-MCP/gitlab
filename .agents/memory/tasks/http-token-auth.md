@@ -98,3 +98,27 @@ request with no token is a 401, and `tools/list` with a token lists 45 tools.
 
 Left for task 3: the setup guide and every page that still says stdio only. The rules `repository.md` and the
 security procedure still forbid a listener until task 3 corrects them.
+
+### Task 3 — docs/http-token-setup
+
+Landed. `wiki/guides/setup-http-token.md` is the setup guide: when to choose HTTP over stdio, creating the
+token, `npm run start:http`, checking it with curl, registering a client with `claude mcp add --transport http`
+or a committed `.mcp.json` that expands a variable of the client's own, putting it on a network behind TLS,
+running it in a container, migrating from the old variable, and a table of what each refusal means. It is
+linked from the wiki index, `connect-a-client.md`, `setup.md`, `env.md` and `docker.md`.
+
+Corrected, because they said stdio only or named the old variable: `env.md` (now four variables and a table of
+where the token comes from), `setup.md`, `connect-a-client.md`, `docker.md` (an "Over HTTP" section, and why
+there is still no `EXPOSE` or compose file), `architecture.md` (two transports, where the token comes from),
+`overview.md`, `mcp-surface.md`, `security-model.md` (surfaces, secrets, deployment posture, verification rows),
+`smoke-test.md`, `README.md`, the intro of `AGENTS.md`, and the comments of the `Dockerfile`. On the agent side:
+`rules/repository.md`, `wiki/context/repository-map.md` (rows for `src/http.js` and `src/auth.js`),
+`wiki/security/security-boundaries.md`, `memory/state/repository-state.md` and `index/project-wiki-index.md`.
+
+The name sharing of D10 is stated in `env.md` and in the guide: `MCP_AUTH_TOKEN` is set only in a server's own
+`env` block, and a client's `headers` expand a variable of the client's own (`${GITLAB_TOKEN}`), never
+`MCP_AUTH_TOKEN`. The guide's default port is 3002, the GitHub server's is 3001 and `shared-instruction`'s is 3000.
+
+Checked: no relative link in any `.md` file is broken, and the old variable survives only in the released
+`0.1.0` changelog and logs-index row, in the records of earlier work, and in the migration notes that name it.
+Code is untouched in this task, so `npm test` is as task 2 left it.
