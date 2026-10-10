@@ -20,6 +20,11 @@ export const SURFACE = {
   repo_delete: "destroy",
   repo_fork: "write",
   repo_search: "read",
+  branch_create: "write",
+  branch_read: "read",
+  branch_list: "read",
+  branch_delete: "destroy",
+  branch_merge: "destroy",
 };
 
 /** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */

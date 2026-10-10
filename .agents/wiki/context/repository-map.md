@@ -26,6 +26,8 @@ of the shared instruction set and the **producer** of the tool surface in `src/t
 | `src/render.js` | The one renderer from a payload to the text the model reads. | How a result reads. |
 | `src/schemas.js` | Shared zod fragments (`repoArg`, paging) and the four annotation sets. | A fragment or hint several tools share. |
 | `src/text.js` | `short`, `firstLine`, `head`, `tail`. | Cutting or shortening text. |
+| `src/shapes.js` | GitLab's objects as the tools report them — a project so far — each a schema and the function that fills it, and `expectBody`, which checks an answer is the object expected. | A second tool returns an object another already does. |
+| `src/merge-status.js`, `src/wait.js` | What GitLab says about whether a merge request can be merged; the one `sleep`, so a test can replace the clock. | Merging, or waiting on GitLab. |
 | `src/config.js` | Every constant: the variable name, API base and version pin, timeout, limits. | Changing a limit. |
 | `src/errors.js`, `src/log.js`, `src/version.js` | `Refused`; the stderr logger; `ROOT`, `VERSION` and `SERVER_NAME`. | Rarely. |
 | `src/tools/` | `index.js`, the registry, and one module per tool. | Adding or changing a tool — **a release**. |

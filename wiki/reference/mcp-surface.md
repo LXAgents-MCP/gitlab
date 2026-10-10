@@ -76,6 +76,19 @@ never appears in one.
 | `repo_fork` | write | Fork into the token owner's namespace or a group. GitLab copies it in the background, so the fork may take a moment to be readable; its `import_status` says when it is done. |
 | `repo_search` | read | Search projects by words in their name, path or description; every word must match. Paged, with GitLab's total when it gives one. It sees the projects the token's user can see. |
 
+### Branches
+
+A branch name with a slash is written as one encoded path segment, `feat%2Fx`, which is the only form
+GitLab finds: the same name with a literal slash is a 404, as a request against `gitlab.com` showed.
+
+| Tool | Kind | Does |
+|---|---|---|
+| `branch_create` | write | Create a branch from the default branch, another branch, a tag or a sha. Fails if the name is taken. |
+| `branch_read` | read | Read one branch: the commit at its tip, that commit's title and date, and whether the branch is protected or the default. |
+| `branch_list` | read | List branches with the sha at each tip and whether each is protected, the default or merged. Paged; can search by name, with `^feat` for a start and `fix$` for an end. |
+| `branch_delete` | destroy | Delete a branch. The default branch and protected branches cannot be deleted. |
+| `branch_merge` | destroy | Merge one branch into another. GitLab has no direct merge, so this opens a merge request from head into base and accepts it at once; the merged request stays as the record, and a request that cannot be merged is closed again. Waits up to ten seconds for GitLab to work out whether it can. Moves the base branch. |
+
 ## What this server does not expose
 
 | Not exposed | Why |
