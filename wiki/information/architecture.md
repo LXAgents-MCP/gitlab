@@ -57,14 +57,15 @@ through `src/log.js`. The stdio process exits by itself when its client goes awa
 `SIGINT` and `SIGTERM` close either transport and exit cleanly; the second matters in a container,
 where the server is the first process and would otherwise ignore it.
 
-## Where the token comes from
+## The two secrets
 
-One place decides, `src/auth.js`. Over stdio the token is `MCP_AUTH_TOKEN`. Over HTTP every request
-carries `Authorization: Bearer <token>`, checked for shape before the body is parsed or a path matched,
-and the token travels to the GitLab client in an `AsyncLocalStorage` for the length of that request, so
-requests that overlap each keep their own. A process that serves HTTP is marked once at startup, and from
-then on the environment is never a source: a request with no token is refused, never run with the
-owner's. The server stores no token between requests. See [Security model](../security/security-model.md).
+`src/auth.js` holds both and keeps them apart. **`GITLAB_API_KEY`** is the GitLab token, read from the
+server's environment when a tool is called and used for every GitLab call on both transports; a request never
+supplies it. **`MCP_AUTH_TOKEN`** guards the HTTP door: every request but `GET /healthz` must carry it as
+`Authorization: Bearer <token>`, compared in constant time against the server's own, before the body is parsed
+or a path matched. It is not forwarded, and HTTP will not start without one of at least 32 characters. stdio is
+a pipe the client spawned, so it has no access token and never reads the variable. The server stores nothing
+between requests. See [Security model](../security/security-model.md).
 
 ## No local path is ever read from a caller
 

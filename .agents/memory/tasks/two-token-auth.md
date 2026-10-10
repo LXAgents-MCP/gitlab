@@ -98,3 +98,26 @@ want of `GITLAB_API_KEY` is covered by a test, not run by hand.)
 
 Left for task 3: the setup guide and every page that says the bearer is the GitLab token. The rules in
 `.agents/rules/repository.md` and the security procedure still describe the passthrough until task 3.
+
+### Task 3 — docs/two-token-setup
+
+Landed. `wiki/guides/setup-http-token.md` is rewritten around the two secrets: a table of what each is and who
+holds it; creating the GitLab key (an `api`-scope access token, preferably a project or group one) and the access
+token (`openssl rand -hex 32`, one per server); starting the server with both; curl checks including the 401
+cases; registering a client with only the access token, using a variable of the client's own
+(`${LXAGENTS_GITLAB_ACCESS}`); TLS; the container with both passed by name; a section on what the access token
+does and does not mean for who can do what (T9); a migration table from 0.2.0; and a troubleshooting table. Its
+title and every link to it say "two tokens". The default port is 3002, the GitHub server's 3001 and
+`shared-instruction`'s 3000.
+
+Corrected, because they said the bearer was the GitLab token or named `MCP_AUTH_TOKEN` as the GitLab token:
+`env.md` (five variables, a table of the two secrets side by side), `setup.md`, `connect-a-client.md`,
+`docker.md`, `architecture.md` ("The two secrets"), `overview.md`, `mcp-surface.md`, `security-model.md` (the
+surfaces, secrets, deployment posture with its stated cost, verification rows, not-a-finding items),
+`smoke-test.md` (an HTTP walk of nine steps), `README.md`, the intro of `AGENTS.md`, and the comments of the
+`Dockerfile`. On the agent side: `rules/repository.md`, `wiki/context/repository-map.md`,
+`wiki/security/security-boundaries.md`, `memory/state/repository-state.md` and `index/project-wiki-index.md`. The
+released `0.2.0` changelog and its logs-index row are left as written; corrections go in the next version.
+
+Checked: no relative link in any `.md` file is broken. Code is untouched in this task, so `npm test` is as task 2
+left it.

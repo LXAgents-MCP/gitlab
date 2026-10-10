@@ -25,9 +25,9 @@ USER node
 # it through the container's stdin and stdout, so it runs with `docker run -i`. Without `-i`
 # Docker attaches no stdin, the server sees it closed, and exits at once.
 #
-# The token is not here either. A value baked into an ENV line ships to everyone who pulls the
-# image; it is passed at run time, `-e MCP_AUTH_TOKEN` for stdio, and not at all for HTTP, where
-# each client sends its own.
+# No secret is here either. A value baked into an ENV line ships to everyone who pulls the
+# image; both are passed at run time: `-e GITLAB_API_KEY` for the GitLab key, and for HTTP also
+# `-e MCP_AUTH_TOKEN`, the access token clients present.
 #
 # The whole default is CMD and this file sets no ENTRYPOINT, so the base image's own
 # `docker-entrypoint.sh` stays in place and a command after the image name runs as written. An

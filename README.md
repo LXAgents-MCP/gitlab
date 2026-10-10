@@ -6,18 +6,18 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 - **Server id:** `lxagents-gitlab`
 - **Package:** `@lxagents-mcp/gitlab` — private; not published to npm.
 - **Transport:** stdio by default: the client starts the server as a subprocess and talks to it through
-  a pipe. HTTP with `MCP_TRANSPORT=http`, where every request carries the GitLab token as
-  `Authorization: Bearer <token>`; it listens on loopback unless told otherwise, and needs TLS in
-  front before it faces a network.
+  a pipe. HTTP with `MCP_TRANSPORT=http`, where every request carries the server's access token as
+  `Authorization: Bearer <token>`; it will not start without one, listens on loopback unless told
+  otherwise, and needs TLS in front before it faces a network.
 - **Surface:** one tool per module in `src/tools/`, named by what it acts on and what it does
   (`repo_create`, `branch_list`, `pr_merge`, …). Every tool that acts on a repository takes one
   `repo` argument: the project's full path, such as `group/project`, or its numeric id. The names
   are the GitHub server's, with GitLab's words underneath: a repository is a project, a pull
   request (`pr_`) is a merge request, and a workflow (`workflow_`) is a pipeline. The list is in
   [MCP surface](wiki/reference/mcp-surface.md).
-- **Token:** `MCP_AUTH_TOKEN` over stdio, in the `env` block of the client's configuration for this
-  server; the bearer token of each request over HTTP, which the server keeps only for that request.
-  It is read when a tool is called and is never an argument.
+- **Tokens:** two, and never arguments. `GITLAB_API_KEY` is the GitLab token every call is made with, on
+  both transports, read when a tool is called. `MCP_AUTH_TOKEN` is the access token a client presents to
+  the HTTP transport (at least 32 characters, never sent to GitLab); stdio does not read it.
 - **Requirements:** Node >= 20. ESM, no build step.
 
 ## Key features
@@ -26,9 +26,9 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
   and nothing else needs editing. A test holds files and tools together in both directions.
 - **One place builds URLs.** A project, a branch or tag name and a file path are validated and
   percent-encoded in `src/api.js`, so an argument cannot steer a call at another endpoint.
-- **The token never leaves its header.** It is not an argument, it is read per call, and it is
+- **The key never leaves its header.** It is not an argument, it is read per call, and it is
   removed from every message the server can produce — refusals and crashes alike. Over HTTP a request
-  without a token is refused, and overlapping requests each reach GitLab with their own.
+  without the access token is refused before anything is read, and the access token is never sent to GitLab.
 - **Honest annotations.** Every tool says whether it reads, creates, changes or destroys, and a test
   holds it to that, so a client can ask a person first before anything destructive. `repo_delete`
   also refuses unless it is told the project's full path.
@@ -46,30 +46,30 @@ npm install
 npm test
 ```
 
-Serve it to an MCP client over stdio, with the token in the environment:
+Serve it to an MCP client over stdio, with the GitLab key in the environment:
 
 ```bash
-MCP_AUTH_TOKEN=<token> npm start
+GITLAB_API_KEY=<token> npm start
 ```
 
-Or over HTTP, where each client sends its own token (see
-[Set up HTTP with a token](wiki/guides/setup-http-token.md)):
+Or over HTTP, where clients present an access token of your making (see
+[Set up HTTP with two tokens](wiki/guides/setup-http-token.md)):
 
 ```bash
-npm run start:http        # http://127.0.0.1:3002/mcp
+GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # http://127.0.0.1:3002/mcp
 ```
 
 Or drive it by hand with the MCP Inspector:
 
 ```bash
-MCP_AUTH_TOKEN=<token> npm run inspect
+GITLAB_API_KEY=<token> npm run inspect
 ```
 
 Full instructions are in [`wiki/environments/setup.md`](wiki/environments/setup.md).
 
 ## Connect it
 
-Add it to the client's configuration, with the token in the `env` block, then **restart the
+Add it to the client's configuration, with the GitLab key in the `env` block, then **restart the
 client**. For Claude Desktop, in `claude_desktop_config.json`:
 
 ```json
@@ -78,7 +78,7 @@ client**. For Claude Desktop, in `claude_desktop_config.json`:
     "lxagents-gitlab": {
       "command": "node",
       "args": ["/absolute/path/to/gitlab/src/index.js"],
-      "env": { "MCP_AUTH_TOKEN": "<your GitLab token>" }
+      "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }
 }
@@ -98,7 +98,7 @@ from the tool surface until the session restarts. See
 - [Docker](wiki/environments/docker.md) — the image, which has not yet been built.
 - [Environment](wiki/environments/env.md) — the variables, and what the token needs.
 - [Connect a client](wiki/guides/connect-a-client.md) — Claude Desktop and Claude Code over stdio.
-- [Set up HTTP with a token](wiki/guides/setup-http-token.md) — running it as a service, and connecting a client with a bearer token.
+- [Set up HTTP with two tokens](wiki/guides/setup-http-token.md) — running it as a service behind an access token, and connecting a client.
 - [Smoke test](wiki/guides/smoke-test.md) — the first live run, which has not been done yet.
 - [Security model](wiki/security/security-model.md) — the token, the surfaces that touch it, and
   what is deliberately not protected.

@@ -37,7 +37,7 @@ the same commit.
 | File | Purpose |
 |---|---|
 | [`../../wiki/guides/connect-a-client.md`](../../wiki/guides/connect-a-client.md) | Registering the server with Claude Desktop or Claude Code, with a token. |
-| [`../../wiki/guides/setup-http-token.md`](../../wiki/guides/setup-http-token.md) | Running the server over HTTP and connecting a client with a bearer token: start, check, register, TLS, container, troubleshooting. |
+| [`../../wiki/guides/setup-http-token.md`](../../wiki/guides/setup-http-token.md) | Running the server over HTTP behind an access token, with the GitLab key held by the server: both secrets, start, check, register, TLS, container, migration from 0.2.0, troubleshooting. |
 | [`../../wiki/guides/smoke-test.md`](../../wiki/guides/smoke-test.md) | The first live run: a walk through every tool on a throwaway project, and what the documentation leaves open. |
 
 ## security/

@@ -63,9 +63,10 @@ code rather than an uninstalled tree. Install first, then trust the number.
   and percent-encoded there, and a tool never concatenates its own.
 * **Arguments are checked before the token is read**, so a bad call costs no request and the
   refusal names the argument.
-* **The token is read per call**, through `src/auth.js` and nowhere else: `MCP_AUTH_TOKEN` over stdio,
-  the request's bearer token over HTTP, where the environment is never consulted. It is never an
-  argument, and is scrubbed from every message — refusals and crashes alike.
+* **The GitLab key is read per call**, through `src/auth.js` and nowhere else, from `GITLAB_API_KEY`, on
+  both transports. It is never an argument, and is scrubbed from every message — refusals and crashes
+  alike. **The access token is a different secret**: `MCP_AUTH_TOKEN` guards the HTTP door, is compared
+  and dropped, and is never used against GitLab or read over stdio.
 * **A failure is a thrown `Refused`** that says what to do next. A tool never returns an error
   payload, and never lets a bare exception reach the client as its explanation.
 * **Comments explain why, not what.**
@@ -92,12 +93,13 @@ which define no tests, so the runner's total includes them.
 * A dependency added to serve one call site. The runtime dependencies are the MCP SDK and zod; a
   third needs its own record under `.agents/memory/decisions/` before it lands, not after.
 * A transport other than stdio and the HTTP one in `src/http.js`, a listener anywhere else, a route
-  beyond `POST /mcp` and `GET /healthz`, a way for an HTTP request to get through without its own
-  token, or a store of tokens between requests. See
-  [`../memory/decisions/http-token-transport.md`](../memory/decisions/http-token-transport.md). The
-  image follows: no `EXPOSE`, no `ENTRYPOINT`, no `ENV` line holding a token, no compose file.
+  beyond `POST /mcp` and `GET /healthz`, a way for an HTTP request to get through without the access
+  token, HTTP starting without one, a client's bearer used as the GitLab key (or the other way round),
+  or a store of tokens between requests. See
+  [`../memory/decisions/two-token-auth.md`](../memory/decisions/two-token-auth.md). The
+  image follows: no `EXPOSE`, no `ENTRYPOINT`, no `ENV` line holding a secret, no compose file.
 * An environment variable, flag or configuration file without the owner's say-so. The server reads
-  `MCP_AUTH_TOKEN` (the secret, stdio only) and `MCP_TRANSPORT`, `PORT` and `HOST`, and takes
+  `GITLAB_API_KEY` and `MCP_AUTH_TOKEN` (the two secrets) and `MCP_TRANSPORT`, `PORT` and `HOST`, and takes
   `--help` and `--version`; another of either is a change to a public surface, not an implementation
   detail.
 * A tool argument that carries a credential, or any way for a caller to choose the host. The API
@@ -109,8 +111,8 @@ which define no tests, so the runner's total includes them.
 ## Deployment
 
 Not published: `package.json` is `private`, and the client runs the server by path
-(`node src/index.js`) with the token in the `env` block of its own configuration, or runs it as an
-HTTP service the client reaches with a bearer token. Making it
+(`node src/index.js`) with the key in the `env` block of its own configuration, or runs it as an
+HTTP service the client reaches with an access token. Making it
 installable from npm is a one-line change the owner approves, and not one to make in passing. A
 `Dockerfile` builds an image that speaks stdio for a client that runs `docker run -i`, or HTTP when
 told to; publishing it to a registry is the owner's decision as well.

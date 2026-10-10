@@ -2,7 +2,7 @@
 
 This repository is `LXAgents-MCP/gitlab`. It is an MCP server, `lxagents-gitlab`, that gives an
 LLM access to GitLab — projects, branches, files, commits, tags, releases, issues, merge requests
-and CI/CD pipelines — through the REST API, over stdio or over HTTP with a bearer token. It
+and CI/CD pipelines — through the REST API, over stdio or over HTTP behind an access token. It
 consumes the shared agent instruction set through a connector rather than copying it.
 
 ## Two sets, two roles

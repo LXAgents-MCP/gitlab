@@ -21,7 +21,7 @@ of the shared instruction set and the **producer** of the tool surface in `src/t
 |---|---|---|
 | `src/index.js` | The one entry point: `--help`, `--version`, `MCP_TRANSPORT`, the stdio transport, `SIGINT` and `SIGTERM`. | The process contract. |
 | `src/http.js` | The HTTP transport and the only listener: `POST /mcp`, `GET /healthz`, a fresh stateless server per request, `PORT` and `HOST`. Also what `npm run start:http` runs. | Anything about serving over HTTP. |
-| `src/auth.js` | Where the token comes from: the bearer header parser, the shape check, the per-request token, and the rule that an HTTP process never reads the environment. | Anything about the token source. |
+| `src/auth.js` | The two secrets: the access token for HTTP (`MCP_AUTH_TOKEN`: the 32-character floor, the bearer parser, the constant-time comparison) and the GitLab key (`GITLAB_API_KEY`). | Anything about either secret. |
 | `src/server.js` | Builds one `McpServer`, registers every tool, shapes results, and carries the `instructions` text every client reads at `initialize`. | The protocol surface. |
 | `src/api.js` | The GitLab client: the token, addressing (`parseRepo`, `refName`, `refPath`, `filePath`), `callApi`, `gitlab()`, the wording of every failure, paging. | How a call is addressed, made, or fails. |
 | `src/args.js` | Argument checks: text, flags, whole numbers, choices, lists, label lists. | A new kind of argument. |
@@ -55,17 +55,18 @@ start:http` runs `src/http.js` directly.)
 ```bash
 npm install
 npm test
-npm start                                   # stdio; the token comes from the environment
-npm run start:http                          # HTTP on 127.0.0.1:3002; each request brings its token
-MCP_AUTH_TOKEN=<token> npm run inspect      # the MCP Inspector, to drive it by hand
+npm start                                   # stdio; GITLAB_API_KEY comes from the environment
+npm run start:http                          # HTTP on 127.0.0.1:3002; needs MCP_AUTH_TOKEN (32+ chars) too
+GITLAB_API_KEY=<token> npm run inspect      # the MCP Inspector, to drive it by hand
 ```
 
 ## Gotchas that actually bite
 
 * **Nothing writes to stdout.** stdout is the JSON-RPC channel. A stray write corrupts the stream
   and the client reports a JSON parse error that points at the payload, not at the logging.
-* **Starting without a token is fine.** The token is read when a tool runs; without it the tool
-  refuses and names `MCP_AUTH_TOKEN`. That is not a broken server.
+* **Starting without the GitLab key is fine; HTTP without the access token is not.** The key is read when
+  a tool runs; without it the tool refuses and names `GITLAB_API_KEY`, which is not a broken server. HTTP
+  with no `MCP_AUTH_TOKEN`, or under 32 characters, exits 1 on purpose.
 * **A server registered mid-session is absent until the session restarts.** The client loads its
   connectors at start.
 * **The tool list is pinned.** Add a tool without its line in `test/surface.js` and three tests
