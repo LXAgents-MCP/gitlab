@@ -66,8 +66,8 @@ See [Environment](../environments/env.md) and [Set up HTTP with two tokens](../g
 * **Not a git client.** It does not clone or push. File tools commit through the API.
 * **Not self-managed GitLab.** The API base is `https://gitlab.com/api/v4`, a constant; supporting
   another host would need a second setting, which is a decision for the owner.
-* **Not a hosted service.** The HTTP transport is yours to run, it binds loopback unless told
-  otherwise, and it needs TLS in front before it faces a network. See
+* **Not a hosted service.** The HTTP transport is yours to run, it listens on every interface
+  by default, it will not start without an access token, and it needs TLS in front before it faces a network. See
   [Security model](../security/security-model.md).
 
 ## Related pages

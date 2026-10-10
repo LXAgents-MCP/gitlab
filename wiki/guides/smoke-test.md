@@ -82,8 +82,8 @@ the walk above then works unchanged through a client registered as in
 | # | Do | Expect |
 |---|---|---|
 | H1 | Start the server with `MCP_AUTH_TOKEN` unset, then with `MCP_AUTH_TOKEN=short` | It exits 1 both times, saying `will not start the HTTP transport` and naming the variable, and listens on nothing. |
-| H2 | Start it properly, then `curl http://127.0.0.1:3002/healthz` | `{"status":"ok","server":"lxagents-gitlab","version":"…"}` with no token. |
-| H3 | `curl -i -X POST http://127.0.0.1:3002/mcp` | 401 with `WWW-Authenticate: Bearer realm="mcp"`. |
+| H2 | Start it properly, then `curl http://127.0.0.1:3000/healthz` | `{"status":"ok","server":"lxagents-gitlab","version":"…"}` with no token. |
+| H3 | `curl -i -X POST http://127.0.0.1:3000/mcp` | 401 with `WWW-Authenticate: Bearer realm="mcp"`. |
 | H4 | The same with `Authorization: Bearer wrong` | 401 with `error="invalid_token"`. |
 | H5 | The same with the GitLab key as the bearer | 401 as well: the key is not an access token. |
 | H6 | `tools/list` with `Authorization: Bearer $MCP_AUTH_TOKEN` (the curl in the guide) | The 45 tools. |

@@ -72,3 +72,21 @@ the default host back to loopback fails three tests, which was confirmed. By han
 the server logs `(all interfaces)` and answers `/healthz`, and `PORT=abc` exits 2 with the message.
 
 Left for task 3: every page that says loopback by default or port 3001.
+
+### Task 3 — docs/http-defaults
+
+Landed. Every page that said the HTTP transport binds loopback by default, or named port 3002, now says port 3000
+on all interfaces. `wiki/guides/setup-http-token.md` has the start-up line as it prints now, the `PORT` and `HOST`
+rows, every curl and client URL on port 3000, a section "Who can reach it" (renamed from "Putting it on a network")
+that says plainly that by default the port is open on the machine's network and that the access token is what stands
+in front of the key, the container run without `-e HOST=0.0.0.0` and with `-p 127.0.0.1:3000:3000` to keep it to
+the host, a refusal row for a port that is taken, and a section "If you used 0.3.0" for the move from `3002` and
+loopback. Also corrected: `env.md` (the two rows, with the note that the GitHub server also defaults to 3000),
+`setup.md`, `docker.md`, `overview.md`, `security-model.md` (the surfaces row, the deployment posture, the
+controls), `smoke-test.md` (the curl ports), `README.md`, and on the agent side `wiki/context/repository-map.md`
+and `wiki/security/security-boundaries.md`, which now says the 32-character access token is the only guard and must
+stay fail-closed. The released changelogs and their rows are left as written, and so are the sentences about the
+test suite reaching no host beyond loopback, which are about the tests.
+
+Checked: no relative link in any `.md` file is broken, and no page outside the released history and the records
+names `3002` or loopback as the HTTP default. Code is untouched in this task.

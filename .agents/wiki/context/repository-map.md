@@ -56,7 +56,7 @@ start:http` runs `src/http.js` directly.)
 npm install
 npm test
 npm start                                   # stdio; GITLAB_API_KEY comes from the environment
-npm run start:http                          # HTTP on 127.0.0.1:3002; needs MCP_AUTH_TOKEN (32+ chars) too
+npm run start:http                          # HTTP on :3000, all interfaces; needs MCP_AUTH_TOKEN (32+ chars) too
 GITLAB_API_KEY=<token> npm run inspect      # the MCP Inspector, to drive it by hand
 ```
 
