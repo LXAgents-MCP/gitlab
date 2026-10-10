@@ -30,6 +30,9 @@ export const SURFACE = {
   file_update: "update",
   file_delete: "destroy",
   directory_list: "read",
+  commit_read: "read",
+  commit_list: "read",
+  commit_compare: "read",
 };
 
 /** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */

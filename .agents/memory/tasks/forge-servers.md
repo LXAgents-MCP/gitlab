@@ -276,3 +276,31 @@ The text helpers `decodeText`, `cutText` and `looksBinary` join `src/text.js` wi
 consumer, with the tests they had in the GitHub server.
 
 Tests: 173 passing, none failing.
+
+### Task 8 — feat/commit-tools
+
+Landed. `commit_read`, `commit_list` and `commit_compare`, pinned in `test/surface.js` and documented
+in the surface page and the token table.
+
+Checked against GitLab's REST documentation: a commit is at `/repository/commits/:sha`, where `sha` is
+a hash, branch or tag and carries `stats`; its files are the diff, at `/commits/:sha/diff`, a list of
+files with their hunks as text and no counts; the list takes `ref_name`, `path`, `author`, `since`,
+`until` and omits GitLab's totals; compare takes `from` and `to` and answers `commits`, `diffs`,
+`compare_timeout` and `compare_same_ref`, in one direction. Real answers from `gitlab.com` confirmed
+`HEAD` as a commit name, the diff's paging headers and its hunks starting at `@@`, and a compare in the
+direction that finds nothing answering `commits: []` with `commit: null`. The anonymous commit
+*list* and a larger compare were answered with a Cloudflare challenge page from this environment, so
+those two shapes are checked against the documentation only.
+
+Shape. `src/diffs.js` turns the diff list into what the tools report: a status from the file's flags,
+line counts read off its hunks, and a unified text with the `---` and `+++` headers GitLab leaves out.
+`commit_read` is two requests, the commit and its diff, because GitLab keeps a commit's files in the
+diff; `commit_compare` is two as well, since "behind" is the same question asked the other way round.
+The commits are sorted by date before the newest 50 are kept, so the result does not depend on an order
+the documentation does not state. `paging` now also reads a `link` header, because the commits API
+sends no totals and the next page is otherwise only its `x-next-page`.
+
+One change to the client came from the probe: an answer that is a web page — a challenge or an outage —
+is reported as that in a refusal, and not as 300 characters of HTML.
+
+Tests: 186 passing, none failing.

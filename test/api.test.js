@@ -381,6 +381,7 @@ test("apiDetail reads each shape GitLab answers in, and plain text", () => {
   assert.equal(apiDetail({ error: "invalid_token" }), ": invalid_token");
   assert.equal(apiDetail({ error: "insufficient_scope", error_description: "needs api" }), ": insufficient_scope (needs api)");
   assert.equal(apiDetail("plain"), ": plain");
+  assert.equal(apiDetail("<!DOCTYPE html><html><title>Just a moment...</title>"), ": the answer was a web page and not the API's, such as a security check or an outage");
   assert.equal(apiDetail(""), "");
   assert.equal(apiDetail(null), "");
   assert.equal(apiDetail({ other: 1 }), "");
@@ -474,5 +475,7 @@ test("paging says whether GitLab has another page", () => {
 
   assert.deepEqual(paging(query, { "x-next-page": "3", "x-page": "2" }), { page: 2, per_page: 30, has_more: true });
   assert.equal(paging(query, { "x-next-page": "" }).has_more, false);
+  assert.equal(paging(query, { link: '<https://gitlab.com/x?page=3>; rel="next", <y>; rel="first"' }).has_more, true);
+  assert.equal(paging(query, { link: '<https://gitlab.com/x?page=1>; rel="prev"' }).has_more, false);
   assert.equal(paging(query, {}).has_more, false);
 });
