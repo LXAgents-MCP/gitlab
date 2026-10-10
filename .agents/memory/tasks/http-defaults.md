@@ -5,7 +5,7 @@ description: Giving the GitLab MCP server's HTTP transport the same defaults as 
 
 # HTTP defaults — GitLab
 
-## 2026-10-10 — in progress
+## 2026-10-10 — complete
 
 **Goal.** The HTTP transport listens where `shared-instruction` listens by default, so the three servers are
 reached the same way: `PORT` 3000 and `HOST` `0.0.0.0`. Until now this server defaulted to `127.0.0.1:3002`.
@@ -20,7 +20,7 @@ one, and its default port is 3000 as well. The 45 tools and the two-token design
 `shared-instruction`'s `src/http.js`: `const PORT = Number(process.env.PORT) || 3000; const HOST = process.env.HOST || "0.0.0.0";`.
 The owner asked for this and said to take the recommended option wherever a choice was open.
 
-**Status:** in progress.
+**Status:** complete. Released as `0.4.0`; the pull requests, merged in order by rebase, are in the table.
 
 ## Tasks
 
@@ -90,3 +90,19 @@ test suite reaching no host beyond loopback, which are about the tests.
 
 Checked: no relative link in any `.md` file is broken, and no page outside the released history and the records
 names `3002` or loopback as the HTTP default. Code is untouched in this task.
+
+### Task 4 — release/0.4.0
+
+Landed. The version is `0.4.0` in `package.json` and the lockfile's own two entries (H3: chosen under the owner's
+instruction to take the recommended option, and stated to them with the plan). `wiki/logs/0/4/0/CHANGELOG.md` says
+first that the port and the exposure change, and that the second is the one to read twice, then what clients must do:
+change the port in their URLs, narrow the bind with `HOST=127.0.0.1` if they relied on loopback, set `PORT` if the
+GitHub server shares the machine, and restart. It also records what was not copied from `shared-instruction`, the
+silent `PORT` fallback. Its row is first in `index/logs-index.md`. Earlier changelogs are left as written.
+`memory/state/repository-state.md` describes `0.4.0`.
+
+Checked from a clean export of the index, with `npm ci`: 302 tests pass and none fail, and
+`node src/index.js --version` prints `lxagents-gitlab 0.4.0`. No git tag was made and nothing was published.
+
+The `PR` column of the table is filled by a closing commit once the pull requests exist, so no earlier branch needs
+a rebase.
