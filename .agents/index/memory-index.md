@@ -29,3 +29,4 @@ same commit that creates it.
 | File | Purpose |
 |---|---|
 | [`../memory/tasks/forge-servers.md`](../memory/tasks/forge-servers.md) | Building this server: `repo_create` moved from `cli`, then the 45-tool GitLab surface; the `0.1.0` release. |
+| [`../memory/tasks/http-token-auth.md`](../memory/tasks/http-token-auth.md) | Giving this server an HTTP transport with a required bearer token and the one variable `MCP_AUTH_TOKEN`; released as 0.2.0. |
