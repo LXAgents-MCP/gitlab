@@ -71,7 +71,7 @@ recommendation and use the recommended one. Each row names the option taken and 
 | D10 | The tool names are the owner's in both servers, and GitLab's words sit underneath: `repo_` acts on a project, `pr_` on a merge request (its `number` is the project-scoped `iid`), `workflow_` on a pipeline — `workflow_list` lists recent pipelines, `workflow_run` creates one, `workflow_status` reads one, `workflow_logs` reads its jobs' logs. Declined: GitLab-specific names (`mr_`, `pipeline_`), which would make the two servers' tools differ. |
 | D11 | GitLab has no direct branch merge, so `branch_merge` opens a merge request from `head` into `base` and accepts it; the merged request stays as the record, and if it cannot be merged the request it opened is closed again. Declined: a local git merge, which the server cannot do. |
 | D12 | Where GitLab has no counterpart of a GitHub argument — draft releases, generated release notes, close and lock reasons — the argument is absent and the documentation says so. Declined: accepting it and ignoring it. |
-| D13 | GitLab.com only, with a personal, project or group access token in `PRIVATE-TOKEN`. Declined: a configurable base URL for self-managed instances, which would be a second setting and a second trust decision. |
+| D13 | GitLab.com only, with a personal, project or group access token. It is sent as `Authorization: Bearer`, which GitLab accepts for all three: the runtime drops that header when a redirect changes host, and would forward GitLab's own `PRIVATE-TOKEN`. Declined: `PRIVATE-TOKEN`, which `cli` used, and a configurable base URL for self-managed instances, which would be a second setting and a second trust decision. |
 
 ## Out of scope
 
@@ -87,3 +87,40 @@ so the memory index has a parent, and `.gitignore`. The repository had no `.giti
 `/.agents/plans/` line keeps the untracked working plan out of history, and the owner approved
 adding it with the plan. The root index lists only the memory index for now; task 3 completes
 it. Nothing else changes in this task, and no code exists yet. The `PR` column is filled by task 14.
+
+### Task 2 — feat/server-core
+
+Landed. `node src/index.js` is a stdio MCP server named `lxagents-gitlab` that serves one tool,
+`repo_create`, the `create_gitlab_repo` tool moved out of `cli` 2.1.0 with its arguments, defaults
+and refusal wording unchanged. `package.json` is `private`, at `0.0.0` until the release task, with
+the same two runtime dependencies as `cli`; the lockfile started from the GitHub server's, which
+started from `cli`'s, so the audited dependency set is the same.
+
+Shape. The modules that do not know the forge — `args.js`, `errors.js`, `log.js`, `render.js`,
+`schemas.js`, `text.js`, the registry and the entry point — are the GitHub server's, with the
+names changed. `src/api.js` is GitLab's own. It is the only place a URL is built: `parseRepo` takes
+a project's full path or its numeric id, and `refPath` and `filePath` write a branch name or a file
+path as the single URL segment GitLab reads, the slashes encoded, where GitHub keeps them literal.
+`gitlab()` reads the token per call and turns every failure into one message that names the next
+step; a tool may word the statuses it knows better through `explain`, which is how `repo_create`
+keeps its old messages. `apiDetail` reads the four shapes GitLab answers in: a message, an object of
+field errors, a list, and an OAuth-style `error`. A list says whether another page follows from the
+`x-next-page` header, which GitLab sets and GitHub does not.
+
+One change from `cli`, recorded as D13: the token goes in `Authorization: Bearer`, not
+`PRIVATE-TOKEN`. GitLab accepts a personal, project or group access token either way, and the runtime
+drops `Authorization` — and no custom header — when a redirect changes host, which GitLab uses to
+move a project. A test over two loopback servers holds the client to it. Nothing a caller can see
+changes.
+
+Pinned. `test/surface.js` is the one place the tool list is written out, each tool tagged read,
+write, update or destroy, and the registry, protocol and stdio tests compare against it. A crash is
+scrubbed like a refusal from the start: the unexpected-exception path redacts the token from both
+the log line and the text returned to the client.
+
+Tests: the runner reports 105 passing and none failing. Two of those are the support files under
+`test/`, which `node --test` also executes and counts. No test reaches a host beyond this machine;
+the one redirect test talks to two servers on loopback.
+
+Left for later tasks: the other 44 tools (tasks 5-12), the instruction set and wiki (3, 4), the
+image (13) and the release (14).
