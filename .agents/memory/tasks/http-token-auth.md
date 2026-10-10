@@ -5,7 +5,7 @@ description: Giving the GitLab MCP server an HTTP transport that requires a bear
 
 # Token over HTTP — GitLab
 
-## 2026-10-10 — in progress
+## 2026-10-10 — complete
 
 **Goal.** A client can reach the GitLab server the way it reaches `shared-instruction` over HTTP: a
 required bearer token in the `Authorization` header, set in the client's configuration, instead of a
@@ -22,7 +22,7 @@ this one. The 45 tools do not change. No new dependency: the SDK's streamable-HT
 `node:http`. The reference is `shared-instruction`'s `src/auth.js` and `wiki/environments/env.md`. The
 version bump to `0.2.0` was approved with the plan.
 
-**Status:** in progress.
+**Status:** complete. Released as `0.2.0`; the pull requests, merged in order by rebase, are in the table.
 
 ## Tasks
 
@@ -122,3 +122,18 @@ The name sharing of D10 is stated in `env.md` and in the guide: `MCP_AUTH_TOKEN`
 Checked: no relative link in any `.md` file is broken, and the old variable survives only in the released
 `0.1.0` changelog and logs-index row, in the records of earlier work, and in the migration notes that name it.
 Code is untouched in this task, so `npm test` is as task 2 left it.
+
+### Task 4 — release/0.2.0
+
+Landed. The version is `0.2.0` in `package.json` and the lockfile's own two entries, which the owner approved
+with the plan (D8). `wiki/logs/0/2/0/CHANGELOG.md` says first that the server is no longer stdio only and that
+nothing has run against live GitLab, then what clients must do: rename `LXAGENTS_MCP_GITLAB_API_KEY` to
+`MCP_AUTH_TOKEN`, set it only in the server's own `env` block (D10), and for HTTP register a URL and a header.
+Its row is first in `index/logs-index.md`. `wiki/guides/smoke-test.md` gained an HTTP walk of seven steps and
+a row for the token reaching GitLab per request, and `memory/state/repository-state.md` describes `0.2.0`.
+
+Checked from a clean export of the index, with `npm ci`: 292 tests pass and none fail, and
+`node src/index.js --version` prints `lxagents-gitlab 0.2.0`. No git tag was made and nothing was published (D8).
+
+The `PR` column of the table is filled by a closing commit once the pull requests exist, so no earlier branch needs
+a rebase.
