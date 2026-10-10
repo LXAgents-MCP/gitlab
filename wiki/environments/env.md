@@ -76,6 +76,9 @@ only what the tools you will use need.
 | `pr_open`, `pr_close`, `pr_review_request` | `api` | Developer or more |
 | `pr_approve` | `api` | Developer or more; a Reporter or Planner only where the project allows it |
 | `pr_merge` | `api` | Developer or more, and a role allowed to merge into the target, which is Maintainer for a protected branch |
+| `workflow_list`, `workflow_status` | `read_api` | Any role that can see the project's pipelines |
+| `workflow_logs` | `read_api` | Any role that can see the project's job logs; a project may limit them to members |
+| `workflow_run` | `api` | Developer or more, and a role allowed to run pipelines on a protected branch or tag; the project may limit who can set variables |
 
 The requirements are those GitLab documents for each endpoint. When a token is short of one, GitLab
 refuses and this server repeats what it said, so the refusal is the authority if it disagrees with

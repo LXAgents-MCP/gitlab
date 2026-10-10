@@ -55,6 +55,10 @@ export const SURFACE = {
   pr_merge: "destroy",
   pr_review_request: "update",
   pr_approve: "update",
+  workflow_list: "read",
+  workflow_run: "write",
+  workflow_status: "read",
+  workflow_logs: "read",
 };
 
 /** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */

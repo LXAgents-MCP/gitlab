@@ -185,6 +185,27 @@ GitLab computes from conflicts, pipelines, approvals and drafts, in the backgrou
 request (a push, a label) is recorded in the same list as its comments, as system notes, which
 `pr_read` and `issue_read` leave out.
 
+### Pipelines
+
+A project has one pipeline definition, its `.gitlab-ci.yml`, so there is no list of workflows to pick
+from: these tools act on pipelines, the runs. A pipeline is named by its id, from `workflow_run` or
+`workflow_list`, and a job by its id, from `workflow_status`.
+
+| Tool | Kind | Does |
+|---|---|---|
+| `workflow_list` | read | List recent pipelines, newest first, optionally of one branch or tag or in one status. Paged. |
+| `workflow_run` | write | Start a pipeline on a branch or tag (default: the default branch), with optional CI/CD variables. It runs whatever the pipeline does, which may deploy or publish. |
+| `workflow_status` | read | Read a pipeline by id, or the latest one on a branch or tag: status, commit, timing, and every job with the reason a failed one failed. A ref with no pipeline yet is an answer, not an error. |
+| `workflow_logs` | read | Read job logs: by default the failed jobs, up to five, each cut to its end, within 20,000 characters in all. `job_id` reads one job; `only_failed: false` reads every job. |
+
+GitLab differs from GitHub here in three ways that show in these tools. There is no workflow to name,
+so `workflow_run` takes a `ref` and `variables` where GitHub takes a workflow, a ref and `inputs`. A
+job has no steps, so a failed job carries GitLab's `failure_reason` (`script_failure`,
+`runner_system_failure`) and its log says where. And a runner's log carries colour codes and
+`section_start` markers that fold it in the web page, which `workflow_logs` strips. Setting variables
+may be limited to a higher role by the project, and a variable is shown in the pipeline, so it is never
+a place for a secret.
+
 ## What this server does not expose
 
 | Not exposed | Why |

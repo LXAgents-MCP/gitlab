@@ -388,3 +388,30 @@ on a merge request come back through `commentsFrom`, now shared with `issue_read
 limit of 30 into `MAX_COMMENTS_SHOWN`.
 
 Tests: 255 passing, none failing.
+
+### Task 12 — feat/workflow-tools
+
+Landed. `workflow_list`, `workflow_run`, `workflow_status` and `workflow_logs`, pinned in
+`test/surface.js` and documented in the surface page and the token table. D10.
+
+Checked against GitLab's REST documentation for pipelines and jobs, and against real answers from
+`gitlab.com` for a public project: the list at `/pipelines` carries `x-total`, `x-next-page` and a
+`link` header and answers `[]` for a ref with no pipeline and 400 for a status that is not one;
+one pipeline carries `user`, `started_at`, `finished_at`, `duration`, `yaml_errors` and a `name` that
+is null unless the project sets one; the jobs of a pipeline are at `/pipelines/:id/jobs` with `stage`,
+`status`, `allow_failure`, `failure_reason` and `duration`; creation is `POST /pipeline` with `ref` and
+`variables`; a job's log is `GET /jobs/:id/trace`. The log needs a token (an anonymous call answers
+401), so its content type and the runner's markers are from the documentation and the runner's source
+and are on the list for the first live call.
+
+Where GitLab differs. A project has one pipeline definition, so `workflow_list` lists pipelines and
+`workflow_run` takes `ref` and `variables` where GitHub takes a workflow and `inputs`; the argument
+for a run is `pipeline_id`, not `run_id`. `workflow_status` finds the latest pipeline on a ref by
+listing with `per_page=1` and not through `/pipelines/latest`, because the second answers 403 or 404
+for a ref with no pipeline, which cannot be told from a project the token cannot see. A job has no
+steps, so `jobShape` has `failure_reason` and `allow_failure` where GitHub's has `failed_step`, and a
+failed job that is allowed to fail is not listed among the failures in the summary. `cleanLog` also
+strips the `section_start` and `section_end` markers the runner writes. The cap of 25 variables is
+this server's own.
+
+Tests: 270 passing, none failing.
