@@ -150,3 +150,30 @@ The security page is written from the code as it stands and follows the shape th
 creator gives. It will gain a row for each destructive tool as those tools land.
 
 Nothing here copies the shared set. Tests unchanged: 105 passing, none failing.
+
+### Task 4 — docs/wiki
+
+Landed. `README.md` is an overview that points at the wiki and states no tool count, and seven wiki
+pages sit under a project wiki index: overview, architecture, MCP surface, setup, environment,
+connect-a-client and the security model. `mcp-surface.md` and `env.md` carry the tables that grow:
+each tool group adds its rows to both, and to the README and security model where it changes what
+they say, in the same commit as the tools.
+
+It is the GitHub server's documentation with the forge changed, and the pages say where the words
+differ: the overview has a table of the same tool prefixes in each forge's words (a repository is a
+project, a pull request a merge request, a workflow a pipeline); the token section is about scopes,
+roles and project or group access tokens and not about a fine-grained token's permissions; the
+security model says why the token travels as `Authorization` and not in GitLab's own header.
+
+Facts once. The surfaces tables task 3 put in the agent security page now live in the human
+security model; the agent page keeps the isolation rule, the before-you-change table, escalation
+and what is not a finding. Claims about the `repo_delete` name-confirmation guard are left out of
+the README and the security model until task 5 adds the tool, so no page describes code that does
+not exist yet.
+
+The pages that say nothing has been run live say it of a token and not of the host: unlike the
+GitHub server's environment, this one could read public data on `gitlab.com`, so a read shape can be
+compared with a real answer where the group has one.
+
+A link check over `README.md`, `wiki/`, `AGENTS.md` and `.agents/` finds no unresolved link. The
+human pages say nothing about `.agents/`. Tests unchanged: 105 passing, none failing.
