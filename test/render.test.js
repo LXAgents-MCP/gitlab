@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MAX_OUTPUT } from "../src/config.js";
 import { describe, fence, renderPayload } from "../src/render.js";
-import { firstLine, head, short, tail } from "../src/text.js";
+import { cutText, decodeText, firstLine, head, looksBinary, short, tail } from "../src/text.js";
 
 test("a flat payload is a summary and one bullet per scalar, in order", () => {
   assert.equal(
@@ -93,5 +93,24 @@ test("short, firstLine, head and tail", () => {
   assert.deepEqual(head("abc", 3), ["abc", false]);
   assert.deepEqual(tail("abcdef", 3), ["(truncated) ...\ndef", true]);
   assert.deepEqual(tail("abc", 3), ["abc", false]);
+});
+
+test("decodeText reads UTF-8, falls back to Windows-1252, and keeps the byte order mark", () => {
+  assert.equal(decodeText(Buffer.from("héllo", "utf8")), "héllo");
+  assert.equal(decodeText(Buffer.from([0x63, 0x61, 0x66, 0xe9])), "café");
+  assert.equal(decodeText(Buffer.from([0xef, 0xbb, 0xbf, 0x61])), "\uFEFFa");
+});
+
+test("cutText cuts at a character count and never leaves half of a surrogate pair", () => {
+  assert.deepEqual(cutText("abcdef", 3), ["abc", true]);
+  assert.deepEqual(cutText("abc", 3), ["abc", false]);
+  assert.deepEqual(cutText("a😀b", 2), ["a", true]); // the cut would fall inside the emoji
+  assert.deepEqual(cutText("a😀b", 3), ["a😀", true]);
+});
+
+test("looksBinary is true for a NUL byte early on and false for text", () => {
+  assert.equal(looksBinary(Buffer.from([0x68, 0x00, 0x69])), true);
+  assert.equal(looksBinary(Buffer.from("plain text")), false);
+  assert.equal(looksBinary(Buffer.concat([Buffer.alloc(9000, 0x61), Buffer.from([0])])), false);
 });
 

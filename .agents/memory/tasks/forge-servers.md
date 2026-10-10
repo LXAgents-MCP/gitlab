@@ -246,3 +246,33 @@ opened is closed again and the refusal says so — or says it is still open when
 falls back to the older `merge_status`; merge request tools will use it too.
 
 Tests: 151 passing, none failing.
+
+### Task 7 — feat/file-tools
+
+Landed. `file_read`, `file_create`, `file_update`, `file_delete` and `directory_list`, pinned in
+`test/surface.js` and documented in the surface page and the token table.
+
+Checked against GitLab's REST documentation: a file is at `/repository/files/:file_path` with the path
+as one encoded segment; reading needs `ref`, and `HEAD` is the default branch, so no lookup is needed
+to read; create answers 201, update 200 and delete 200 with the parameters in a JSON body, each
+taking `branch` and `commit_message`, with `content` as text or base64 and `last_commit_id` on update
+and delete; the tree is at `/repository/tree` with `path`, `ref` and paging, and a missing path has
+answered 404 since GitLab 17.7. The page lists no error text, so the three messages GitLab gives for
+a file commit — that the file already exists, that it does not exist, that it changed since it was
+read — are matched by wording and kept on the live-check list. Real answers from `gitlab.com` went
+through `file_read` and `directory_list`, and a directory read as a file is a 404 "File Not Found".
+
+Where GitLab differs. The tools that write need a branch, so one is looked up when none is given;
+reading does not. What `file_read` returns for a later change is the file's `last_commit_id`, not its
+blob id, so `file_update` and `file_delete` take `last_commit_id` where the GitHub server's take
+`sha`, and `file_read` returns both ids. The files API answers a write with only the path and branch,
+so no write reports a commit sha, and the GitHub server's extra request to read one is not made.
+`directory_list` is paged, because the tree is, where GitHub returns a whole directory; its entries
+are `dir`, `file` or `submodule`, with no size, which the tree does not carry. `src/contents.js`
+holds the path, the base64 encoding, the default-branch lookup and the wording of the three commit
+refusals.
+
+The text helpers `decodeText`, `cutText` and `looksBinary` join `src/text.js` with their first
+consumer, with the tests they had in the GitHub server.
+
+Tests: 173 passing, none failing.
