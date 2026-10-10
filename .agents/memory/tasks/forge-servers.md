@@ -124,3 +124,29 @@ the one redirect test talks to two servers on loopback.
 
 Left for later tasks: the other 44 tools (tasks 5-12), the instruction set and wiki (3, 4), the
 image (13) and the release (14).
+
+### Task 3 — docs/agents-setup
+
+Landed. `AGENTS.md` is the entry point of a consuming repository: it declares the shared tools this
+repository uses (`automation` and the four mandatory ones, plus `pull_request_template`), carries
+the three gates and the discovery gate inline, says how to use the connector and what to say when it
+does not resolve, and adds four trigger rows of its own. `.claude/CLAUDE.md` imports it so Claude
+Code and every other agent read one file. The local set: two rules — `gitlab-repository-rules` and
+`tool-surface` — the agent wiki's `repository-map` and `security-boundaries` pages, a state file, the
+stdio-only decision, and three indexes under a root index whose override table is empty. It is the
+GitHub server's set with the forge changed; the sentences that differ are the ones about projects, the
+full-path argument and self-managed instances.
+
+Names. The local repository rule is `gitlab-repository-rules`, not `repository-rules`, because the
+shared set already has a file of that name and a local file with it would read as an undeclared
+override.
+
+Forward references. Four links in the agent wiki point at human wiki pages that task 4 writes
+(`architecture`, `mcp-surface`, `env`, `security-model`). They resolve when task 4 lands; a link
+check over `AGENTS.md` and `.agents/` finds no other unresolved link. The project wiki index and
+the logs index are created with the pages they list, in tasks 4 and 14.
+
+The security page is written from the code as it stands and follows the shape the shared security
+creator gives. It will gain a row for each destructive tool as those tools land.
+
+Nothing here copies the shared set. Tests unchanged: 105 passing, none failing.

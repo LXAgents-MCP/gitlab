@@ -12,6 +12,18 @@ Read this every session and load only the rows whose scope matches the request, 
 continue prior work instead of restarting it. Every memory file is registered here in the
 same commit that creates it.
 
+## state/
+
+| File | Purpose |
+|---|---|
+| [`../memory/state/repository-state.md`](../memory/state/repository-state.md) | Current known state: what exists, what is verified, what is not built yet. |
+
+## decisions/
+
+| File | Purpose |
+|---|---|
+| [`../memory/decisions/stdio-only-transport.md`](../memory/decisions/stdio-only-transport.md) | Why this server is stdio only, when a sibling repository serves HTTP. |
+
 ## tasks/
 
 | File | Purpose |
