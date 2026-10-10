@@ -1,0 +1,31 @@
+/*
+ * The tool surface this server is meant to serve, pinned in one place.
+ *
+ * Adding, renaming or removing a tool is a change to a public surface and a release, so the
+ * list is written out and not derived: the registry, protocol and stdio tests all compare
+ * against it, and a tool that appears or vanishes without an edit here fails all three.
+ *
+ * Each tool is tagged with the kind of change it makes, and the registry test holds its
+ * annotations to that kind:
+ *
+ *   read     only reads
+ *   write    creates something; repeating the call repeats the effect
+ *   update   changes something that exists; repeating it changes nothing more
+ *   destroy  deletes, overwrites or merges
+ */
+export const SURFACE = {
+  repo_create: "write",
+};
+
+/** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */
+export const KIND_HINTS = {
+  read: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  write: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  update: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  destroy: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+};
+
+/** Tools that do not take a `repo`: one creates a project, one searches across all of them. */
+export const NO_REPO_ARGUMENT = ["repo_create", "repo_search"];
+
+export const TOOL_NAMES = Object.keys(SURFACE).sort();
