@@ -23,6 +23,17 @@ export function setToken(t, value) {
   });
 }
 
+/** Set any environment variable for one test, or remove it when `value` is null, and restore it after. */
+export function setEnv(t, name, value) {
+  const saved = process.env[name];
+  if (value === null) delete process.env[name];
+  else process.env[name] = value;
+  t.after(() => {
+    if (saved === undefined) delete process.env[name];
+    else process.env[name] = saved;
+  });
+}
+
 export const withToken = (t) => setToken(t, TOKEN);
 export const withoutToken = (t) => setToken(t, null);
 

@@ -316,6 +316,6 @@ test("the write tools are held to the no-token rule only after their arguments c
   withoutToken(t);
   const { calls } = mockApi(t, reply(200, {}));
 
-  await assert.rejects(fileCreate({ repo: "g/r", path: "a", content: "x", message: "m", branch: "main" }), isRefusal(/^MCP_AUTH_TOKEN is not set\./));
+  await assert.rejects(fileCreate({ repo: "g/r", path: "a", content: "x", message: "m", branch: "main" }), isRefusal(/^GITLAB_API_KEY is not set\./));
   assert.equal(calls.length, 0);
 });

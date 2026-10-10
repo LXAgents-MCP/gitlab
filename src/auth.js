@@ -1,34 +1,53 @@
 /**
- * Where the GitLab token comes from, and the rules for the one that arrives over HTTP.
+ * The two secrets this server deals with, and which one is for what.
  *
- * Over stdio the client spawns this process, so there is no request to carry a credential and the
- * token is read from the environment, from `MCP_AUTH_TOKEN`. Over HTTP every request carries its
- * own, as `Authorization: Bearer <token>`, and that token is the GitLab token: it is used for the
- * GitLab calls of that request and kept nowhere. The server holds no secret of its own.
- *
- * **The two sources never mix.** A process that serves HTTP never reads `MCP_AUTH_TOKEN`: a
- * request without a token is refused, it does not fall back to the owner's. `enterHttpMode` makes
- * that a property of the process, so it does not depend on the request context having survived to
- * the point a tool asks for the token.
+ * - **`MCP_AUTH_TOKEN` guards the door.** It is the server's own secret for the HTTP transport: a
+ *   client proves it holds it with `Authorization: Bearer <token>`, and the server refuses to
+ *   serve HTTP without one. stdio is a pipe the client spawns on its own machine, so there is
+ *   nobody to authenticate and `src/index.js` never reads it on that path.
+ * - **`GITLAB_API_KEY` is the key to GitLab.** It is the token every GitLab call is made with, on
+ *   both transports, read from this process's environment when a tool is called. A client never
+ *   supplies it and never sees it, and the bearer a client presents is never sent to GitLab.
  *
  * Nothing here writes to stdout: on stdio, stdout is the protocol channel.
  */
-import { AsyncLocalStorage } from "node:async_hooks";
-import { MAX_TOKEN_LENGTH, TOKEN_ENV } from "./config.js";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { AUTH_ENV, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "./config.js";
 
-/** The token of the request being answered, for the duration of that request. */
-const requestToken = new AsyncLocalStorage();
+/* ------------------------------------------------------------------ the door: MCP_AUTH_TOKEN */
 
-let httpMode = false;
-
-/** Called once by a process that serves HTTP. From then on the environment is never a source of the token. */
-export function enterHttpMode() {
-  httpMode = true;
+/**
+ * The server's access token, or an empty string when there is none.
+ *
+ * Read at call time and never at import, so a value set later is seen and a test can set and unset
+ * it. Surrounding whitespace is dropped: a token copied out of a file or an `env_file` often
+ * carries a trailing newline, and an HTTP header cannot.
+ *
+ * @returns {string}
+ */
+export function configuredAuthToken() {
+  return (process.env[AUTH_ENV] ?? "").trim();
 }
 
-/** @returns {boolean} Whether this process serves HTTP. */
-export function isHttpMode() {
-  return httpMode;
+/**
+ * Why `token` cannot guard the HTTP transport, or `null` when it can.
+ *
+ * The message names the variable and never the value, so it is safe to log.
+ *
+ * @param {string} [token]
+ * @returns {string | null}
+ */
+export function authTokenProblem(token = configuredAuthToken()) {
+  if (token === "") return `${AUTH_ENV} is not set`;
+  if (token.length < MIN_AUTH_TOKEN_LENGTH) {
+    return `${AUTH_ENV} is ${token.length} characters, and it must be at least ${MIN_AUTH_TOKEN_LENGTH}`;
+  }
+  return null;
+}
+
+/** SHA-256 of a string, so two values of any length compare in constant time. */
+export function digest(value) {
+  return createHash("sha256").update(value).digest();
 }
 
 /**
@@ -47,67 +66,31 @@ export function bearerCredential(header) {
 }
 
 /**
- * Why a credential cannot be a token, or `null` when it can be one.
+ * Whether `credential` is the token whose digest is `expected`.
  *
- * Only the shape is checked. GitLab's token formats change, and GitLab is the one that knows
- * whether a token is valid, so there is no length floor and no prefix list here - a floor of 32
- * characters, as `shared-instruction` has, would refuse a valid personal access token of 26.
+ * The comparison is constant-time over fixed-length digests, so neither the token's length nor how
+ * much of it a guess got right shows in how long the answer takes.
  *
  * @param {string} credential
- * @returns {string | null}
+ * @param {Buffer} expected `digest(token)` of a token that passed `authTokenProblem`.
+ * @returns {boolean}
  */
-export function credentialProblem(credential) {
-  if (credential.length > MAX_TOKEN_LENGTH) return `longer than ${MAX_TOKEN_LENGTH} characters`;
-  if (!/^[!-~]+$/.test(credential)) return "not printable ASCII without spaces";
-  return null;
+export function credentialMatches(credential, expected) {
+  return timingSafeEqual(digest(credential), expected);
 }
 
-/**
- * Run `fn` with `token` as the token of the request it answers.
- *
- * @template T
- * @param {string} token
- * @param {() => T} fn
- * @returns {T}
- */
-export function runWithToken(token, fn) {
-  return requestToken.run(token, fn);
-}
+/* ------------------------------------------------------------------ the key: GITLAB_API_KEY */
 
-/** @returns {string | undefined} The token of the request being answered, or `undefined` outside one. */
-export function requestScopedToken() {
-  return requestToken.getStore();
-}
-
-/** @returns {string} The token in `MCP_AUTH_TOKEN`, trimmed, or an empty string. Stdio only. */
-export function configuredToken() {
+/** @returns {string} The GitLab token in `GITLAB_API_KEY`, trimmed, or an empty string. */
+export function configuredApiKey() {
   return (process.env[TOKEN_ENV] ?? "").trim();
 }
 
 /**
- * The token a call to GitLab is made with, or `null` when there is none to use.
- *
- * Over HTTP that is the request's and nothing else; over stdio it is the environment's.
- *
- * @returns {string | null}
- */
-export function currentToken() {
-  const scoped = requestScopedToken();
-  if (scoped !== undefined) return scoped;
-  if (httpMode) return null;
-  return configuredToken() || null;
-}
-
-/**
- * The token to scrub from text about to be shown, or an empty string. Never used to make a call.
+ * The text to scrub from anything about to be shown: the GitLab key. Never used to make a call.
  *
  * @returns {string}
  */
 export function tokenToScrub() {
-  return currentToken() ?? "";
-}
-
-/** Where the token being used came from, in words for a refusal. */
-export function tokenHome() {
-  return httpMode ? "the Authorization: Bearer header" : TOKEN_ENV;
+  return configuredApiKey();
 }

@@ -1,9 +1,13 @@
 ---
 name: memory-decisions-http-token-transport
-description: Why this server also serves HTTP, how the GitLab token reaches it there, and what answers the objections that kept it stdio only.
+description: Partly superseded by two-token-auth.md. Why this server also serves HTTP, and the passthrough design of 0.2.0 that answered the objections that kept it stdio only.
 ---
 
 # This server serves HTTP, and the bearer token is the GitLab token
+
+> **Partly superseded on 2026-10-10** by [`two-token-auth.md`](two-token-auth.md): the HTTP transport stays, but
+> the bearer token is now the server's own `MCP_AUTH_TOKEN`, and GitLab is called with `GITLAB_API_KEY`. The
+> passthrough described below is what 0.2.0 shipped. Kept as history.
 
 ## 2026-10-10
 

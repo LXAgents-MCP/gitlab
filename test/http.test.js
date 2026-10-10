@@ -7,22 +7,24 @@ import test from "node:test";
 import { MAX_BODY_BYTES } from "../src/config.js";
 import { httpSettings, startHttpServer } from "../src/http.js";
 import { SERVER_NAME, VERSION } from "../src/version.js";
-import { mockApi, reply, withToken } from "./helpers.js";
+import { mockApi, reply, TOKEN, withToken, withoutToken } from "./helpers.js";
 import { TOOL_NAMES } from "./surface.js";
 
 /*
  * The HTTP transport over real sockets on loopback. The client here is `node:http`, not `fetch`,
  * because `fetch` is what the tests replace to stand in for GitLab; the two must not be the same.
- * This process serves HTTP for the whole file, which is why no test here reads the environment's
- * token.
+ *
+ * Two secrets are in play and the tests keep them apart: ACCESS is the server's own token, which a
+ * client presents; TOKEN is the GitLab key, which the server holds and a client never sees.
  */
 
 const ENTRY = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "index.js");
 const JSON_RPC = { "Content-Type": "application/json", Accept: "application/json, text/event-stream" };
+const ACCESS = "f00dfacecafe0123456789abcdef".padEnd(64, "9");
 
-/** A running server on a free loopback port, closed when the test ends. */
+/** A running server on a free loopback port, guarded by ACCESS, closed when the test ends. */
 async function serve(t) {
-  const running = await startHttpServer({ port: 0, host: "127.0.0.1" });
+  const running = await startHttpServer({ port: 0, host: "127.0.0.1", authToken: ACCESS });
   t.after(() => running.close());
   return `http://127.0.0.1:${running.port}`;
 }
@@ -49,13 +51,15 @@ function send(base, { method = "POST", path = "/mcp", headers = {}, body } = {})
   });
 }
 
-/** A JSON-RPC call to `/mcp` carrying a bearer token. */
-function rpc(base, token, method, params, id = 1) {
+/** A JSON-RPC call to `/mcp` carrying a bearer credential, or none when `bearer` is null. */
+function rpc(base, bearer, method, params, id = 1) {
   return send(base, {
-    headers: { ...JSON_RPC, ...(token === null ? {} : { Authorization: `Bearer ${token}` }) },
+    headers: { ...JSON_RPC, ...(bearer === null ? {} : { Authorization: `Bearer ${bearer}` }) },
     body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
   });
 }
+
+const readRepo = (name = "r") => ({ name: "repo_read", arguments: { repo: `o/${name}` } });
 
 /* ------------------------------------------------------------------ the routes */
 
@@ -81,7 +85,7 @@ test("the exemption is exactly GET /healthz", async (t) => {
   }
 });
 
-test("a request without a usable token is a 401 in the JSON-RPC envelope, before anything is read", async (t) => {
+test("a request without the access token is a 401 in the JSON-RPC envelope, before anything is read", async (t) => {
   const base = await serve(t);
   const refusal = { jsonrpc: "2.0", id: null };
 
@@ -90,7 +94,7 @@ test("a request without a usable token is a 401 in the JSON-RPC envelope, before
   assert.equal(missing.headers["www-authenticate"], 'Bearer realm="mcp"');
   assert.deepEqual(missing.json, {
     ...refusal,
-    error: { code: -32001, message: "Unauthorized: send your GitLab token as Authorization: Bearer <token>" },
+    error: { code: -32001, message: "Unauthorized: send the server's access token as Authorization: Bearer <token>" },
   });
 
   for (const authorization of ["Basic dXNlcjpwYXNz", "Bearer", "Bearer a b", "Token abc"]) {
@@ -98,17 +102,35 @@ test("a request without a usable token is a 401 in the JSON-RPC envelope, before
     assert.equal(wrong.status, 401, authorization);
     assert.equal(wrong.headers["www-authenticate"], 'Bearer realm="mcp"', authorization);
   }
+});
 
-  for (const token of ["a".repeat(513), "tokén"]) {
-    const invalid = await send(base, { headers: { ...JSON_RPC, Authorization: `Bearer ${token}` }, body: "{}" });
-    assert.equal(invalid.status, 401);
-    assert.equal(invalid.headers["www-authenticate"], 'Bearer realm="mcp", error="invalid_token"');
-    assert.deepEqual(invalid.json, { ...refusal, error: { code: -32001, message: "Unauthorized: the token is not valid" } });
-    assert.ok(!invalid.text.includes(token), "the answer never echoes the token");
+test("a wrong token is a 401 with invalid_token, whatever it resembles, and the answer never echoes either token", async (t) => {
+  const base = await serve(t);
+  const wrongTokens = [
+    "not-the-token",
+    ACCESS.slice(0, -1),
+    `${ACCESS}x`,
+    ACCESS.toUpperCase().replace(/[^A-Z0-9]/g, "Z"),
+    "a".repeat(2000),
+    "tokén",
+    TOKEN,
+  ];
+
+  for (const token of wrongTokens) {
+    const answer = await send(base, { headers: { ...JSON_RPC, Authorization: `Bearer ${token}` }, body: "{}" });
+    assert.equal(answer.status, 401, token.slice(0, 20));
+    assert.equal(answer.headers["www-authenticate"], 'Bearer realm="mcp", error="invalid_token"');
+    assert.deepEqual(answer.json, {
+      jsonrpc: "2.0",
+      error: { code: -32001, message: "Unauthorized: the token is not valid" },
+      id: null,
+    });
+    assert.ok(!answer.text.includes(ACCESS), "the access token");
+    assert.ok(!answer.text.includes(token), "the token that was sent");
   }
 });
 
-test("a caller without a token cannot learn which routes exist", async (t) => {
+test("a caller without the token cannot learn which routes exist", async (t) => {
   const base = await serve(t);
 
   assert.equal((await send(base, { method: "GET", path: "/nope" })).status, 401);
@@ -116,9 +138,9 @@ test("a caller without a token cannot learn which routes exist", async (t) => {
   assert.equal((await send(base, { method: "DELETE", path: "/mcp" })).status, 401);
 });
 
-test("with a token, an unknown path is a 404 and a method other than POST is a 405", async (t) => {
+test("with the token, an unknown path is a 404 and a method other than POST is a 405", async (t) => {
   const base = await serve(t);
-  const headers = { ...JSON_RPC, Authorization: "Bearer glpat-token" };
+  const headers = { ...JSON_RPC, Authorization: `Bearer ${ACCESS}` };
 
   const missing = await send(base, { method: "GET", path: "/nope", headers });
   assert.equal(missing.status, 404);
@@ -133,7 +155,7 @@ test("with a token, an unknown path is a 404 and a method other than POST is a 4
 
 test("a body that is not JSON is a 400, and one over the limit is a 413", async (t) => {
   const base = await serve(t);
-  const headers = { ...JSON_RPC, Authorization: "Bearer glpat-token" };
+  const headers = { ...JSON_RPC, Authorization: `Bearer ${ACCESS}` };
 
   const malformed = await send(base, { headers, body: "{not json" });
   assert.equal(malformed.status, 400);
@@ -143,46 +165,57 @@ test("a body that is not JSON is a 400, and one over the limit is a 413", async 
   assert.equal(oversized.status, 413);
 });
 
-/* ------------------------------------------------------------------ the tools, with a token */
+/* ------------------------------------------------------------------ the tools, with the access token */
 
 test("tools/list over HTTP lists exactly the surface", async (t) => {
   const base = await serve(t);
 
-  const { status, json } = await rpc(base, "glpat-token", "tools/list", {});
+  const { status, json } = await rpc(base, ACCESS, "tools/list", {});
 
   assert.equal(status, 200);
   assert.deepEqual(json.result.tools.map((tool) => tool.name).sort(), TOOL_NAMES);
 });
 
-test("the request's token is the one GitLab is called with, whatever the environment holds", async (t) => {
+test("GitLab is called with GITLAB_API_KEY, and the client's access token never reaches it", async (t) => {
   withToken(t);
   const base = await serve(t);
   const { calls } = mockApi(t, reply(404, { message: "Not Found" }));
 
-  const { status, json } = await rpc(base, "glpat-request_token", "tools/call", {
-    name: "repo_read",
-    arguments: { repo: "o/r" },
-  });
+  const { status, json } = await rpc(base, ACCESS, "tools/call", readRepo());
 
   assert.equal(status, 200);
   assert.equal(json.result.isError, true);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, "https://gitlab.com/api/v4/projects/o%2Fr?license=true");
-  assert.equal(calls[0].headers.Authorization, "Bearer glpat-request_token");
+  assert.equal(calls[0].headers.Authorization, `Bearer ${TOKEN}`, "the key, not the access token");
+  assert.ok(!JSON.stringify(calls).includes(ACCESS), "the access token is in no part of the request to GitLab");
 });
 
-test("a request with no token never reaches GitLab, even when the environment holds one", async (t) => {
-  withToken(t);
+test("with the access token but no GitLab key, a tool is refused naming GITLAB_API_KEY, and GitLab is not called", async (t) => {
+  withoutToken(t);
   const base = await serve(t);
   const { calls } = mockApi(t); // any request to GitLab fails the test
 
-  const { status } = await rpc(base, null, "tools/call", { name: "repo_read", arguments: { repo: "o/r" } });
+  const { status, json } = await rpc(base, ACCESS, "tools/call", readRepo());
 
-  assert.equal(status, 401);
+  assert.equal(status, 200);
+  assert.equal(json.result.isError, true);
+  assert.match(json.result.content[0].text, /GITLAB_API_KEY is not set/);
   assert.equal(calls.length, 0);
 });
 
-test("requests that overlap each reach GitLab with their own token", async (t) => {
+test("a request without the access token never reaches GitLab, even when the key is set", async (t) => {
+  withToken(t);
+  const base = await serve(t);
+  const { calls } = mockApi(t);
+
+  assert.equal((await rpc(base, null, "tools/call", readRepo())).status, 401);
+  assert.equal((await rpc(base, TOKEN, "tools/call", readRepo())).status, 401, "the GitLab key is not an access token");
+  assert.equal(calls.length, 0);
+});
+
+test("requests that overlap all reach GitLab with the key and none with an access token", async (t) => {
+  withToken(t);
   const base = await serve(t);
   const seen = new Map();
   t.mock.method(globalThis, "fetch", async (url, init) => {
@@ -192,39 +225,55 @@ test("requests that overlap each reach GitLab with their own token", async (t) =
   });
 
   const names = Array.from({ length: 8 }, (_, i) => `r${i}`);
-  const answers = await Promise.all(
-    names.map((name) => rpc(base, `glpat-token_${name}`, "tools/call", { name: "repo_read", arguments: { repo: `o/${name}` } })),
-  );
+  const answers = await Promise.all(names.map((name) => rpc(base, ACCESS, "tools/call", readRepo(name))));
 
   assert.ok(answers.every((answer) => answer.status === 200));
   for (const name of names) {
-    assert.equal(seen.get(`/api/v4/projects/o%2F${name}`), `Bearer glpat-token_${name}`, name);
+    assert.equal(seen.get(`/api/v4/projects/o%2F${name}`), `Bearer ${TOKEN}`, name);
   }
 });
 
-test("GitLab rejecting the token names the header, and the token never reaches the caller or the log", async (t) => {
+test("GitLab rejecting the key names GITLAB_API_KEY, and neither secret reaches the caller or the log", async (t) => {
+  withToken(t);
   const base = await serve(t);
-  const token = "glpat-secret_value_1234";
-  mockApi(t, reply(401, { message: `Bad credentials for ${token}` }));
+  mockApi(t, reply(401, { message: `Bad credentials for ${TOKEN}` }));
   const logged = [];
   t.mock.method(process.stderr, "write", (chunk) => {
     logged.push(String(chunk));
     return true;
   });
 
-  const { status, text, json } = await rpc(base, token, "tools/call", { name: "repo_read", arguments: { repo: "o/r" } });
+  const { status, text, json } = await rpc(base, ACCESS, "tools/call", readRepo());
 
   assert.equal(status, 200);
-  assert.match(json.result.content[0].text, /GitLab rejected the token \(401\)\. Check that the Authorization: Bearer header holds a valid token/);
-  assert.ok(!text.includes(token), "the response");
-  assert.ok(!logged.join("").includes(token), "the log");
+  assert.match(json.result.content[0].text, /GitLab rejected the token \(401\)\. Check that GITLAB_API_KEY holds a valid token/);
+  for (const secret of [TOKEN, ACCESS]) {
+    assert.ok(!text.includes(secret), "the response");
+    assert.ok(!logged.join("").includes(secret), "the log");
+  }
+});
+
+/* ------------------------------------------------------------------ starting */
+
+test("startHttpServer will not listen without an access token of 32 characters, and names the variable", async () => {
+  await assert.rejects(startHttpServer({ port: 0, authToken: "" }), /^Error: MCP_AUTH_TOKEN is not set$/);
+  await assert.rejects(startHttpServer({ port: 0, authToken: "short" }), /MCP_AUTH_TOKEN is 5 characters, and it must be at least 32/);
+});
+
+test("httpSettings defaults to loopback and the GitLab server's port", () => {
+  assert.deepEqual(httpSettings({}), { port: 3002, host: "127.0.0.1" });
+  assert.deepEqual(httpSettings({ PORT: " 8080 ", HOST: " 0.0.0.0 " }), { port: 8080, host: "0.0.0.0" });
+  assert.deepEqual(httpSettings({ PORT: "", HOST: "" }), { port: 3002, host: "127.0.0.1" });
 });
 
 /* ------------------------------------------------------------------ the process */
 
-/** A real `node src/index.js`, with its stderr collected, and the URL it says it serves. */
+/** A real `node src/index.js` with exactly the given environment on top of ours, minus both secrets. */
 function startProcess(t, env) {
-  const child = spawn(process.execPath, [ENTRY], { env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+  const base = { ...process.env };
+  delete base.GITLAB_API_KEY;
+  delete base.MCP_AUTH_TOKEN;
+  const child = spawn(process.execPath, [ENTRY], { env: { ...base, ...env }, stdio: ["ignore", "pipe", "pipe"] });
   const exited = new Promise((resolve) => child.on("exit", (code, signal) => resolve({ code, signal })));
   let stderr = "";
   let stdout = "";
@@ -234,9 +283,20 @@ function startProcess(t, env) {
   return { child, exited, output: () => ({ stdout, stderr }) };
 }
 
-test("MCP_TRANSPORT=http serves HTTP from a real process, ignores the environment's token, and stops on SIGTERM", async (t) => {
-  const leftover = "leftover-token-value";
-  const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: "0", HOST: "127.0.0.1", MCP_AUTH_TOKEN: leftover });
+/** The exit code of a process that should end by itself, or "running" if it is still up after `ms`: a failure that does not hang the suite. */
+async function exitCodeWithin(run, ms = 10_000) {
+  let timer;
+  const limit = new Promise((resolve) => {
+    timer = setTimeout(() => resolve("running"), ms);
+  });
+  const result = await Promise.race([run.exited.then((exit) => exit.code), limit]);
+  clearTimeout(timer);
+  return result;
+}
+
+test("MCP_TRANSPORT=http serves HTTP from a real process behind the access token and stops on SIGTERM", async (t) => {
+  const key = "glpat-process_key_value_9876";
+  const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: "0", HOST: "127.0.0.1", MCP_AUTH_TOKEN: ACCESS, GITLAB_API_KEY: key });
 
   const base = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`no startup line: ${run.output().stderr}`)), 10_000);
@@ -250,33 +310,65 @@ test("MCP_TRANSPORT=http serves HTTP from a real process, ignores the environmen
   });
 
   assert.equal((await send(base, { method: "GET", path: "/healthz" })).status, 200);
-  assert.equal((await rpc(base, null, "tools/list", {})).status, 401, "the environment's token is not a way in");
-  assert.equal((await rpc(base, "glpat-token", "tools/list", {})).status, 200);
+  assert.equal((await rpc(base, null, "tools/list", {})).status, 401);
+  assert.equal((await rpc(base, key, "tools/list", {})).status, 401, "the GitLab key is not a way in");
+  assert.equal((await rpc(base, ACCESS, "tools/list", {})).status, 200);
 
   run.child.kill("SIGTERM");
   assert.deepEqual(await run.exited, { code: 0, signal: null });
 
   const { stdout, stderr } = run.output();
   assert.equal(stdout, "", "nothing on stdout");
-  assert.match(stderr, /MCP_AUTH_TOKEN is set in this process's environment and is ignored over HTTP/);
-  assert.ok(!stderr.includes(leftover), "the value is never logged");
+  assert.ok(!stderr.includes(ACCESS) && !stderr.includes(key), "neither secret is ever logged");
+  assert.doesNotMatch(stderr, /GITLAB_API_KEY is not set/, "the key was set");
+});
+
+test("HTTP without a GitLab key starts and says so, because a tool will refuse", async (t) => {
+  const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: "0", MCP_AUTH_TOKEN: ACCESS });
+
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`no startup line: ${run.output().stderr}`)), 10_000);
+    run.child.stderr.on("data", () => {
+      if (/serving over http on/.test(run.output().stderr)) {
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+  });
+
+  assert.match(run.output().stderr, /GITLAB_API_KEY is not set in this process's environment: every tool will refuse until it is/);
+  run.child.kill("SIGTERM");
+  await run.exited;
+});
+
+test("HTTP will not start without a usable access token: it exits 1, names the variable, and listens on nothing", async (t) => {
+  for (const [env, reason] of [
+    [{}, /MCP_AUTH_TOKEN is not set/],
+    [{ MCP_AUTH_TOKEN: "   " }, /MCP_AUTH_TOKEN is not set/],
+    [{ MCP_AUTH_TOKEN: "too-short" }, /MCP_AUTH_TOKEN is 9 characters, and it must be at least 32/],
+    [{ GITLAB_API_KEY: "glpat-only_the_key_1234" }, /MCP_AUTH_TOKEN is not set/],
+  ]) {
+    const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: "0", ...env });
+    assert.equal(await exitCodeWithin(run), 1, JSON.stringify(env));
+    const { stdout, stderr } = run.output();
+    assert.match(stderr, reason);
+    assert.match(stderr, /will not start the HTTP transport/);
+    assert.match(stderr, /openssl rand -hex 32/);
+    assert.equal(stdout, "");
+    assert.doesNotMatch(stderr, /serving over http/);
+    assert.ok(!stderr.includes("too-short"), "the value is never logged");
+  }
 });
 
 test("an unknown MCP_TRANSPORT, or a PORT that is not a port, exits 2 with the reason on stderr", async (t) => {
   for (const [env, reason] of [
     [{ MCP_TRANSPORT: "carrier-pigeon" }, /MCP_TRANSPORT must be stdio or http, got 'carrier-pigeon'/],
-    [{ MCP_TRANSPORT: "http", PORT: "http" }, /PORT must be a whole number from 0 to 65535, got 'http'/],
-    [{ MCP_TRANSPORT: "http", PORT: "70000" }, /PORT must be a whole number from 0 to 65535, got '70000'/],
+    [{ MCP_TRANSPORT: "http", PORT: "http", MCP_AUTH_TOKEN: ACCESS }, /PORT must be a whole number from 0 to 65535, got 'http'/],
+    [{ MCP_TRANSPORT: "http", PORT: "70000", MCP_AUTH_TOKEN: ACCESS }, /PORT must be a whole number from 0 to 65535, got '70000'/],
   ]) {
     const run = startProcess(t, env);
-    assert.equal((await run.exited).code, 2, JSON.stringify(env));
+    assert.equal(await exitCodeWithin(run), 2, JSON.stringify(env));
     assert.match(run.output().stderr, reason);
     assert.equal(run.output().stdout, "");
   }
-});
-
-test("httpSettings defaults to loopback and the GitLab server's port", () => {
-  assert.deepEqual(httpSettings({}), { port: 3002, host: "127.0.0.1" });
-  assert.deepEqual(httpSettings({ PORT: " 8080 ", HOST: " 0.0.0.0 " }), { port: 8080, host: "0.0.0.0" });
-  assert.deepEqual(httpSettings({ PORT: "", HOST: "" }), { port: 3002, host: "127.0.0.1" });
 });
