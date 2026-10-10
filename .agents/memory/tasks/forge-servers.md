@@ -218,3 +218,31 @@ shows nothing is sent otherwise. The README and the security model carry that cl
 exists; task 4 left it out until then.
 
 Tests: 128 passing, none failing.
+
+### Task 6 — feat/branch-tools
+
+Landed. `branch_create`, `branch_read`, `branch_list`, `branch_delete` and `branch_merge`, pinned in
+`test/surface.js` and documented in the surface page and the token table.
+
+Checked against GitLab's REST documentation: a branch is read and deleted at
+`/repository/branches/:branch` with the name URL-encoded, listed with `search` (a substring, `^` for
+a start, `$` for an end) or `regex`, and created with `branch` and `ref`, which the page's example
+sends as query parameters; deletion answers 204 and refuses the default and protected branches. A
+request against `gitlab.com` confirmed that a branch name with a slash must be written `%2F` — the
+literal slash is a 404 — and the compare endpoint's shape (`commits`, `diffs`, `compare_same_ref`).
+Branches are the one group where the paths are encoded differently from the GitHub server's, which
+`refPath` already does.
+
+Where GitLab differs. The list endpoint has no protected filter, so `branch_list` takes `search`
+where the GitHub server takes `protected`, and reports `default` and `merged` as well. `branch_create`
+looks up the default branch when no source is given, because `ref` is required. There is no direct
+merge: `branch_merge` compares the two branches first, so a head the base already holds is answered
+as up to date and opens nothing; otherwise it opens a merge request from head into base, waits for
+GitLab to say whether it can be merged (it works that out in the background, up to ten reads a
+second apart), and accepts it with the head's sha so a branch that moved is refused. If it cannot be
+merged, or the merge is refused (401, 405, 409, 422 as the merge page lists them), the request it
+opened is closed again and the refusal says so — or says it is still open when closing failed.
+`src/merge-status.js` turns `detailed_merge_status` into ready, pending or a reason in words, and
+falls back to the older `merge_status`; merge request tools will use it too.
+
+Tests: 151 passing, none failing.

@@ -24,3 +24,10 @@ export const MAX_OUTPUT = 30_000;
 /** Results per page when a call does not say, and the most GitLab allows. */
 export const DEFAULT_PER_PAGE = 30;
 export const MAX_PER_PAGE = 100;
+
+/**
+ * How `branch_merge` waits for GitLab to work out whether a new merge request can be merged: the
+ * pause between reads, in milliseconds, and the most reads. GitLab does it in the background.
+ */
+export const MERGE_POLL_MS = 1_000;
+export const MERGE_POLL_TRIES = 10;
