@@ -89,6 +89,24 @@ GitLab finds: the same name with a literal slash is a 404, as a request against 
 | `branch_delete` | destroy | Delete a branch. The default branch and protected branches cannot be deleted. |
 | `branch_merge` | destroy | Merge one branch into another. GitLab has no direct merge, so this opens a merge request from head into base and accepts it at once; the merged request stays as the record, and a request that cannot be merged is closed again. Waits up to ten seconds for GitLab to work out whether it can. Moves the base branch. |
 
+### Files and directories
+
+Changes are made by committing through the API, one commit per call, on a branch you name (default:
+the default branch). A path is written as one encoded segment, `src%2Findex.js`. GitLab takes a
+commit's content as text or base64, and this server always sends base64, so the text arrives exactly as
+it was given.
+
+| Tool | Kind | Does |
+|---|---|---|
+| `file_read` | read | Read one text file at a branch, tag or commit; `HEAD`, the default, is the default branch. Cut at 25,000 characters; binary files and files over 1 MB are refused. Returns its content, size, blob id and `last_commit_id`. |
+| `directory_list` | read | List the files and folders in one directory, not recursively. Paged. Omit the path for the root. |
+| `file_create` | write | Create a new file as one commit. Fails if it exists. Content up to 1 MB. |
+| `file_update` | update | Replace an existing file's whole content as one commit. Pass `last_commit_id` from `file_read` to fail if the file changed since. |
+| `file_delete` | destroy | Delete one file as one commit. The file stays in history. |
+
+GitLab's files API does not return the commit it made, only the path and branch, so a write does not
+report a commit sha; `commit_list` finds it.
+
 ## What this server does not expose
 
 | Not exposed | Why |

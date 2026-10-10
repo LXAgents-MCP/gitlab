@@ -62,6 +62,8 @@ only what the tools you will use need.
 | `repo_fork` | `api` | Any role that can see the project, and permission to create projects in the target namespace |
 | `branch_read`, `branch_list` | `read_api` | Any role that can see the project |
 | `branch_create`, `branch_delete` | `api` | Developer or more, and a role the branch's protection allows for a protected branch |
+| `file_read`, `directory_list` | `read_api` (`read_repository` also opens these) | Any role that can see the project |
+| `file_create`, `file_update`, `file_delete` | `api` | Developer or more, and a role the branch's protection allows for a protected branch |
 | `branch_merge` | `api` | Developer or more to open the request, and a role allowed to merge into the base, which is Maintainer for a protected branch |
 
 The requirements are those GitLab documents for each endpoint. When a token is short of one, GitLab

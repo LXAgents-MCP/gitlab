@@ -31,3 +31,13 @@ export const MAX_PER_PAGE = 100;
  */
 export const MERGE_POLL_MS = 1_000;
 export const MERGE_POLL_TRIES = 10;
+
+/**
+ * Characters of a file shown to the model. A file is read to be looked at, not ingested, and the
+ * limit sits below `MAX_OUTPUT` so the summary and the fields still fit in the same result.
+ */
+export const MAX_FILE_CHARS = 25_000;
+
+/** Bytes of a file `file_read` will take, and of content one write may carry. Source files fit; blobs are not what this is for. */
+export const MAX_READ_BYTES = 1_000_000;
+export const MAX_WRITE_BYTES = 1_000_000;
