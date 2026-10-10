@@ -33,6 +33,14 @@ export const SURFACE = {
   commit_read: "read",
   commit_list: "read",
   commit_compare: "read",
+  tag_check: "read",
+  tag_get: "read",
+  tag_get_all: "read",
+  tag_delete: "destroy",
+  release_create: "write",
+  release_read: "read",
+  release_list: "read",
+  release_delete: "destroy",
 };
 
 /** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */

@@ -5,7 +5,6 @@
  * must be named, so a tool that is not handed a branch has to find the default one first. That
  * lookup, the path, and the encoding of what is written live here once.
  */
-import { gitlab } from "./api.js";
 import { MAX_WRITE_BYTES } from "./config.js";
 import { Refused } from "./errors.js";
 
@@ -36,23 +35,6 @@ export function encodeContent(content) {
     );
   }
   return bytes.toString("base64");
-}
-
-/**
- * The branch a write goes to: the one asked for, or else the project's default.
- *
- * @param {{ full: string, path: string }} repo
- * @param {string | undefined} branch
- * @returns {Promise<string>}
- */
-export async function branchOrDefault(repo, branch) {
-  if (branch !== undefined) return branch;
-
-  const { body } = await gitlab("GET", repo.path, { what: `find the default branch of ${repo.full}` });
-  if (typeof body?.default_branch !== "string" || body.default_branch === "") {
-    throw new Refused(`${repo.full} has no default branch yet. Pass \`branch\`, or create the first commit another way.`);
-  }
-  return body.default_branch;
 }
 
 /**

@@ -62,6 +62,8 @@ only what the tools you will use need.
 | `repo_fork` | `api` | Any role that can see the project, and permission to create projects in the target namespace |
 | `branch_read`, `branch_list` | `read_api` | Any role that can see the project |
 | `branch_create`, `branch_delete` | `api` | Developer or more, and a role the branch's protection allows for a protected branch |
+| `tag_check`, `tag_get`, `tag_get_all`, `release_read`, `release_list` | `read_api` | Any role that can see the project |
+| `tag_delete`, `release_create`, `release_delete` | `api` | Developer or more; a protected tag also limits who may create it |
 | `file_read`, `directory_list` | `read_api` (`read_repository` also opens these) | Any role that can see the project |
 | `commit_read`, `commit_list`, `commit_compare` | `read_api` | Any role that can see the project |
 | `file_create`, `file_update`, `file_delete` | `api` | Developer or more, and a role the branch's protection allows for a protected branch |

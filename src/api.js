@@ -359,6 +359,24 @@ function failure({ status, body, headers, what, explain, token }) {
 }
 
 /**
+ * The branch a call works on: the one asked for, or else the project's default branch, which a few
+ * endpoints will not guess.
+ *
+ * @param {{ full: string, path: string }} repo
+ * @param {string | undefined} branch
+ * @returns {Promise<string>}
+ */
+export async function branchOrDefault(repo, branch) {
+  if (branch !== undefined) return branch;
+
+  const { body } = await gitlab("GET", repo.path, { what: `find the default branch of ${repo.full}` });
+  if (typeof body?.default_branch !== "string" || body.default_branch === "") {
+    throw new Refused(`${repo.full} has no default branch yet. Pass \`branch\`, or create the first commit another way.`);
+  }
+  return body.default_branch;
+}
+
+/**
  * Call GitLab and return the answer, or refuse with a message that names the next step.
  *
  * A 2xx answer is returned. So is any status listed in `allow`, for a call where that status is
