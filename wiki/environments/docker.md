@@ -79,14 +79,15 @@ The image's default is stdio, so serving HTTP is a matter of selecting the trans
 passing both secrets by name, so the values are not on the command line:
 
 ```bash
-docker run --rm -p 127.0.0.1:3002:3002 -e MCP_TRANSPORT=http -e HOST=0.0.0.0 \
+docker run --rm -p 127.0.0.1:3000:3000 -e MCP_TRANSPORT=http \
   -e GITLAB_API_KEY -e MCP_AUTH_TOKEN "lxagents-gitlab:$VERSION"
 ```
 
 `GITLAB_API_KEY` is the GitLab token the server uses; `MCP_AUTH_TOKEN` is the access token, at least 32
-characters, which the container refuses to start HTTP without. `HOST=0.0.0.0` is for the inside of the
-container, where a published port cannot reach loopback; `127.0.0.1:` in `-p` keeps the port reachable from this
-host only. Clients then connect to `http://127.0.0.1:3002/mcp` with `Authorization: Bearer <MCP_AUTH_TOKEN>`; see
+characters, which the container refuses to start HTTP without. Inside the container the server
+listens on every interface on port 3000 by default, which is what lets a published port reach it, so `HOST` is not
+set; `127.0.0.1:` in `-p` keeps the port reachable from this host only, and leaving it off publishes the port to the
+network. Clients then connect to `http://127.0.0.1:3000/mcp` with `Authorization: Bearer <MCP_AUTH_TOKEN>`; see
 [Set up HTTP with two tokens](../guides/setup-http-token.md). Put TLS in front before publishing the port beyond
 the host. **This path, like the rest of the image, has not been run in a container.**
 

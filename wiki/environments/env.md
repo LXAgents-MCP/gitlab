@@ -9,8 +9,8 @@ the server over stdio sets only the key.
 | `GITLAB_API_KEY` | none | The GitLab token every tool uses, **on both transports**. Read when a tool is called, trimmed, and never taken as an argument. |
 | `MCP_AUTH_TOKEN` | none, **required for HTTP** | The server's own access token: what a client must send as `Authorization: Bearer <token>` to use the HTTP transport. At least 32 characters. **HTTP will not start without it.** stdio never reads it, and it is never sent to GitLab. |
 | `MCP_TRANSPORT` | `stdio` | Which transport `src/index.js` speaks: `stdio`, or `http` (`streamable-http` is accepted too). Anything else exits 2. |
-| `PORT` | `3002` | The port the HTTP transport listens on. Not a port exits 2. |
-| `HOST` | `127.0.0.1` | The interface it listens on. Loopback by default, because the process holds a GitLab key. |
+| `PORT` | `3000` | The port the HTTP transport listens on, the same as `shared-instruction`. A value that is not a port exits 2. The GitHub server also defaults to `3000`: set `PORT` to run both on one machine. |
+| `HOST` | `0.0.0.0` | The interface it listens on: every one, as `shared-instruction` does. `HOST=127.0.0.1` keeps it to this machine. The process holds a GitLab key, so what guards it is `MCP_AUTH_TOKEN`; see [Security model](../security/security-model.md). |
 
 There is no configuration file, and the only flags are `--help` and `--version`. A further variable that takes
 a secret is a decision for the owner, not an implementation detail: it widens what a leaked environment gives

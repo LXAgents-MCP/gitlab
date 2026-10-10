@@ -13,7 +13,7 @@ the access token, decides who may use the key, and it never leaves this server.
 
 A credentialed API client with no state. It reads no local file but its own `package.json`, runs no
 command and persists nothing. Over stdio it listens on nothing; over HTTP it listens on one port, on
-loopback unless told otherwise. Its input is tool arguments from a client; its
+all interfaces unless told otherwise. Its input is tool arguments from a client; its
 output is HTTPS requests to `gitlab.com` and results back to the same client. The interesting
 risk is not data theft from the server — there is no data in it — but **authority**: whatever the
 token may do, an agent calling this server may do.
@@ -40,7 +40,7 @@ behaving:
 | File | Exposure | Guard |
 |---|---|---|
 | `src/auth.js` `configuredApiKey`, `src/api.js` `requireToken` | Anyone who can set the process environment | Read per call; never an argument; the registry test fails any tool whose input names a credential; a caller's bearer is never used as the GitLab key |
-| `src/http.js`, `src/auth.js` | The one listener, reachable by anyone who can open the port | Every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start without a token of at least 32 characters; 4 MB body cap; binds `127.0.0.1` unless `HOST` says otherwise; a test shows the access token reaches GitLab in no part of a request |
+| `src/http.js`, `src/auth.js` | The one listener, reachable by anyone who can open the port | Every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start without a token of at least 32 characters; 4 MB body cap; listens on all interfaces on port 3000 unless `PORT` and `HOST` say otherwise; a test shows the access token reaches GitLab in no part of a request |
 | `src/api.js` `gitlab()` | The only place the `Authorization` header is built | One call site; the header goes to `callApi` and nowhere else |
 | `src/api.js` `failure()` and `callApi` | Error text built from GitLab's answer or from the network | `redact` on every message; tests make GitLab echo the token and make the network error carry it |
 | `src/server.js` `callTool` | The unexpected-exception path | `redact` on the log line and on the returned text, with the GitLab key; a test makes a handler throw the key |
@@ -95,13 +95,14 @@ permissions, `repo_delete` included, and GitLab's audit events name the key's ow
 identity per caller and no way to revoke one caller without changing the token for all. That is the objection
 that once kept HTTP out (`.agents/memory/decisions/stdio-only-transport.md`); the owner accepted it with the
 two-token design (`.agents/memory/decisions/two-token-auth.md`). The controls are the ones in this document:
-grant the key the least that works, keep the access token at 32 characters or more and private, bind
-loopback, put TLS in front, run one server per person or role where identities must stay apart, and rotate by
+grant the key the least that works, keep the access token at 32 characters or more and private, narrow the bind
+with `HOST=127.0.0.1` where only one machine needs it, put TLS in front, run one server per person or role where identities must stay apart, and rotate by
 restarting with a new token.
 
 **What it does not do, and the operator must.** It does not terminate TLS. The access token travels in a
-header, and over plain `http` anyone on the path can read it and then use the key, so the default bind is `127.0.0.1` and
-anything that exposes the port must put TLS in front. It has no `Host` allow-list and no rate limit of
+header, and over plain `http` anyone on the path can read it and then use the key. The default bind is every interface on port 3000, as in `shared-instruction`, so the port is on the
+network of whatever runs it from the first start, guarded by the access token the server will not start without;
+anything that faces a network it does not trust must put TLS in front. It has no `Host` allow-list and no rate limit of
 its own; GitLab rate limits authenticated requests per user, and a body is capped at 4 MB. Its health route says who is there and
 nothing else.
 

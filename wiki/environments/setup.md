@@ -37,7 +37,7 @@ To serve HTTP instead, give it the GitLab key and an access token for clients (a
 not start without one):
 
 ```bash
-GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # http://127.0.0.1:3002/mcp
+GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # port 3000, all interfaces
 ```
 
 See [Set up HTTP with two tokens](../guides/setup-http-token.md). The two flags:
