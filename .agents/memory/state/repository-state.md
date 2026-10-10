@@ -22,10 +22,10 @@ is deliberately not stated here: it goes stale at the next module.
 **Token.** `LXAGENTS_MCP_GITLAB_API_KEY`, read when a tool is called. No other variable is read,
 and the only flags are `--help` and `--version`.
 
-**Verified.** The suite replaces `fetch` and never touches the network. **Nothing has been
-exercised against live GitLab:** the environment the work was done in could not reach
-`gitlab.com` with a token, so every request shape is checked against GitLab's documentation
-and against mocks only. A first smoke test is the owner's.
+**Verified.** The suite replaces `fetch` and reaches no host beyond loopback. **Nothing has been
+exercised with a GitLab token:** the environment the work was done in had none. Every request shape
+is checked against GitLab's documentation and against mocks, and a read shape against public data on
+`gitlab.com` where that was possible. A first smoke test is the owner's.
 
 **Not built.** No CI. No HTTP transport (decision `stdio-only-transport.md`). No self-managed GitLab instances.
 Not published to npm (`private: true`). No container image yet.
