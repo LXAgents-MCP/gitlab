@@ -32,7 +32,7 @@ test("the server identifies itself, offers tools only, and tells a client how to
 
   assert.deepEqual(client.getServerVersion(), { name: SERVER_NAME, version: VERSION });
   assert.deepEqual(Object.keys(client.getServerCapabilities()), ["tools"]);
-  assert.match(client.getInstructions(), /LXAGENTS_MCP_GITLAB_API_KEY/);
+  assert.match(client.getInstructions(), /MCP_AUTH_TOKEN/);
   assert.match(client.getInstructions(), /'group\/project'/);
 });
 
@@ -95,7 +95,7 @@ test("a refusal is an error result with the reason, and no structured content", 
 
   assert.equal(result.isError, true);
   assert.equal(result.structuredContent, undefined);
-  assert.match(text(result), /^\*\*Refused\*\*\n\nLXAGENTS_MCP_GITLAB_API_KEY is not set\./);
+  assert.match(text(result), /^\*\*Refused\*\*\n\nMCP_AUTH_TOKEN is not set\./);
 });
 
 test("a call with a missing argument, or to no such tool, is an error result and not a crash", async (t) => {

@@ -29,7 +29,7 @@ const project = (overrides = {}) => ({
 });
 
 test("repo_create: the token variable is the one the owner named", () => {
-  assert.equal(TOKEN_ENV, "LXAGENTS_MCP_GITLAB_API_KEY");
+  assert.equal(TOKEN_ENV, "MCP_AUTH_TOKEN");
   assert.equal(create.name, "repo_create");
   assert.ok(create.description.includes(TOKEN_ENV));
   assert.deepEqual(Object.keys(create.inputSchema), ["name", "group", "description", "visibility", "initialize_with_readme"]);
@@ -118,7 +118,7 @@ test("repo_create: a missing token is a refusal that names the variable, and not
   withoutToken(t);
   const { calls } = mockApi(t, reply(201, project()));
 
-  await assert.rejects(repoCreate({ name: "demo" }), isRefusal(/^LXAGENTS_MCP_GITLAB_API_KEY is not set\./));
+  await assert.rejects(repoCreate({ name: "demo" }), isRefusal(/^MCP_AUTH_TOKEN is not set\./));
   assert.equal(calls.length, 0);
 });
 
@@ -154,7 +154,7 @@ test("repo_create: 401 says the token was rejected, and stops before any project
 
   await assert.rejects(
     repoCreate({ name: "demo", group: "acme" }),
-    isRefusal(/^GitLab rejected the token \(401\)\. Check that LXAGENTS_MCP_GITLAB_API_KEY holds a valid token/),
+    isRefusal(/^GitLab rejected the token \(401\)\. Check that MCP_AUTH_TOKEN holds a valid token/),
   );
   assert.equal(calls.length, 1);
 });

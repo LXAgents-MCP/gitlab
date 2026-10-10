@@ -39,7 +39,7 @@ test("over stdio the server lists exactly its surface and answers a call", async
   // checked: a refusal that names the variable, not a crash and not a hang.
   const result = await client.callTool({ name: "repo_create", arguments: { name: "demo" } });
   assert.equal(result.isError, true);
-  assert.match(result.content[0].text, /LXAGENTS_MCP_GITLAB_API_KEY is not set/);
+  assert.match(result.content[0].text, /MCP_AUTH_TOKEN is not set/);
 });
 
 test("a bad command line exits 2 with the reason on stderr and nothing on stdout", () => {
@@ -57,7 +57,7 @@ test("--help prints the usage to stderr, leaves stdout empty and exits 0", () =>
 
   assert.equal(run.status, 0);
   assert.equal(run.stdout, "");
-  assert.match(run.stderr, /LXAGENTS_MCP_GITLAB_API_KEY/);
+  assert.match(run.stderr, /MCP_AUTH_TOKEN/);
 });
 
 test("--version prints the name and version to stderr, leaves stdout empty and exits 0", () => {

@@ -6,7 +6,7 @@
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { redact } from "./api.js";
-import { TOKEN_ENV } from "./config.js";
+import { tokenToScrub } from "./auth.js";
 import { Refused } from "./errors.js";
 import { log } from "./log.js";
 import { renderPayload } from "./render.js";
@@ -17,9 +17,10 @@ import { SERVER_NAME, VERSION } from "./version.js";
 const INSTRUCTIONS =
   "GitLab.com through its REST API: projects (called repositories here), branches, files, commits, tags, " +
   "releases, issues, merge requests (called pull requests here) and CI/CD pipelines (called workflows " +
-  "here). Every tool needs LXAGENTS_MCP_GITLAB_API_KEY in this server's environment. Name a project by its " +
-  "full path, 'group/project' or 'group/subgroup/project', or by its numeric id. Tools that delete or " +
-  "merge are destructive: confirm with the owner before calling them.";
+  "here). Every tool needs a GitLab token: MCP_AUTH_TOKEN in this server's environment over stdio, or " +
+  "the Authorization: Bearer header over HTTP. Name a project by its full path, 'group/project' or " +
+  "'group/subgroup/project', or by its numeric id. Tools that delete or merge are destructive: confirm " +
+  "with the owner before calling them.";
 
 /**
  * Shape a handler's payload into a `tools/call` result.
@@ -61,7 +62,7 @@ async function callTool(spec, args) {
     }
     // A crash is text nobody wrote for a reader, so it is scrubbed like any other: the token
     // must not reach the log or the client whatever put it into an error message.
-    const secret = process.env[TOKEN_ENV]?.trim() ?? "";
+    const secret = tokenToScrub();
     log(redact(`Handler crashed:\n${error?.stack ?? error}`, secret));
     return toolResult(
       { summary: "Internal Error" },

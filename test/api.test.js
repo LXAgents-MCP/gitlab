@@ -33,23 +33,23 @@ function env(t, name, value) {
 
 /* ------------------------------------------------------------------ the token */
 
-test("requireToken returns the trimmed token", (t) => {
-  env(t, "LXAGENTS_TEST_TOKEN", "  abc123  ");
+test("requireToken returns the trimmed token from MCP_AUTH_TOKEN", (t) => {
+  env(t, "MCP_AUTH_TOKEN", "  abc123  ");
 
-  assert.equal(requireToken("LXAGENTS_TEST_TOKEN"), "abc123");
+  assert.equal(requireToken(), "abc123");
 });
 
 test("requireToken refuses a missing or blank token and names the variable", (t) => {
-  env(t, "LXAGENTS_TEST_TOKEN", undefined);
-  assert.throws(() => requireToken("LXAGENTS_TEST_TOKEN"), isRefusal(/^LXAGENTS_TEST_TOKEN is not set\. .*`env` block/));
+  env(t, "MCP_AUTH_TOKEN", undefined);
+  assert.throws(() => requireToken(), isRefusal(/^MCP_AUTH_TOKEN is not set\. .*`env` block/));
 
-  env(t, "LXAGENTS_TEST_TOKEN", "   ");
-  assert.throws(() => requireToken("LXAGENTS_TEST_TOKEN"), isRefusal(/LXAGENTS_TEST_TOKEN is not set/));
+  env(t, "MCP_AUTH_TOKEN", "   ");
+  assert.throws(() => requireToken(), isRefusal(/MCP_AUTH_TOKEN is not set/));
 });
 
 test("requireToken reads the GitLab variable by default", (t) => {
   withoutToken(t);
-  assert.throws(() => requireToken(), isRefusal(/^LXAGENTS_MCP_GITLAB_API_KEY is not set\./));
+  assert.throws(() => requireToken(), isRefusal(/^MCP_AUTH_TOKEN is not set\./));
 });
 
 test("redact removes every occurrence of a secret and tolerates an empty one", () => {
@@ -247,7 +247,7 @@ test("gitlab with no token refuses before it sends anything", async (t) => {
   withoutToken(t);
   const { calls } = mockApi(t, reply(200, {}));
 
-  await assert.rejects(gitlab("GET", "/user"), isRefusal(/^LXAGENTS_MCP_GITLAB_API_KEY is not set\./));
+  await assert.rejects(gitlab("GET", "/user"), isRefusal(/^MCP_AUTH_TOKEN is not set\./));
   assert.equal(calls.length, 0);
 });
 
@@ -276,7 +276,7 @@ test("401 says the token was rejected", async (t) => {
 
   await assert.rejects(
     gitlab("GET", "/user", { what: "read the user" }),
-    isRefusal(/^GitLab rejected the token \(401\)\. Check that LXAGENTS_MCP_GITLAB_API_KEY holds a valid token/),
+    isRefusal(/^GitLab rejected the token \(401\)\. Check that MCP_AUTH_TOKEN holds a valid token/),
   );
 });
 
