@@ -1,8 +1,8 @@
 /** Create a file as one commit. */
 import { z } from "zod";
-import { filePath, gitlab, parseRepo, refName } from "../api.js";
+import { branchOrDefault, filePath, gitlab, parseRepo, refName } from "../api.js";
 import { rawText, requiredText } from "../args.js";
-import { branchOrDefault, encodeContent, explainCommit, filesPath } from "../contents.js";
+import { encodeContent, explainCommit, filesPath } from "../contents.js";
 import { WRITE, repoArg } from "../schemas.js";
 import { expectBody } from "../shapes.js";
 

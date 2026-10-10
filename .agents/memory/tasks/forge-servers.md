@@ -304,3 +304,30 @@ One change to the client came from the probe: an answer that is a web page — a
 is reported as that in a refusal, and not as 300 characters of HTML.
 
 Tests: 186 passing, none failing.
+
+### Task 9 — feat/tag-release-tools
+
+Landed. `tag_check`, `tag_get`, `tag_get_all`, `tag_delete`, `release_create`, `release_read`,
+`release_list` and `release_delete`, pinned in `test/surface.js` and documented in the surface page and
+the token table.
+
+Checked against GitLab's REST documentation: tags are at `/repository/tags[/:tag_name]` and a tag
+carries `target`, which is the tag object for an annotated tag and the commit for a lightweight one,
+with a null `message` for the latter; creation takes `tag_name`, `ref` and an optional `message`;
+releases are at `/releases[/:tag_name]` and are named by their tag, with `ref` needed only when the
+tag does not exist, `released_at` in the future making an upcoming release, and deletion keeping the
+tag. The pages state no status code for delete, no 404 text, and no "already exists" message; the tools
+accept any 2xx and match the wording. Real answers from `gitlab.com` confirmed the tag and release
+list shapes and paging headers, a release's `assets` (`links` and `sources`) and `_links.self`, and
+that the latest release's permanent address answers 302 to the release itself, which the client
+follows on the same host. A release from `gitlab-runner` passed through the mapper and the schema.
+
+Where GitLab differs. There is no draft, prerelease or generated-notes flag, and a release has no id,
+so `release_create` takes `released_at` instead and `release_delete` takes only a tag; D12. A tag has no
+tagger, only a message and a date, and only when annotated. `tag_check` tells a missing tag from a
+missing project by GitLab's message, since both are 404. `release_create` looks up the default branch
+when no target is given, because the tag may not exist and GitLab wants its starting point named, and
+the lookup moved to `src/api.js` as `branchOrDefault`, shared with the file tools. A release's
+`assets` are its attached links, with their direct addresses, and the source archives GitLab makes.
+
+Tests: 201 passing, none failing.

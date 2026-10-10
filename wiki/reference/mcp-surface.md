@@ -117,6 +117,24 @@ report a commit sha; `commit_list` finds it.
 
 GitLab sends a file's diff without counts, so the line counts are read off its hunks.
 
+### Tags and releases
+
+A tag is created by `release_create`, which makes the tag from a branch or commit when it does not
+exist; there is no separate tag-creating tool. A release is named by its tag: GitLab gives it no id of
+its own. GitLab has no draft or prerelease flag and does not write release notes, so `release_create`
+has none of those; it has `released_at`, and a date in the future makes an upcoming release.
+
+| Tool | Kind | Does |
+|---|---|---|
+| `tag_check` | read | Say whether a tag exists, and if so what it points at and whether it is annotated. A missing tag is an answer, not an error; a missing project is an error. |
+| `tag_get` | read | Read one tag: the commit behind it, whether it is protected and has a release, and, for an annotated tag, its message and date. |
+| `tag_get_all` | read | List tags, most recently updated first, with the commit each points at. Paged; can search by name. |
+| `tag_delete` | destroy | Delete a tag. It does not delete a release. A protected tag cannot be deleted. |
+| `release_create` | write | Create a release for a tag, creating the tag from the default branch or a target if it does not exist. Optional title, notes and release date. |
+| `release_read` | read | Read one release by tag, or the latest through GitLab's permanent address: title, notes, date, asset links and source archives. |
+| `release_list` | read | List releases, newest release date first, upcoming ones included. Paged. |
+| `release_delete` | destroy | Delete a release by tag. Its tag is kept. |
+
 ## What this server does not expose
 
 | Not exposed | Why |

@@ -87,3 +87,46 @@ export function describeProject(fields) {
   const deletion = fields.scheduled_for_deletion ? `, scheduled for deletion on ${fields.scheduled_for_deletion}` : "";
   return `${fields.full_name} is a ${fields.visibility} ${archived}${kind}${branch}${deletion}.`;
 }
+
+/** What every tool that returns a release reports about it. */
+export const releaseShape = {
+  tag: z.string(),
+  name: z.string().optional(),
+  upcoming: z.boolean(),
+  html_url: z.string().optional(),
+  released_at: z.string().optional(),
+  body: z.string().optional(),
+  assets: z.array(z.object({ name: z.string(), url: z.string() })),
+};
+
+/**
+ * @param {any} release A release as GitLab returns it.
+ * @returns {z.infer<z.ZodObject<typeof releaseShape>>} `assets` are the links attached to it and the
+ *   source archives GitLab makes, which have no name of their own.
+ */
+export function releaseFields(release) {
+  const links = Array.isArray(release.assets?.links) ? release.assets.links : [];
+  const sources = Array.isArray(release.assets?.sources) ? release.assets.sources : [];
+  return {
+    tag: release.tag_name,
+    ...(release.name ? { name: release.name } : {}),
+    upcoming: Boolean(release.upcoming_release),
+    ...(release._links?.self ? { html_url: release._links.self } : {}),
+    ...(release.released_at ? { released_at: release.released_at } : {}),
+    ...(release.description ? { body: release.description } : {}),
+    assets: [
+      ...links.map((link) => ({ name: link.name, url: link.direct_asset_url ?? link.url })),
+      ...sources.map((source) => ({ name: `source.${source.format}`, url: source.url })),
+    ],
+  };
+}
+
+/**
+ * One line about a release, for a summary.
+ *
+ * @param {ReturnType<typeof releaseFields>} fields
+ * @returns {string}
+ */
+export function describeRelease(fields) {
+  return `${fields.upcoming ? "upcoming release" : "release"} ${fields.name ?? fields.tag} (tag ${fields.tag})`;
+}

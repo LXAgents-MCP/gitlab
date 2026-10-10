@@ -1,8 +1,8 @@
 /** Delete a file as one commit. */
 import { z } from "zod";
-import { filePath, gitlab, parseRepo, refName } from "../api.js";
+import { branchOrDefault, filePath, gitlab, parseRepo, refName } from "../api.js";
 import { optionalText, requiredText } from "../args.js";
-import { branchOrDefault, explainCommit, filesPath } from "../contents.js";
+import { explainCommit, filesPath } from "../contents.js";
 import { DESTROY, repoArg } from "../schemas.js";
 
 export const TOOL = {
