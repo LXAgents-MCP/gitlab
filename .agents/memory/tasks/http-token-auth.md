@@ -28,13 +28,13 @@ version bump to `0.2.0` was approved with the plan.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/http-token-auth-plan` | |
-| 2 | HTTP transport with a bearer token | `feat/http-token-auth` | |
-| 3 | Setup guide and corrected documentation | `docs/http-token-setup` | |
-| 4 | Release | `release/0.2.0` | |
+| 1 | Task record | `chore/http-token-auth-plan` | [#16](https://github.com/LXAgents-MCP/gitlab/pull/16) |
+| 2 | HTTP transport with a bearer token | `feat/http-token-auth` | [#17](https://github.com/LXAgents-MCP/gitlab/pull/17) |
+| 3 | Setup guide and corrected documentation | `docs/http-token-setup` | [#18](https://github.com/LXAgents-MCP/gitlab/pull/18) |
+| 4 | Release | `release/0.2.0` | [#19](https://github.com/LXAgents-MCP/gitlab/pull/19) |
 
-Branches stack: task 1 from `master`, task `k` from task `k-1`. The `PR` column is filled by a closing
-commit once the pull requests exist.
+Branches stacked: task 1 from `master`, task `k` from task `k-1`. A rebase merge rewrites commits, so
+each branch was replayed onto the new `master` before its pull request was merged, in order, by rebase.
 
 ## Decisions the owner approved with the plan
 
@@ -137,3 +137,14 @@ Checked from a clean export of the index, with `npm ci`: 292 tests pass and none
 
 The `PR` column of the table is filled by a closing commit once the pull requests exist, so no earlier branch needs
 a rebase.
+
+## Closing
+
+The four pull requests were merged in order by rebase. After the last, `master` was identical in tree to the
+original `release/0.2.0` tip, and 292 tests passed from a clean install with `--version` printing `0.2.0`.
+The merged branches were not deleted, because the git proxy refuses it; the owner deletes them.
+
+**Superseded in part, the same day.** The owner then asked for two separate tokens, one for the client to
+reach this server and one for this server to reach GitLab, with `GITLAB_API_KEY` as the second. That reverses
+D1 and D3 (the bearer token as the GitLab token; HTTP never reading the environment) and narrows D4 and D10.
+The record is `two-token-auth.md`, released as `0.3.0`; this record is kept as written.
