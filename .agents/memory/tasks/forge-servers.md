@@ -5,7 +5,7 @@ description: Building this GitLab MCP server — moving create_gitlab_repo out o
 
 # Forge servers — GitLab
 
-## 2026-10-10 — in progress
+## 2026-10-10 — complete
 
 **Goal.** An LLM can work with GitLab — projects, branches, files, commits, tags, releases,
 issues, merge requests and CI/CD pipelines — through a dedicated MCP server, and the host-shell
@@ -28,7 +28,7 @@ carries none of it. Stdio only, Node 20 or newer, no build step; the runtime dep
 MCP SDK and zod. GitLab means gitlab.com. The moved code comes from `cli` commits `827b25a`,
 `9babff7` and `5f9b64f`; its history is not transplanted.
 
-**Status:** in progress.
+**Status:** complete. Released as `0.1.0`; the pull requests, merged in order by rebase, are in the table.
 
 ## Tasks
 
@@ -49,8 +49,8 @@ MCP SDK and zod. GitLab means gitlab.com. The moved code comes from `cli` commit
 | 13 | Container image | `build/docker` | |
 | 14 | Release | `release/0.1.0` | |
 
-Branches stack: task 1 from `master`, task `k` from task `k-1`. The `PR` column is filled by
-task 14, once the pull requests exist.
+Branches stack: task 1 from `master`, task `k` from task `k-1`. The `PR` column is filled by a
+closing commit once the pull requests exist.
 
 ## Decisions the owner approved with the plan
 
@@ -443,3 +443,32 @@ The docs that state the process contract, the repository map, the security proce
 deployment rule now cover the image, and the state file no longer says there is none.
 
 Tests: 272 passing, none failing.
+
+### Task 14 — release/0.1.0
+
+Landed. The version is `0.1.0` in `package.json` and the lockfile — the owner approved it with the plan
+(D3) — and no git tag was made and nothing was published.
+
+The release log is `wiki/logs/0/1/0/CHANGELOG.md`, in the house shape: a lead, the **Clients must**
+steps, then Added, Changed and Security. It says first that nothing has run against live GitLab. Its
+index, `.agents/index/logs-index.md`, is new and routed from the root index; the state file is
+rewritten to describe a released repository. The one change from `cli` that a reader can see in the
+code, the `Authorization: Bearer` header (D13), is in its Changed section.
+
+The live-check list is not in the release log but in `wiki/guides/smoke-test.md`: a walk through every
+tool on a throwaway project, then each behaviour the documentation leaves open with what to look for.
+A released log may not be edited, and the owner will work through this list and learn which items hold;
+a page can follow what they find, and the next release's log carries the corrections. A job's log is
+the one read nobody has seen, because GitLab answers it to a token only.
+
+Checks run on the release branch from a clean install (`rm -rf node_modules && npm ci`): 272 tests pass
+and none fail; the production tree is the MCP SDK and zod; nothing under `src/` imports `node:http`,
+`node:net`, `node:cluster` or `express`; the `Dockerfile` has no `ENV`, `EXPOSE` or `ENTRYPOINT` line;
+`node src/index.js --version` prints `lxagents-gitlab 0.1.0`.
+
+Because the redirect test uses the real `fetch` against two servers on loopback, the sentences that said
+the tests touch no network now say they reach no host beyond this machine: the repository rules and
+this record's objective.
+
+Left for the owner: the smoke test, building the image once, and whether and where to publish either.
+The `PR` column of the table above is filled by a closing commit once the pull requests exist.

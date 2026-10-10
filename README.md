@@ -88,6 +88,7 @@ from the tool surface until the session restarts. See
 - [Docker](wiki/environments/docker.md) — the stdio image, which has not yet been built.
 - [Environment](wiki/environments/env.md) — the one variable, and what the token needs.
 - [Connect a client](wiki/guides/connect-a-client.md) — Claude Desktop and Claude Code.
+- [Smoke test](wiki/guides/smoke-test.md) — the first live run, which has not been done yet.
 - [Security model](wiki/security/security-model.md) — the token, the surfaces that touch it, and
   what is deliberately not protected.
 
