@@ -51,3 +51,6 @@ export const MAX_DIFF_CHARS = 20_000;
 /** Changed files and commits listed in a result. The totals are always reported. */
 export const MAX_FILES_SHOWN = 100;
 export const MAX_COMMITS_SHOWN = 50;
+
+/** Comments returned with an issue or a merge request when they are asked for. The count is always reported. */
+export const MAX_COMMENTS_SHOWN = 30;
