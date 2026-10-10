@@ -20,12 +20,14 @@ COPY src ./src
 # Not root. The process speaks to GitLab and reads one file of its own; it needs nothing more.
 USER node
 
-# No EXPOSE, on purpose: this server has no listener and none should be added. A client reaches
+# No EXPOSE, on purpose: the default is stdio, which has no port, and HTTP is opt-in with
+# `-e MCP_TRANSPORT=http`, published by `-p` at run time. A stdio client reaches
 # it through the container's stdin and stdout, so it runs with `docker run -i`. Without `-i`
 # Docker attaches no stdin, the server sees it closed, and exits at once.
 #
 # The token is not here either. A value baked into an ENV line ships to everyone who pulls the
-# image; it is passed at run time, `-e LXAGENTS_MCP_GITLAB_API_KEY`.
+# image; it is passed at run time, `-e MCP_AUTH_TOKEN` for stdio, and not at all for HTTP, where
+# each client sends its own.
 #
 # The whole default is CMD and this file sets no ENTRYPOINT, so the base image's own
 # `docker-entrypoint.sh` stays in place and a command after the image name runs as written. An

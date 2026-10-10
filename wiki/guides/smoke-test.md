@@ -103,7 +103,7 @@ differently, the tool named is the one to fix.
 | `workflow_run` | `POST /pipeline` with `ref` and `variables: [{key, value}]` in a JSON body answers 201; the 400 text for a missing ref, for a configuration with no jobs and for variables a role may not set. |
 | `workflow_status` | A private project's pipeline reads the same as a public one's, and `include_retried` is off by default. |
 | `workflow_logs` | `GET /jobs/:id/trace` answers `text/plain` with a token (an anonymous call is a 401, so this has never been seen); an erased or unstarted job answers 404 or 410; `section_start` markers are removed. |
-| the image | Build it, run `node src/index.js --version` in it, connect a client with `docker run --rm -i -e LXAGENTS_MCP_GITLAB_API_KEY`, and check that `docker stop` returns at once. See [Docker](../environments/docker.md). |
+| the image | Build it, run `node src/index.js --version` in it, connect a client with `docker run --rm -i -e MCP_AUTH_TOKEN`, and check that `docker stop` returns at once. See [Docker](../environments/docker.md). |
 
 ## Reporting what differs
 

@@ -40,22 +40,25 @@ in front of you *before* the reasoning that would violate it, not after.
 
 | About to touch… | Verify before committing |
 |---|---|
-| `requireToken`, `gitlab()`, `callApi` or `failure()` in `src/api.js` | The token still goes only into the `Authorization` header built in `gitlab()`. Every message built from GitLab's text or a network error still passes `redact`. The tests that make GitLab, the network and a handler echo the token still pass — and fail when you remove the redaction, which is worth trying once. The token still travels as `Authorization: Bearer`, never as GitLab's own `PRIVATE-TOKEN` header, which the runtime would forward to another host on a redirect; redirects are still followed by the runtime and not by hand (nothing sets `redirect` to `manual`), and the redirect test still shows a second host receiving no token. |
-| `callTool` in `src/server.js` | The crash path still redacts both the log line and the returned text. |
+| `src/auth.js`, `requireToken`, `gitlab()`, `callApi` or `failure()` in `src/api.js` | The token still goes only into the `Authorization` header built in `gitlab()`. Every message built from GitLab's text or a network error still passes `redact`. The tests that make GitLab, the network and a handler echo the token still pass — and fail when you remove the redaction, which is worth trying once. The token still travels as `Authorization: Bearer`, never as GitLab's own `PRIVATE-TOKEN` header, which the runtime would forward to another host on a redirect; redirects are still followed by the runtime and not by hand (nothing sets `redirect` to `manual`), and the redirect test still shows a second host receiving no token. |
+| `callTool` in `src/server.js` | The crash path still redacts both the log line and the returned text, with the active token. |
+| `src/http.js` or `src/auth.js` | A request with no token is still a 401 before any body is read or path matched; a process that serves HTTP still never reads `MCP_AUTH_TOKEN` (`enterHttpMode`); the token still lives in the per-request store and is stored nowhere; `tools/call` with a token and the environment set still reaches GitLab with the request's token (`test/http.test.js`); the default bind is still `127.0.0.1`. |
 | `parseRepo`, `refName`, `refPath`, `filePath`, or how any tool builds a path | Every path segment still comes from these; empty, `.` and `..` segments are still refused; `gitlab()` still refuses a path with `?` or `#`. |
 | A tool's `inputSchema` | No key names a credential (the registry test fails it), and nothing lets a caller choose the host. |
 | `API_BASE` in `src/config.js`, or any new constant that looks like a host | It is still a constant. |
 | A destructive tool, or any tool's annotations | Its kind in `test/surface.js` is `destroy`, its description tells the client to confirm with the owner, and `repo_delete` still refuses without a matching `confirm`. |
 | Dependencies in `package.json` | Still the MCP SDK and zod only (`npm ls --omit=dev --depth=0`). A third needs a decision record first. |
-| Anything under `src/` that could open a socket or serve | ``grep -rn -e "node:http" -e "node:net" -e "node:cluster" -e express src`` still prints nothing. |
+| Anything under `src/` that could open a socket or serve | ``grep -rln -e "node:http" -e "node:net" -e "node:cluster" -e express src`` still prints only `src/http.js`. |
 | The `Dockerfile` or `.dockerignore` | `--ignore-scripts` survives, the file still ends as `USER node`, and there is still no `ENV`, `EXPOSE` or `ENTRYPOINT` line (``grep -n -e '^ENV' -e '^EXPOSE' -e '^ENTRYPOINT' Dockerfile`` prints nothing). `.env*` and `.mcp.json` stay in `.dockerignore`. |
 
 ## C. What to escalate rather than decide
 
 Ask the user; do not resolve these on your own initiative.
 
-* **Any transport other than stdio, any listener, any route.** See
-  [`../../memory/decisions/stdio-only-transport.md`](../../memory/decisions/stdio-only-transport.md).
+* **Any transport other than stdio and the HTTP one, any listener outside `src/http.js`, any route
+  beyond `POST /mcp` and `GET /healthz`, any fallback to the environment's token over HTTP, any
+  storage of tokens between requests.** See
+  [`../../memory/decisions/http-token-transport.md`](../../memory/decisions/http-token-transport.md).
 * **A second secret variable, a base-URL setting, or any real token in a file, a fixture or a
   commit.** There are none; adding one is a decision, not an edit.
 * **Loosening a guard to make something work** — accepting a raw URL from a caller, bypassing
@@ -76,5 +79,10 @@ Named because each one has cost, or would cost, a round of investigation:
   session, not a broken or hijacked server.
 * **stdio having no authentication.** Deliberate. Asking for a token on stdio is a design change to
   argue, not a gap.
+* **`GET /healthz` answering without a token.** The one open route; it says only that a server is
+  there.
+* **`MCP_AUTH_TOKEN` having the same name as `shared-instruction`'s variable.** By the owner's
+  instruction, and recorded in the decision; the hazard is a value exported in a shell, which the
+  setup guide says not to do.
 * **A 404 for a project that exists.** GitLab answers 404 for a private project the token
   cannot see.

@@ -29,7 +29,7 @@ the same commit.
 | File | Purpose |
 |---|---|
 | [`../../wiki/environments/setup.md`](../../wiki/environments/setup.md) | Installing, running, inspecting and testing it. |
-| [`../../wiki/environments/env.md`](../../wiki/environments/env.md) | The one variable, and what the token needs. |
+| [`../../wiki/environments/env.md`](../../wiki/environments/env.md) | The variables, and what the token needs. |
 | [`../../wiki/environments/docker.md`](../../wiki/environments/docker.md) | Building and running the stdio image, registering it with a client, and what it has not been checked for. |
 
 ## guides/
@@ -37,6 +37,7 @@ the same commit.
 | File | Purpose |
 |---|---|
 | [`../../wiki/guides/connect-a-client.md`](../../wiki/guides/connect-a-client.md) | Registering the server with Claude Desktop or Claude Code, with a token. |
+| [`../../wiki/guides/setup-http-token.md`](../../wiki/guides/setup-http-token.md) | Running the server over HTTP and connecting a client with a bearer token: start, check, register, TLS, container, troubleshooting. |
 | [`../../wiki/guides/smoke-test.md`](../../wiki/guides/smoke-test.md) | The first live run: a walk through every tool on a throwaway project, and what the documentation leaves open. |
 
 ## security/

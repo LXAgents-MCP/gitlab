@@ -1,14 +1,35 @@
 # Environment
 
-**One variable, and it is a secret.**
+**Four variables, and exactly one of them is a secret.** One carries the GitLab token over stdio; three
+choose and place the HTTP transport. A client that spawns the server over stdio sets only the first.
 
 | Variable | Default | What it does |
 |---|---|---|
-| `LXAGENTS_MCP_GITLAB_API_KEY` | none | The GitLab token every tool uses. Read when a tool is called, trimmed, and never taken as an argument. |
+| `MCP_AUTH_TOKEN` | none | The GitLab token every tool uses **over stdio**. Read when a tool is called, trimmed, and never taken as an argument. **HTTP never reads it.** |
+| `MCP_TRANSPORT` | `stdio` | Which transport `src/index.js` speaks: `stdio`, or `http` (`streamable-http` is accepted too). Anything else exits 2. |
+| `PORT` | `3002` | The port the HTTP transport listens on. Not a port exits 2. |
+| `HOST` | `127.0.0.1` | The interface it listens on. Loopback by default, because what crosses the wire is a GitLab token. |
 
-No other variable is read, there is no configuration file, and the only flags are `--help` and
-`--version`. A second variable that takes a secret is a decision for the owner, not an
-implementation detail: it widens what a leaked environment gives away.
+There is no configuration file, and the only flags are `--help` and `--version`. A second variable that
+takes a secret is a decision for the owner, not an implementation detail: it widens what a leaked
+environment gives away. `LXAGENTS_MCP_GITLAB_API_KEY` was the variable before `0.2.0` and is gone.
+
+## Where the token comes from
+
+| Transport | Source | Set in |
+|---|---|---|
+| stdio | `MCP_AUTH_TOKEN` | The `env` block of this server's entry in the client's configuration |
+| HTTP | `Authorization: Bearer <token>` on every request | The client's configuration of its HTTP entry, under `headers` |
+
+Over HTTP the bearer token **is** the GitLab token. The server stores no secret of its own, uses the
+token for the GitLab calls of that one request, and does not read `MCP_AUTH_TOKEN` at all: a request
+without a token is refused, never run with the environment's. [Set up HTTP with a token](../guides/setup-http-token.md)
+walks through it.
+
+**`MCP_AUTH_TOKEN` is also the name `shared-instruction` uses, for a different secret.** The two servers
+are separate processes, so there is no clash as long as each gets its own value: set it in a server's
+own `env` block, and do not export it in a shell, where a stdio process would inherit a value meant for
+the other and send it to GitLab.
 
 ## Why it is read per call
 
@@ -19,7 +40,8 @@ hides the cause.
 
 ## Where to put it
 
-In the `env` block of this server's entry in the client's configuration, then restart the client:
+Over stdio, in the `env` block of this server's entry in the client's configuration, then restart the
+client:
 
 ```json
 {
@@ -27,18 +49,21 @@ In the `env` block of this server's entry in the client's configuration, then re
     "lxagents-gitlab": {
       "command": "node",
       "args": ["/absolute/path/to/gitlab/src/index.js"],
-      "env": { "LXAGENTS_MCP_GITLAB_API_KEY": "<your GitLab token>" }
+      "env": { "MCP_AUTH_TOKEN": "<your GitLab token>" }
     }
   }
 }
 ```
 
-Under Docker the `env` block reaches the `docker` process and `-e LXAGENTS_MCP_GITLAB_API_KEY` passes
-it into the container; see [Docker](docker.md).
+Over HTTP, in the `headers` of the client's entry; see [Set up HTTP with a token](../guides/setup-http-token.md).
+
+Under Docker the `env` block reaches the `docker` process and `-e MCP_AUTH_TOKEN` passes it into the
+container for stdio; see [Docker](docker.md).
 
 Keep it out of the repository, the command line and any file that is committed. It is never logged,
 never echoed in an error and never put in a result; the test suite asserts that neither a real-looking
-token nor one GitLab echoes back reaches the output. `.env` and `.env.*` are gitignored.
+token nor one GitLab echoes back reaches the output, over stdio and over HTTP. `.env` and `.env.*` are
+gitignored.
 
 ## What the token needs
 
@@ -98,3 +123,4 @@ page sizes.
 
 * [Security model](../security/security-model.md) — where the token can and cannot go.
 * [Connect a client](../guides/connect-a-client.md)
+* [Set up HTTP with a token](../guides/setup-http-token.md)

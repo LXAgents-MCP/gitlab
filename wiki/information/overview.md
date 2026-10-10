@@ -2,7 +2,8 @@
 
 `LXAgents-MCP/gitlab` is an MCP server, `lxagents-gitlab`, that lets an LLM work with GitLab.com
 through its REST API: read and change projects, branches, files, commits, tags, releases, issues,
-merge requests and CI/CD pipelines. It speaks stdio, and the client starts it as a subprocess.
+merge requests and CI/CD pipelines. It speaks stdio, where the client starts it as a
+subprocess, or HTTP, where each request carries the GitLab token as a bearer token.
 
 ## Why it is its own server
 
@@ -51,20 +52,23 @@ operation an agent needs on a project, each with its own tool prefix:
 Which of these exist in a given version is listed, tool by tool, in
 [MCP surface](../reference/mcp-surface.md).
 
-## Why the token is in the environment
+## Where the token comes from
 
-A tool that took the token as an argument would put it in a prompt and a transcript. This server
-reads `LXAGENTS_MCP_GITLAB_API_KEY` from its own environment, set by the client's configuration,
-and reads it when a tool is called rather than at startup, so a server without one still starts
-and says what is missing when asked. See [Environment](../environments/env.md).
+A tool that took the token as an argument would put it in a prompt and a transcript. So over stdio this
+server reads `MCP_AUTH_TOKEN` from its own environment, set by the client's configuration, when a tool is
+called rather than at startup, so a server without one still starts and says what is missing when asked.
+Over HTTP the client sends the token as `Authorization: Bearer <token>` with every request and the
+server keeps none. See [Environment](../environments/env.md) and
+[Set up HTTP with a token](../guides/setup-http-token.md).
 
 ## What it is not
 
 * **Not a git client.** It does not clone or push. File tools commit through the API.
 * **Not self-managed GitLab.** The API base is `https://gitlab.com/api/v4`, a constant; supporting
   another host would need a second setting, which is a decision for the owner.
-* **Not a service.** There is no HTTP transport. See [Security model](../security/security-model.md)
-  for why.
+* **Not a hosted service.** The HTTP transport is yours to run, it binds loopback unless told
+  otherwise, and it needs TLS in front before it faces a network. See
+  [Security model](../security/security-model.md).
 
 ## Related pages
 

@@ -5,17 +5,19 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 
 - **Server id:** `lxagents-gitlab`
 - **Package:** `@lxagents-mcp/gitlab` — private; not published to npm.
-- **Transport:** stdio only. The client starts the server as a subprocess and talks to it through a
-  pipe. There is no network listener and none should be added: the token this server holds can
-  change and delete projects.
+- **Transport:** stdio by default: the client starts the server as a subprocess and talks to it through
+  a pipe. HTTP with `MCP_TRANSPORT=http`, where every request carries the GitLab token as
+  `Authorization: Bearer <token>`; it listens on loopback unless told otherwise, and needs TLS in
+  front before it faces a network.
 - **Surface:** one tool per module in `src/tools/`, named by what it acts on and what it does
   (`repo_create`, `branch_list`, `pr_merge`, …). Every tool that acts on a repository takes one
   `repo` argument: the project's full path, such as `group/project`, or its numeric id. The names
   are the GitHub server's, with GitLab's words underneath: a repository is a project, a pull
   request (`pr_`) is a merge request, and a workflow (`workflow_`) is a pipeline. The list is in
   [MCP surface](wiki/reference/mcp-surface.md).
-- **Token:** `LXAGENTS_MCP_GITLAB_API_KEY`, in the `env` block of the client's configuration for
-  this server. It is read when a tool is called and is never an argument.
+- **Token:** `MCP_AUTH_TOKEN` over stdio, in the `env` block of the client's configuration for this
+  server; the bearer token of each request over HTTP, which the server keeps only for that request.
+  It is read when a tool is called and is never an argument.
 - **Requirements:** Node >= 20. ESM, no build step.
 
 ## Key features
@@ -25,7 +27,8 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 - **One place builds URLs.** A project, a branch or tag name and a file path are validated and
   percent-encoded in `src/api.js`, so an argument cannot steer a call at another endpoint.
 - **The token never leaves its header.** It is not an argument, it is read per call, and it is
-  removed from every message the server can produce — refusals and crashes alike.
+  removed from every message the server can produce — refusals and crashes alike. Over HTTP a request
+  without a token is refused, and overlapping requests each reach GitLab with their own.
 - **Honest annotations.** Every tool says whether it reads, creates, changes or destroys, and a test
   holds it to that, so a client can ask a person first before anything destructive. `repo_delete`
   also refuses unless it is told the project's full path.
@@ -46,13 +49,20 @@ npm test
 Serve it to an MCP client over stdio, with the token in the environment:
 
 ```bash
-LXAGENTS_MCP_GITLAB_API_KEY=<token> npm start
+MCP_AUTH_TOKEN=<token> npm start
+```
+
+Or over HTTP, where each client sends its own token (see
+[Set up HTTP with a token](wiki/guides/setup-http-token.md)):
+
+```bash
+npm run start:http        # http://127.0.0.1:3002/mcp
 ```
 
 Or drive it by hand with the MCP Inspector:
 
 ```bash
-LXAGENTS_MCP_GITLAB_API_KEY=<token> npm run inspect
+MCP_AUTH_TOKEN=<token> npm run inspect
 ```
 
 Full instructions are in [`wiki/environments/setup.md`](wiki/environments/setup.md).
@@ -68,7 +78,7 @@ client**. For Claude Desktop, in `claude_desktop_config.json`:
     "lxagents-gitlab": {
       "command": "node",
       "args": ["/absolute/path/to/gitlab/src/index.js"],
-      "env": { "LXAGENTS_MCP_GITLAB_API_KEY": "<your GitLab token>" }
+      "env": { "MCP_AUTH_TOKEN": "<your GitLab token>" }
     }
   }
 }
@@ -85,9 +95,10 @@ from the tool surface until the session restarts. See
 - [Architecture](wiki/information/architecture.md) — how a call becomes a request and a result.
 - [MCP surface](wiki/reference/mcp-surface.md) — every tool, and what the server does not expose.
 - [Local setup](wiki/environments/setup.md) — running and testing it.
-- [Docker](wiki/environments/docker.md) — the stdio image, which has not yet been built.
-- [Environment](wiki/environments/env.md) — the one variable, and what the token needs.
-- [Connect a client](wiki/guides/connect-a-client.md) — Claude Desktop and Claude Code.
+- [Docker](wiki/environments/docker.md) — the image, which has not yet been built.
+- [Environment](wiki/environments/env.md) — the variables, and what the token needs.
+- [Connect a client](wiki/guides/connect-a-client.md) — Claude Desktop and Claude Code over stdio.
+- [Set up HTTP with a token](wiki/guides/setup-http-token.md) — running it as a service, and connecting a client with a bearer token.
 - [Smoke test](wiki/guides/smoke-test.md) — the first live run, which has not been done yet.
 - [Security model](wiki/security/security-model.md) — the token, the surfaces that touch it, and
   what is deliberately not protected.
