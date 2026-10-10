@@ -41,6 +41,13 @@ export const SURFACE = {
   release_read: "read",
   release_list: "read",
   release_delete: "destroy",
+  issue_open: "write",
+  issue_read: "read",
+  issue_comment: "write",
+  issue_close: "update",
+  issue_assign: "update",
+  issue_label: "update",
+  issue_lock: "update",
 };
 
 /** The hints each kind must carry. `openWorldHint` is true for all: every tool talks to GitLab. */

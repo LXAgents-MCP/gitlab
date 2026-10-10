@@ -9,8 +9,11 @@
 /** The environment variable that holds the token. Never an argument, so it never appears in a prompt. */
 export const TOKEN_ENV = "LXAGENTS_MCP_GITLAB_API_KEY";
 
-/** The REST API. gitlab.com only; self-managed instances are not supported. */
-export const API_BASE = "https://gitlab.com/api/v4";
+/** The site, for a link to a page the API does not hand back. gitlab.com only; self-managed instances are not supported. */
+export const WEB_BASE = "https://gitlab.com";
+
+/** The REST API. */
+export const API_BASE = `${WEB_BASE}/api/v4`;
 
 /** Milliseconds. How long a call to GitLab may take before the tool gives up on it. */
 export const API_TIMEOUT_MS = 30_000;

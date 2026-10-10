@@ -22,13 +22,14 @@ of the shared instruction set and the **producer** of the tool surface in `src/t
 | `src/index.js` | The one entry point: `--help`, `--version`, the stdio transport, `SIGINT`. | The process contract. |
 | `src/server.js` | Builds one `McpServer`, registers every tool, shapes results, and carries the `instructions` text every client reads at `initialize`. | The protocol surface. |
 | `src/api.js` | The GitLab client: the token, addressing (`parseRepo`, `refName`, `refPath`, `filePath`), `callApi`, `gitlab()`, the wording of every failure, paging. | How a call is addressed, made, or fails. |
-| `src/args.js` | Argument checks: text, flags, whole numbers, choices, lists. | A new kind of argument. |
+| `src/args.js` | Argument checks: text, flags, whole numbers, choices, lists, label lists. | A new kind of argument. |
+| `src/users.js` | Username to user id, refusing an unknown name before any write. | A tool that names a person. |
 | `src/render.js` | The one renderer from a payload to the text the model reads. | How a result reads. |
 | `src/schemas.js` | Shared zod fragments (`repoArg`, paging) and the four annotation sets. | A fragment or hint several tools share. |
 | `src/text.js` | `short`, `firstLine`, `head`, `tail`. | Cutting or shortening text. |
-| `src/shapes.js` | GitLab's objects as the tools report them — a project so far — each a schema and the function that fills it, and `expectBody`, which checks an answer is the object expected. | A second tool returns an object another already does. |
+| `src/shapes.js` | GitLab's objects as the tools report them — a project, a release or an issue — each a schema and the function that fills it, and `expectBody`, which checks an answer is the object expected. | A second tool returns an object another already does. |
 | `src/merge-status.js`, `src/wait.js` | What GitLab says about whether a merge request can be merged; the one `sleep`, so a test can replace the clock. | Merging, or waiting on GitLab. |
-| `src/config.js` | Every constant: the variable name, API base and version pin, timeout, limits. | Changing a limit. |
+| `src/config.js` | Every constant: the variable name, site and API base and version pin, timeout, limits. | Changing a limit. |
 | `src/errors.js`, `src/log.js`, `src/version.js` | `Refused`; the stderr logger; `ROOT`, `VERSION` and `SERVER_NAME`. | Rarely. |
 | `src/tools/` | `index.js`, the registry, and one module per tool. | Adding or changing a tool — **a release**. |
 | `test/` | One file per subject, plus `helpers.js` and `surface.js`, which every other file imports. | Always. Every behavioural change ships with a test. |

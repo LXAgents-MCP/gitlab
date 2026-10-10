@@ -331,3 +331,31 @@ the lookup moved to `src/api.js` as `branchOrDefault`, shared with the file tool
 `assets` are its attached links, with their direct addresses, and the source archives GitLab makes.
 
 Tests: 201 passing, none failing.
+
+### Task 10 — feat/issue-tools
+
+Landed. `issue_open`, `issue_read`, `issue_comment`, `issue_close`, `issue_assign`, `issue_label` and
+`issue_lock`, pinned in `test/surface.js` and documented in the surface page and the token table.
+
+Checked against GitLab's REST documentation for issues and notes: an issue is at
+`/projects/:id/issues/:issue_iid` and the number every tool takes is the `iid`, which GitLab numbers
+apart from merge requests; creation and update take `description`, `labels`, `assignee_ids` and
+`milestone_id`, update takes `state_event` (`close`), `add_labels`, `remove_labels` and
+`discussion_locked`; comments are notes at `.../notes` and the list takes `activity_filter`
+(`only_comments`), `sort` and `order_by`. `issue_read` also drops a note marked `system`, in case a
+version of GitLab ignores the filter.
+
+Where GitLab differs. Assignment is by user id and the tools take a username, so `src/users.js` looks
+each one up with `GET /users?username=` and refuses an unknown name before any write; the same module
+is for the merge request tools. Labels travel as one comma-separated string, so `labelList` in
+`src/args.js` refuses a name with a comma. GitLab creates a label that does not exist, so a typo makes
+a new label instead of failing; the description says so. A free plan keeps one assignee, so `issue_open`
+and `issue_assign` compare what was applied with what was asked and say which people were not applied.
+`issue_assign` reads the current assignees for `add` and `remove`, since changing one person means
+sending the whole list, and skips the write when nothing would change; `[0]` is sent to clear them.
+There is no close reason and no lock reason (D12), `milestone` is the milestone id and not its title,
+and a comment's answer carries no address, so `issue_comment` builds one from the project path
+(`WEB_BASE` in `src/config.js`) and leaves it out for a project given by id. `state` is GitLab's
+`opened` and `closed`.
+
+Tests: 230 passing, none failing.

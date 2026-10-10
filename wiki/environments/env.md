@@ -68,6 +68,9 @@ only what the tools you will use need.
 | `commit_read`, `commit_list`, `commit_compare` | `read_api` | Any role that can see the project |
 | `file_create`, `file_update`, `file_delete` | `api` | Developer or more, and a role the branch's protection allows for a protected branch |
 | `branch_merge` | `api` | Developer or more to open the request, and a role allowed to merge into the base, which is Maintainer for a protected branch |
+| `issue_read` | `read_api` | Any role that can see the project |
+| `issue_open`, `issue_comment` | `api` | Guest or more; on a locked issue only a member can comment |
+| `issue_close`, `issue_assign`, `issue_label`, `issue_lock` | `api` | Reporter or more |
 
 The requirements are those GitLab documents for each endpoint. When a token is short of one, GitLab
 refuses and this server repeats what it said, so the refusal is the authority if it disagrees with
