@@ -70,6 +70,11 @@ never appears in one.
 | Tool | Kind | Does |
 |---|---|---|
 | `repo_create` | write | Create a project, in the token owner's namespace or in a group. Private unless told otherwise, with an initial README. Moved from `cli`, where it was `create_gitlab_repo`. |
+| `repo_read` | read | Read one project: description, visibility, default branch, star, fork and open issue counts, license, topics, last activity and parent, and the date it is scheduled for deletion, if it is. |
+| `repo_update` | update | Change settings: name, URL path, description, visibility, default branch, archive or unarchive, the issue tracker switch. Only what is passed changes; at least one is required. Archiving has its own endpoint in GitLab, so one call may make up to two requests. |
+| `repo_delete` | destroy | Delete a project. `confirm` must repeat its full path, and anything else deletes nothing. GitLab may only mark the project for deletion and remove it after a retention period, so "accepted" is not "gone": it can usually be restored until then. |
+| `repo_fork` | write | Fork into the token owner's namespace or a group. GitLab copies it in the background, so the fork may take a moment to be readable; its `import_status` says when it is done. |
+| `repo_search` | read | Search projects by words in their name, path or description; every word must match. Paged, with GitLab's total when it gives one. It sees the projects the token's user can see. |
 
 ## What this server does not expose
 

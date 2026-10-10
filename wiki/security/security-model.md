@@ -27,7 +27,9 @@ behaving:
   what the tools in use need, on only the projects involved.
 * **Annotations** say what kind of change each tool makes, and deletes and merges are marked
   destructive, so a client can ask a person first.
-* **The server cannot make a client ask.** Everything past those two is the person at the client.
+* **`repo_delete` refuses** unless it is told the project's full path, which makes a
+  copy-and-paste accident or a vague instruction fail.
+* **The server cannot make a client ask.** Everything past those three is the person at the client.
 
 ## Surfaces
 
@@ -49,6 +51,12 @@ behaving:
 | `src/api.js` `gitlab()` | The path handed to it | Must start with `/` and carry no `?` or `#`; a violation is a programming error, not a refusal |
 | `src/config.js` `API_BASE` | The host | A constant: no argument or variable can change it |
 | `src/api.js` `callApi` | The address GitLab redirects a read to, when a project has moved | The destination comes from GitLab's answer and never from an argument; the token travels in `Authorization`, which the runtime drops when the host changes (GitLab's own `PRIVATE-TOKEN` header it would forward), and a test shows a second host receiving no token, over real sockets |
+
+### What a call can change
+
+| File | Exposure | Guard |
+|---|---|---|
+| `src/tools/repo-delete.js` | The most destructive tool: it removes a project with its issues and merge requests, or marks it for removal after a retention period | `confirm` must repeat the full path, and a test shows nothing is sent otherwise (a numeric id sends only the read that finds the path); annotated `destroy` |
 
 ## Secrets
 
@@ -114,4 +122,5 @@ The whole security posture is one credential handled in one place: it never leav
 except as an `Authorization` header to `gitlab.com`, it is scrubbed from every message the
 server can produce, no argument can carry it or redirect a call, and there is no listener for anyone
 else to use it through. What remains is authority — the token can do what it was granted — which is
-why the destructive tools are annotated and why the first advice is to grant less.
+why the destructive tools are annotated, why `repo_delete` asks for the project's path, and why the
+first advice is to grant less.

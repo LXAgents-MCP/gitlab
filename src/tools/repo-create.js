@@ -5,13 +5,12 @@
  * and the wording of its refusals are unchanged.
  */
 import { z } from "zod";
-import { SEGMENT, gitlab } from "../api.js";
+import { SEGMENT, gitlab, isNamespacePath } from "../api.js";
 import { optionalFlag, optionalText, requiredText } from "../args.js";
 import { Refused } from "../errors.js";
 import { WRITE } from "../schemas.js";
 
 const VISIBILITIES = ["private", "internal", "public"];
-const MAX_GROUP_DEPTH = 20;
 
 export const TOOL = {
   name: "repo_create",
@@ -108,8 +107,7 @@ export async function handle(args) {
 
   const group = optionalText(args.group, "group");
   if (group !== undefined) {
-    const segments = group.split("/");
-    if (segments.length > MAX_GROUP_DEPTH || !segments.every((s) => SEGMENT.test(s))) {
+    if (!isNamespacePath(group)) {
       throw new Refused(
         `\`group\` '${group}' is not a valid GitLab group path. Give the full path, such as ` +
           "'my-group' or 'my-group/sub-group'; omit it to create the repository in the token " +

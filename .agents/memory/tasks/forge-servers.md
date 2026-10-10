@@ -177,3 +177,44 @@ compared with a real answer where the group has one.
 
 A link check over `README.md`, `wiki/`, `AGENTS.md` and `.agents/` finds no unresolved link. The
 human pages say nothing about `.agents/`. Tests unchanged: 105 passing, none failing.
+
+### Task 5 — feat/repo-tools
+
+Landed. `repo_read`, `repo_update`, `repo_delete`, `repo_fork` and `repo_search`, pinned in
+`test/surface.js` and documented in the surface page, the token table, the README and the security
+model.
+
+Checked against GitLab's REST documentation before writing: a project is read, updated and deleted at
+`/projects/:id`, with a path written as one encoded segment; an update takes `name`, `path`,
+`description`, `visibility`, `default_branch` and `topics`, while archiving and unarchiving are their
+own idempotent endpoints that need the Owner role; a delete marks the project for deletion and it is
+removed at the end of a retention period; a fork takes `namespace_path`, `name` and `path`, and the
+page says the copy is asynchronous and read through `import_status`; a search is a case-insensitive
+substring match of every word over name, path and description, with `order_by` and `sort`. The pages
+state no status code for delete or fork, so the tools accept any 2xx. The Update table lists
+`issues_enabled` as deprecated in favour of `issues_access_level`, which is what `has_issues` sends;
+the excerpt read here did not show that field itself, so it is on the live-check list.
+
+Read shapes were compared with real data: a public project and a project search on `gitlab.com` pass
+through `projectFields` and the output schema. An anonymous answer lacks `archived`, the open issue
+count and more, which a token's answer has, so the mapper treats them as absent and not as an error.
+
+Shape. `projectShape`, `projectFields` and `describeProject` in `src/shapes.js` are what read, update
+and fork share, as the repository shape is in the GitHub server, and `expectBody` turns a 2xx answer of
+the wrong shape into a refusal. `isNamespacePath` joins `SEGMENT` in `src/api.js` so that `repo_create`
+and `repo_fork` check a group the same way.
+
+Where GitLab differs, the tool says so. `repo_update` has `path` as well as `name`, because the name
+is not the address; takes `visibility` where GitHub takes `private`; and has no homepage. It
+unarchives before it changes settings and archives after, because an archived project is read-only,
+addresses the later requests by id, since a new path moves the project, and says what had already
+happened if a later step is refused. `repo_delete` answers `accepted` and not `deleted`: GitLab may
+only schedule the deletion, and the summary says so. Its guard is the project's full path, resolved
+through one read when the project was named by number. `repo_search` has no qualifier syntax to offer
+and reports GitLab's `x-total` when it sends one.
+
+The guard. `repo_delete` refuses unless `confirm` repeats the full path, ignoring case, and a test
+shows nothing is sent otherwise. The README and the security model carry that claim now that the tool
+exists; task 4 left it out until then.
+
+Tests: 128 passing, none failing.

@@ -56,6 +56,10 @@ only what the tools you will use need.
 | Tools | Scope | Role |
 |---|---|---|
 | `repo_create` | `api` | Allowed to create projects in the namespace: always in the token owner's own, and in a group only where the group's settings allow the user's role to. |
+| `repo_read`, `repo_search` | `read_api` | Any role that can see the project; a search lists only what the token's user can see |
+| `repo_update` | `api` | Maintainer; GitLab documents Owner for archiving and unarchiving |
+| `repo_delete` | `api` | Owner |
+| `repo_fork` | `api` | Any role that can see the project, and permission to create projects in the target namespace |
 
 The requirements are those GitLab documents for each endpoint. When a token is short of one, GitLab
 refuses and this server repeats what it said, so the refusal is the authority if it disagrees with

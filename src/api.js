@@ -63,7 +63,19 @@ export function redact(text, secret) {
 export const SEGMENT = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,254}$/;
 
 // A project sits in a group, which may sit in up to twenty subgroups.
-const MAX_PATH_DEPTH = 21;
+const MAX_GROUP_DEPTH = 20;
+const MAX_PATH_DEPTH = MAX_GROUP_DEPTH + 1;
+
+/**
+ * Is this the path of a group or subgroup - or of a user's own namespace, which is one segment?
+ *
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function isNamespacePath(text) {
+  const segments = text.split("/");
+  return segments.length <= MAX_GROUP_DEPTH && segments.every((segment) => SEGMENT.test(segment));
+}
 
 /**
  * Read a project argument: its full path, or its numeric id.
