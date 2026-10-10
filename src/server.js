@@ -17,10 +17,9 @@ import { SERVER_NAME, VERSION } from "./version.js";
 const INSTRUCTIONS =
   "GitLab.com through its REST API: projects (called repositories here), branches, files, commits, tags, " +
   "releases, issues, merge requests (called pull requests here) and CI/CD pipelines (called workflows " +
-  "here). Every tool needs a GitLab token: MCP_AUTH_TOKEN in this server's environment over stdio, or " +
-  "the Authorization: Bearer header over HTTP. Name a project by its full path, 'group/project' or " +
-  "'group/subgroup/project', or by its numeric id. Tools that delete or merge are destructive: confirm " +
-  "with the owner before calling them.";
+  "here). Every tool needs GITLAB_API_KEY in this server's environment. Name a project by its " +
+  "full path, 'group/project' or 'group/subgroup/project', or by its numeric id. Tools that delete or " +
+  "merge are destructive: confirm with the owner before calling them.";
 
 /**
  * Shape a handler's payload into a `tools/call` result.

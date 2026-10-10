@@ -62,3 +62,39 @@ Landed: this record and its row in `memory-index.md`. The first commit of the br
 task. The `PR` column here is filled by a closing commit, not here, so no later branch needs a rebase.
 
 Baseline before any change: `npm test` ran 292 passing and none failing.
+
+### Task 2 — feat/two-token-auth
+
+Landed. Over HTTP every route but `/healthz` now needs `Authorization: Bearer <MCP_AUTH_TOKEN>`. The check comes
+before the body is parsed and before a path is matched, answers 401 in the JSON-RPC envelope with
+`WWW-Authenticate: Bearer realm="mcp"`, and adds `error="invalid_token"` when a credential was sent and did not
+match (T6: SHA-256 digests, `timingSafeEqual`). HTTP refuses to start without the token or with fewer than 32
+characters, exits 1, names the variable and shows `openssl rand -hex 32`, and listens on nothing (T2). With a
+valid token, 404, 405, 400 and 413 are as in 0.2.0.
+
+Every GitLab call, on both transports, is made with `GITLAB_API_KEY` (T1, T4, T5): `requireToken` reads it per
+call, and a missing key refuses the tool naming the variable. The HTTP process says so at start but runs. The
+client's bearer is compared and dropped; a test searches the whole request to GitLab for it and finds nothing.
+stdio is unchanged except for the variable's name and never reads `MCP_AUTH_TOKEN` (T3).
+
+Removed: the per-request token, `AsyncLocalStorage`, `enterHttpMode` and the rule that HTTP ignores the
+environment, all of which existed because the bearer was the GitLab token. `src/auth.js` is now two small
+groups, the door and the key. `src/config.js` keeps `TOKEN_ENV` for the GitLab key's name, now
+`GITLAB_API_KEY`, and adds `AUTH_ENV`, `MIN_AUTH_TOKEN_LENGTH`. The 512-character cap on a presented credential is
+gone with the passthrough; any credential that is not the token is simply wrong. The decision is recorded in
+`.agents/memory/decisions/two-token-auth.md`, with the cost it carries (T9), and `http-token-transport.md` is
+marked partly superseded.
+
+Tests: 300 passing, none failing (292 before). `test/auth.test.js` and `test/http.test.js` are rewritten for the
+two secrets: the header parser, the floor, the constant-time comparison against near-misses (prefix, suffix,
+longer, case, empty, the GitLab key), the 401 cases, the exact `/healthz` exemption, the key used against
+GitLab with the access token absent from the request, no upstream call without the access token or without the
+key, 8 concurrent calls, neither secret in a response or the log, startup refusals in-process and from a real
+process, and a real process that serves, ignores nothing it should read, and stops on `SIGTERM`. Making the
+comparison always true fails five tests; allowing an empty token fails the two startup tests, which was
+confirmed. By hand against a running server: no token exits 1 with the message, `/healthz` answers, no bearer
+and a wrong bearer are 401 with the right challenge, a right bearer lists 45 tools. (A tool refused for
+want of `GITLAB_API_KEY` is covered by a test, not run by hand.)
+
+Left for task 3: the setup guide and every page that says the bearer is the GitLab token. The rules in
+`.agents/rules/repository.md` and the security procedure still describe the passthrough until task 3.

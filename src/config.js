@@ -2,23 +2,31 @@
  * Every knob this server has, in one place.
  *
  * There are no command-line flags and no configuration file. The only input from outside the
- * tool arguments is the token and, to serve HTTP, three variables: `MCP_AUTH_TOKEN` over stdio,
- * the `Authorization` header over HTTP (`src/auth.js`), and `MCP_TRANSPORT`, `PORT` and `HOST`
- * (`src/http.js`). A server without a token still starts and says what is missing when asked.
+ * tool arguments is two secrets and three settings, all variables: `GITLAB_API_KEY`, the token
+ * every GitLab call is made with; `MCP_AUTH_TOKEN`, the secret a client must present to reach the
+ * HTTP transport; and `MCP_TRANSPORT`, `PORT` and `HOST` (`src/http.js`). A server without the
+ * GitLab key still starts and says what is missing when a tool is used.
  */
 
 /**
- * The environment variable that holds the token over stdio, named as `shared-instruction` names its
- * own token. Never an argument, so it never appears in a prompt. HTTP never reads it.
+ * The environment variable that holds the GitLab token, on both transports. Never an argument, so
+ * it never appears in a prompt.
  */
-export const TOKEN_ENV = "MCP_AUTH_TOKEN";
+export const TOKEN_ENV = "GITLAB_API_KEY";
 
-/** The port and interface of the HTTP transport when `PORT` and `HOST` are not set. Loopback, because the token is a GitLab credential. */
+/**
+ * The environment variable that holds the server's own access token for HTTP, named as
+ * `shared-instruction` names its own. A client presents it as `Authorization: Bearer <token>`. It
+ * is not a GitLab credential and is never sent to GitLab; stdio never reads it.
+ */
+export const AUTH_ENV = "MCP_AUTH_TOKEN";
+
+/** Characters. The shortest access token HTTP will start with, as in `shared-instruction`. */
+export const MIN_AUTH_TOKEN_LENGTH = 32;
+
+/** The port and interface of the HTTP transport when `PORT` and `HOST` are not set. Loopback, because it fronts a GitLab key. */
 export const DEFAULT_PORT = 3002;
 export const DEFAULT_HOST = "127.0.0.1";
-
-/** Characters. The longest bearer token accepted; GitLab's longest format is well under it. */
-export const MAX_TOKEN_LENGTH = 512;
 
 /** Bytes. The largest request body the HTTP transport reads: a 1 MB file write is about 1.4 MB as base64. */
 export const MAX_BODY_BYTES = 4_000_000;

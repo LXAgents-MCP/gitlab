@@ -3,21 +3,24 @@
  * Server entry point.
  *
  * Gives an LLM access to GitLab over MCP, over stdio by default and over HTTP when
- * MCP_TRANSPORT=http. The token is the GitLab token and is never an argument:
+ * MCP_TRANSPORT=http. Two secrets, neither an argument:
  *
- * - stdio: the client starts this process and speaks to it over a pipe; register it with the
- *   token in its `env` block.
+ * - GITLAB_API_KEY is the GitLab token, used for every call on both transports.
+ * - MCP_AUTH_TOKEN is this server's own access token, which an HTTP client must present as
+ *   `Authorization: Bearer <token>` (src/http.js). stdio never reads it.
+ *
+ * stdio: the client starts this process and speaks to it over a pipe; register it with the GitLab
+ * token in its `env` block.
  *
  *   {"mcpServers": {"lxagents-gitlab": {
  *     "command": "node", "args": ["<this file>"],
- *     "env": {"MCP_AUTH_TOKEN": "<token>"}}}}
+ *     "env": {"GITLAB_API_KEY": "<token>"}}}}
  *
- * - HTTP: every request carries the token as `Authorization: Bearer <token>` (src/http.js).
- *
- * The token this server uses can change and delete projects. A pipe can only be reached by
- * the client that spawned it; the HTTP transport can be reached by anyone who can open its port,
- * so it binds loopback unless HOST says otherwise and refuses any request without a token. The
- * only other network traffic is outbound, to gitlab.com, and only when a tool is called.
+ * The key this server uses can change and delete projects. A pipe can only be reached by the
+ * client that spawned it; the HTTP transport can be reached by anyone who can open its port, so it
+ * binds loopback unless HOST says otherwise, refuses to start without an access token, and refuses
+ * any request that does not carry it. The only other network traffic is outbound, to gitlab.com,
+ * and only when a tool is called.
  *
  * Nothing here may write to stdout: on stdio, stdout is the JSON-RPC channel.
  */
@@ -31,11 +34,14 @@ const USAGE = `LXAgents GitLab MCP Server
 
 Usage: node src/index.js [options]
 
-Serves GitLab tools over stdio, or over HTTP when MCP_TRANSPORT=http. The GitLab token is
-never an argument:
-  stdio  set MCP_AUTH_TOKEN in the environment of this process; it is read when a tool is called.
-  http   send Authorization: Bearer <token> with every request; MCP_AUTH_TOKEN is not read.
-         PORT (default 3002) and HOST (default 127.0.0.1) say where it listens.
+Serves GitLab tools over stdio, or over HTTP when MCP_TRANSPORT=http. Neither secret is
+an argument:
+  GITLAB_API_KEY  the GitLab token; set it in the environment of this process, read when a tool
+                  is called. Used on both transports.
+  MCP_AUTH_TOKEN  http only: the server's access token, at least 32 characters, which every
+                  request must carry as Authorization: Bearer <token>. HTTP will not start
+                  without it. stdio does not read it.
+  PORT (default 3002) and HOST (default 127.0.0.1) say where HTTP listens.
 
 Options:
   -h, --help       Show this help

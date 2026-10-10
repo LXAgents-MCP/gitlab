@@ -2,24 +2,29 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { requireToken } from "../src/api.js";
 import {
+  authTokenProblem,
   bearerCredential,
-  configuredToken,
-  credentialProblem,
-  currentToken,
-  enterHttpMode,
-  isHttpMode,
-  requestScopedToken,
-  runWithToken,
-  tokenHome,
+  configuredApiKey,
+  configuredAuthToken,
+  credentialMatches,
+  digest,
   tokenToScrub,
 } from "../src/auth.js";
-import { MAX_TOKEN_LENGTH } from "../src/config.js";
-import { isRefusal, setToken, withToken, withoutToken, TOKEN } from "./helpers.js";
+import { AUTH_ENV, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "../src/config.js";
+import { isRefusal, setEnv, setToken, withToken, withoutToken, TOKEN } from "./helpers.js";
 
 /*
- * Where the token comes from. Order matters in this file: `enterHttpMode` is a property of the
- * process and cannot be undone, so the test that sets it is the last one.
+ * The two secrets and which is for what. MCP_AUTH_TOKEN guards the HTTP door; GITLAB_API_KEY is
+ * the key to GitLab. Neither stands in for the other.
  */
+
+const ACCESS = "0123456789abcdef".repeat(4);
+
+test("the variables are the ones the owner named", () => {
+  assert.equal(TOKEN_ENV, "GITLAB_API_KEY");
+  assert.equal(AUTH_ENV, "MCP_AUTH_TOKEN");
+  assert.equal(MIN_AUTH_TOKEN_LENGTH, 32);
+});
 
 test("bearerCredential reads the credential of a Bearer header and nothing else", () => {
   assert.equal(bearerCredential("Bearer abc"), "abc");
@@ -31,68 +36,64 @@ test("bearerCredential reads the credential of a Bearer header and nothing else"
   }
 });
 
-test("credentialProblem checks the shape of a token and no more", () => {
-  for (const token of ["glpat-abcdefghij0123456789", "ghp_abcdefghijklmnopqrstuvwxyz0123456789", "a".repeat(93), "x"]) {
-    assert.equal(credentialProblem(token), null, token);
-  }
+test("the access token is read at call time and trimmed", (t) => {
+  setEnv(t, AUTH_ENV, null);
+  assert.equal(configuredAuthToken(), "");
 
-  assert.match(credentialProblem("a".repeat(MAX_TOKEN_LENGTH + 1)), /longer than 512 characters/);
-  assert.match(credentialProblem("tokén"), /not printable ASCII/);
-  assert.match(credentialProblem("a b"), /not printable ASCII/);
-  assert.match(credentialProblem(""), /not printable ASCII/);
+  setEnv(t, AUTH_ENV, `  ${ACCESS}\n`);
+  assert.equal(configuredAuthToken(), ACCESS);
 });
 
-test("over stdio the token is the environment's, trimmed", (t) => {
+test("authTokenProblem refuses a missing or short access token and names the variable, never the value", () => {
+  assert.equal(authTokenProblem(""), "MCP_AUTH_TOKEN is not set");
+  assert.equal(authTokenProblem("a".repeat(31)), "MCP_AUTH_TOKEN is 31 characters, and it must be at least 32");
+  assert.equal(authTokenProblem("a".repeat(32)), null);
+  assert.equal(authTokenProblem(ACCESS), null);
+  assert.ok(!String(authTokenProblem("short-secret")).includes("short-secret"));
+});
+
+test("authTokenProblem reads the environment when given no token", (t) => {
+  setEnv(t, AUTH_ENV, null);
+  assert.equal(authTokenProblem(), "MCP_AUTH_TOKEN is not set");
+
+  setEnv(t, AUTH_ENV, ACCESS);
+  assert.equal(authTokenProblem(), null);
+});
+
+test("credentialMatches accepts the token and nothing that merely resembles it", () => {
+  const expected = digest(ACCESS);
+
+  assert.equal(credentialMatches(ACCESS, expected), true);
+  for (const wrong of [ACCESS.slice(0, -1), ACCESS.slice(1), `${ACCESS}0`, ACCESS.toUpperCase(), "", "x", "a".repeat(5000)]) {
+    assert.equal(credentialMatches(wrong, expected), false, wrong.slice(0, 20));
+  }
+});
+
+test("the GitLab key is the one in GITLAB_API_KEY, read per call and trimmed", (t) => {
   setToken(t, `  ${TOKEN}  `);
-  assert.equal(configuredToken(), TOKEN);
-  assert.equal(currentToken(), TOKEN);
+  assert.equal(configuredApiKey(), TOKEN);
   assert.equal(requireToken(), TOKEN);
   assert.equal(tokenToScrub(), TOKEN);
-  assert.equal(tokenHome(), "MCP_AUTH_TOKEN");
 
   setToken(t, "   ");
-  assert.equal(currentToken(), null);
+  assert.equal(configuredApiKey(), "");
   assert.equal(tokenToScrub(), "");
+  assert.throws(() => requireToken(), isRefusal(/^GITLAB_API_KEY is not set\. .*`env` block/));
 });
 
-test("a request's token wins over the environment inside the request, and only there", async (t) => {
-  withToken(t);
-
-  assert.equal(requestScopedToken(), undefined);
-  const inside = await runWithToken("request-token", async () => {
-    await new Promise((resolve) => setTimeout(resolve, 5));
-    return { scoped: requestScopedToken(), current: currentToken(), required: requireToken() };
-  });
-  assert.deepEqual(inside, { scoped: "request-token", current: "request-token", required: "request-token" });
-  assert.equal(currentToken(), TOKEN, "outside the request the environment is the source again");
-});
-
-test("requests that overlap each keep their own token", async () => {
-  const tokens = Array.from({ length: 12 }, (_, i) => `token-${i}`);
-  const seen = await Promise.all(
-    tokens.map((token, i) =>
-      runWithToken(token, async () => {
-        await new Promise((resolve) => setTimeout(resolve, (12 - i) * 3));
-        return requireToken();
-      }),
-    ),
-  );
-  assert.deepEqual(seen, tokens);
-});
-
-test("a process that serves HTTP never reads the environment's token", (t) => {
-  withToken(t);
-  assert.equal(isHttpMode(), false);
-
-  enterHttpMode();
-
-  assert.equal(isHttpMode(), true);
-  assert.equal(currentToken(), null, "the environment is not a fallback");
-  assert.equal(tokenToScrub(), "");
-  assert.equal(tokenHome(), "the Authorization: Bearer header");
-  assert.throws(() => requireToken(), isRefusal(/^This request carried no token\. Send your GitLab token as `Authorization: Bearer <token>`\.$/));
-  assert.equal(runWithToken("t", () => requireToken()), "t");
-
+test("MCP_AUTH_TOKEN is not a GitLab key: with only the access token set, a call is refused", (t) => {
   withoutToken(t);
-  assert.throws(() => requireToken(), isRefusal(/carried no token/));
+  setEnv(t, AUTH_ENV, ACCESS);
+
+  assert.equal(configuredApiKey(), "");
+  assert.throws(() => requireToken(), isRefusal(/^GITLAB_API_KEY is not set\./));
+});
+
+test("GITLAB_API_KEY is not an access token: it does not satisfy the HTTP door", (t) => {
+  withToken(t);
+  setEnv(t, AUTH_ENV, null);
+
+  assert.equal(configuredAuthToken(), "");
+  assert.equal(authTokenProblem(), "MCP_AUTH_TOKEN is not set");
+  assert.equal(credentialMatches(TOKEN, digest(ACCESS)), false);
 });

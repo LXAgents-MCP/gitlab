@@ -131,7 +131,7 @@ test("issue_open refuses bad arguments before any request", async (t) => {
   await assert.rejects(issueOpen({ repo: "g/r", title: "x", milestone: 0 }), isRefusal(/`milestone` must be between 1/));
   await assert.rejects(issueOpen({ repo: "bad", title: "x" }), isRefusal(/is not a project/));
   assert.equal(calls.length, 0);
-  await assert.rejects(issueOpen({ repo: "g/r", title: "x" }), isRefusal(/MCP_AUTH_TOKEN is not set/));
+  await assert.rejects(issueOpen({ repo: "g/r", title: "x" }), isRefusal(/GITLAB_API_KEY is not set/));
 });
 
 test("labelList refuses a comma and passes everything else through", () => {
