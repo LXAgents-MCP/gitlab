@@ -34,23 +34,24 @@ MCP SDK and zod. GitLab means gitlab.com. The moved code comes from `cli` commit
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/forge-servers-plan` | |
-| 2 | Server core and `repo_create` | `feat/server-core` | |
-| 3 | Agent instruction set | `docs/agents-setup` | |
-| 4 | Human documentation | `docs/wiki` | |
-| 5 | Repository tools | `feat/repo-tools` | |
-| 6 | Branch tools | `feat/branch-tools` | |
-| 7 | File and directory tools | `feat/file-tools` | |
-| 8 | Commit tools | `feat/commit-tools` | |
-| 9 | Tag and release tools | `feat/tag-release-tools` | |
-| 10 | Issue tools | `feat/issue-tools` | |
-| 11 | Merge request tools | `feat/pr-tools` | |
-| 12 | Pipeline tools | `feat/workflow-tools` | |
-| 13 | Container image | `build/docker` | |
-| 14 | Release | `release/0.1.0` | |
+| 1 | Task record | `chore/forge-servers-plan` | [#1](https://github.com/LXAgents-MCP/gitlab/pull/1) |
+| 2 | Server core and `repo_create` | `feat/server-core` | [#2](https://github.com/LXAgents-MCP/gitlab/pull/2) |
+| 3 | Agent instruction set | `docs/agents-setup` | [#3](https://github.com/LXAgents-MCP/gitlab/pull/3) |
+| 4 | Human documentation | `docs/wiki` | [#4](https://github.com/LXAgents-MCP/gitlab/pull/4) |
+| 5 | Repository tools | `feat/repo-tools` | [#5](https://github.com/LXAgents-MCP/gitlab/pull/5) |
+| 6 | Branch tools | `feat/branch-tools` | [#6](https://github.com/LXAgents-MCP/gitlab/pull/6) |
+| 7 | File and directory tools | `feat/file-tools` | [#7](https://github.com/LXAgents-MCP/gitlab/pull/7) |
+| 8 | Commit tools | `feat/commit-tools` | [#8](https://github.com/LXAgents-MCP/gitlab/pull/8) |
+| 9 | Tag and release tools | `feat/tag-release-tools` | [#9](https://github.com/LXAgents-MCP/gitlab/pull/9) |
+| 10 | Issue tools | `feat/issue-tools` | [#10](https://github.com/LXAgents-MCP/gitlab/pull/10) |
+| 11 | Merge request tools | `feat/pr-tools` | [#11](https://github.com/LXAgents-MCP/gitlab/pull/11) |
+| 12 | Pipeline tools | `feat/workflow-tools` | [#12](https://github.com/LXAgents-MCP/gitlab/pull/12) |
+| 13 | Container image | `build/docker` | [#13](https://github.com/LXAgents-MCP/gitlab/pull/13) |
+| 14 | Release | `release/0.1.0` | [#14](https://github.com/LXAgents-MCP/gitlab/pull/14) |
 
-Branches stack: task 1 from `master`, task `k` from task `k-1`. The `PR` column is filled by a
-closing commit once the pull requests exist.
+Branches stacked: task 1 from `master`, task `k` from task `k-1`. A rebase merge rewrites commits, so
+each branch was replayed onto the new `master` before its pull request was merged, in order, by rebase.
+The 14 pull requests merged after the 14 of `LXAgents-MCP/github`.
 
 ## Decisions the owner approved with the plan
 
@@ -471,4 +472,15 @@ the tests touch no network now say they reach no host beyond this machine: the r
 this record's objective.
 
 Left for the owner: the smoke test, building the image once, and whether and where to publish either.
-The `PR` column of the table above is filled by a closing commit once the pull requests exist.
+The `PR` column of the table above was filled by a closing commit once the pull requests existed.
+
+### Closing
+
+Landed. All 14 pull requests were merged in order, #1 to #14, each by rebase, after the GitHub server's
+chain, and `master` is a linear history of 14 commits after the initial one. The tree of `master` is
+identical to the tip of `release/0.1.0` as it stood before the first rebase, and from a clean install 272
+tests pass and `node src/index.js --version` prints `lxagents-gitlab 0.1.0`.
+
+The merged branches were not deleted as planned: the git proxy refused to delete a remote branch (HTTP
+403) and was not retried. The 14 branches named in the table are still on the remote and can be deleted
+by the owner; none of them is needed.
