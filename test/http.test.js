@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { createServer } from "node:net";
 import { request } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { MAX_BODY_BYTES } from "../src/config.js";
+import { DEFAULT_HOST, DEFAULT_PORT, MAX_BODY_BYTES } from "../src/config.js";
 import { httpSettings, startHttpServer } from "../src/http.js";
 import { SERVER_NAME, VERSION } from "../src/version.js";
 import { mockApi, reply, TOKEN, withToken, withoutToken } from "./helpers.js";
@@ -260,10 +261,20 @@ test("startHttpServer will not listen without an access token of 32 characters, 
   await assert.rejects(startHttpServer({ port: 0, authToken: "short" }), /MCP_AUTH_TOKEN is 5 characters, and it must be at least 32/);
 });
 
-test("httpSettings defaults to loopback and the GitLab server's port", () => {
-  assert.deepEqual(httpSettings({}), { port: 3002, host: "127.0.0.1" });
-  assert.deepEqual(httpSettings({ PORT: " 8080 ", HOST: " 0.0.0.0 " }), { port: 8080, host: "0.0.0.0" });
-  assert.deepEqual(httpSettings({ PORT: "", HOST: "" }), { port: 3002, host: "127.0.0.1" });
+test("httpSettings defaults to shared-instruction's: port 3000 on every interface", () => {
+  assert.deepEqual(httpSettings({}), { port: 3000, host: "0.0.0.0" });
+  assert.deepEqual(httpSettings({ PORT: "", HOST: "" }), { port: 3000, host: "0.0.0.0" });
+  assert.deepEqual(httpSettings({ PORT: "   ", HOST: "   " }), { port: 3000, host: "0.0.0.0" });
+  assert.equal(DEFAULT_PORT, 3000);
+  assert.equal(DEFAULT_HOST, "0.0.0.0");
+});
+
+test("httpSettings lets PORT and HOST override, accepts 0, and refuses a PORT that is not a port", () => {
+  assert.deepEqual(httpSettings({ PORT: " 8080 ", HOST: " 127.0.0.1 " }), { port: 8080, host: "127.0.0.1" });
+  assert.deepEqual(httpSettings({ PORT: "0" }), { port: 0, host: "0.0.0.0" }, "0 asks the system for a free port");
+  for (const bad of ["abc", "70000", "-1", "80.5", "1e9"]) {
+    assert.throws(() => httpSettings({ PORT: bad }), new RegExp(`PORT must be a whole number from 0 to 65535, got '${bad}'`), bad);
+  }
 });
 
 /* ------------------------------------------------------------------ the process */
@@ -281,6 +292,18 @@ function startProcess(t, env) {
   child.stderr.on("data", (chunk) => (stderr += chunk));
   t.after(() => child.kill("SIGKILL"));
   return { child, exited, output: () => ({ stdout, stderr }) };
+}
+
+/** A port nothing is listening on right now. */
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
 }
 
 /** The exit code of a process that should end by itself, or "running" if it is still up after `ms`: a failure that does not hang the suite. */
@@ -321,6 +344,28 @@ test("MCP_TRANSPORT=http serves HTTP from a real process behind the access token
   assert.equal(stdout, "", "nothing on stdout");
   assert.ok(!stderr.includes(ACCESS) && !stderr.includes(key), "neither secret is ever logged");
   assert.doesNotMatch(stderr, /GITLAB_API_KEY is not set/, "the key was set");
+});
+
+test("with no HOST set, a real process listens on every interface and says so; with HOST set, only there", async (t) => {
+  for (const [host, said] of [[undefined, /serving over http on :\d+\/mcp \(all interfaces\)/], ["127.0.0.1", /serving over http on http:\/\/127\.0\.0\.1:\d+\/mcp/]]) {
+    const port = await freePort();
+    const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: String(port), MCP_AUTH_TOKEN: ACCESS, ...(host ? { HOST: host } : {}) });
+
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`no startup line: ${run.output().stderr}`)), 10_000);
+      run.child.stderr.on("data", () => {
+        if (/serving over http on/.test(run.output().stderr)) {
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+    });
+
+    assert.match(run.output().stderr, said, String(host));
+    assert.equal((await send(`http://127.0.0.1:${port}`, { method: "GET", path: "/healthz" })).status, 200);
+    run.child.kill("SIGTERM");
+    await run.exited;
+  }
 });
 
 test("HTTP without a GitLab key starts and says so, because a tool will refuse", async (t) => {

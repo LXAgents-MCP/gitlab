@@ -24,9 +24,14 @@ export const AUTH_ENV = "MCP_AUTH_TOKEN";
 /** Characters. The shortest access token HTTP will start with, as in `shared-instruction`. */
 export const MIN_AUTH_TOKEN_LENGTH = 32;
 
-/** The port and interface of the HTTP transport when `PORT` and `HOST` are not set. Loopback, because it fronts a GitLab key. */
-export const DEFAULT_PORT = 3002;
-export const DEFAULT_HOST = "127.0.0.1";
+/**
+ * The port and interface of the HTTP transport when `PORT` and `HOST` are not set, the ones
+ * `shared-instruction` uses: 3000 on every interface, so a container's published port reaches it. The
+ * process holds a GitLab key, so what guards it is the access token it refuses to start without, and
+ * TLS is the operator's. `HOST=127.0.0.1` narrows it to this machine.
+ */
+export const DEFAULT_PORT = 3000;
+export const DEFAULT_HOST = "0.0.0.0";
 
 /** Bytes. The largest request body the HTTP transport reads: a 1 MB file write is about 1.4 MB as base64. */
 export const MAX_BODY_BYTES = 4_000_000;

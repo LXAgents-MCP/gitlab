@@ -18,8 +18,8 @@
  *
  * The key this server uses can change and delete projects. A pipe can only be reached by the
  * client that spawned it; the HTTP transport can be reached by anyone who can open its port, so it
- * binds loopback unless HOST says otherwise, refuses to start without an access token, and refuses
- * any request that does not carry it. The only other network traffic is outbound, to gitlab.com,
+ * listens on port 3000 on all interfaces unless PORT and HOST say otherwise, refuses to start without an
+ * access token, and refuses any request that does not carry it. The only other network traffic is outbound, to gitlab.com,
  * and only when a tool is called.
  *
  * Nothing here may write to stdout: on stdio, stdout is the JSON-RPC channel.
@@ -41,7 +41,7 @@ an argument:
   MCP_AUTH_TOKEN  http only: the server's access token, at least 32 characters, which every
                   request must carry as Authorization: Bearer <token>. HTTP will not start
                   without it. stdio does not read it.
-  PORT (default 3002) and HOST (default 127.0.0.1) say where HTTP listens.
+  PORT (default 3000) and HOST (default 0.0.0.0, every interface) say where HTTP listens.
 
 Options:
   -h, --help       Show this help

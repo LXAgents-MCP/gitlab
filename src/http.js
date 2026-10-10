@@ -13,8 +13,9 @@
  * is.
  *
  * This file is the entry point `npm run start:http` runs, and `src/index.js` reaches it when
- * `MCP_TRANSPORT=http`. It binds `127.0.0.1` unless `HOST` says otherwise, because the process
- * holds a GitLab key; whatever exposes it further must terminate TLS.
+ * `MCP_TRANSPORT=http`. It listens on port 3000 on all interfaces unless `PORT` and `HOST` say
+ * otherwise, as `shared-instruction` does. It holds a GitLab key, so what guards it is the access
+ * token it refuses to start without; whatever exposes it beyond a trusted network must terminate TLS.
  *
  * Diagnostics go to stderr, as everywhere in this server.
  */
@@ -136,7 +137,9 @@ async function handle(req, res, expected) {
 }
 
 /**
- * Read `PORT` and `HOST`.
+ * Read `PORT` and `HOST`: 3000 and `0.0.0.0` when unset or blank, as in `shared-instruction`. Unlike
+ * its `Number(PORT) || 3000`, a `PORT` that is set and is not a port is an error and not a silent 3000,
+ * and `0` is accepted and asks the system for a free port.
  *
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {{ port: number, host: string }}
@@ -243,7 +246,8 @@ export async function main() {
     return;
   }
 
-  log(`${SERVER_NAME} ${VERSION} serving over http on http://${running.host}:${running.port}/mcp`);
+  const where = running.host === "0.0.0.0" ? `:${running.port}/mcp (all interfaces)` : `http://${running.host}:${running.port}/mcp`;
+  log(`${SERVER_NAME} ${VERSION} serving over http on ${where}`);
   log(`the access token in ${AUTH_ENV} is required on every route except GET /healthz.`);
 
   let closing = false;
