@@ -169,3 +169,21 @@ export function textList(value, field, { required = false, max = 100 } = {}) {
   if (required && seen.size === 0) throw new Refused(`\`${field}\` is required and must list at least one value.`);
   return [...seen];
 }
+
+/**
+ * A list of label names. GitLab takes labels as one comma-separated string, so a name with a comma
+ * in it cannot be sent and is refused here instead of being split into two labels.
+ *
+ * @param {unknown} value
+ * @param {string} field
+ * @param {{ required?: boolean, max?: number }} [options]
+ * @returns {string[] | undefined}
+ */
+export function labelList(value, field, options) {
+  const labels = textList(value, field, options);
+  const bad = (labels ?? []).find((label) => label.includes(","));
+  if (bad !== undefined) {
+    throw new Refused(`\`${field}\` may not contain a comma, because GitLab separates label names with one: '${bad}'.`);
+  }
+  return labels;
+}

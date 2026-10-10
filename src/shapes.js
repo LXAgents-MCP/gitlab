@@ -130,3 +130,61 @@ export function releaseFields(release) {
 export function describeRelease(fields) {
   return `${fields.upcoming ? "upcoming release" : "release"} ${fields.name ?? fields.tag} (tag ${fields.tag})`;
 }
+
+/**
+ * Names out of a list GitLab sends either as plain strings (labels) or as objects (users).
+ *
+ * @param {unknown} list
+ * @param {string} key The field that holds the name in an object: `name` or `username`.
+ * @returns {string[]}
+ */
+export function namesIn(list, key) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((entry) => (typeof entry === "string" ? entry : entry?.[key]))
+    .filter((name) => typeof name === "string" && name !== "");
+}
+
+/** What `issue_read` reports about an issue. */
+export const issueShape = {
+  number: z.number(),
+  title: z.string(),
+  state: z.string(),
+  author: z.string().optional(),
+  labels: z.array(z.string()),
+  assignees: z.array(z.string()),
+  milestone: z.string().optional(),
+  comment_count: z.number(),
+  locked: z.boolean(),
+  confidential: z.boolean(),
+  html_url: z.string(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+  closed_at: z.string().optional(),
+  body: z.string().optional(),
+};
+
+/**
+ * @param {any} issue An issue as GitLab returns it. `number` is its `iid`, the number in the
+ *   project that people write as #42; `id` is global and is not what any tool takes.
+ * @returns {z.infer<z.ZodObject<typeof issueShape>>}
+ */
+export function issueFields(issue) {
+  return {
+    number: issue.iid,
+    title: issue.title,
+    state: issue.state,
+    ...(issue.author?.username ? { author: issue.author.username } : {}),
+    labels: namesIn(issue.labels, "name"),
+    assignees: namesIn(issue.assignees, "username"),
+    ...(issue.milestone?.title ? { milestone: issue.milestone.title } : {}),
+    comment_count: issue.user_notes_count ?? 0,
+    locked: Boolean(issue.discussion_locked),
+    confidential: Boolean(issue.confidential),
+    html_url: issue.web_url,
+    ...(issue.created_at ? { created_at: issue.created_at } : {}),
+    ...(issue.updated_at ? { updated_at: issue.updated_at } : {}),
+    ...(issue.closed_at ? { closed_at: issue.closed_at } : {}),
+    ...(issue.description ? { body: issue.description } : {}),
+  };
+}

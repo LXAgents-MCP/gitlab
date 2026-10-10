@@ -135,6 +135,30 @@ has none of those; it has `released_at`, and a date in the future makes an upcom
 | `release_list` | read | List releases, newest release date first, upcoming ones included. Paged. |
 | `release_delete` | destroy | Delete a release by tag. Its tag is kept. |
 
+### Issues
+
+An issue is named by its number in the project, the `#42` people write, which GitLab calls the `iid`.
+It is not the global id in the API's answers. Merge requests are numbered separately, so `#7` the
+issue and `!7` the merge request can both exist; these tools only ever address the issue. Usernames
+are looked up before anything is written, and an unknown one refuses the whole call, so a typo never
+assigns half of what was asked.
+
+| Tool | Kind | Does |
+|---|---|---|
+| `issue_open` | write | Open an issue, with optional body, labels, assignees and milestone. Reports what was applied and what was not. |
+| `issue_read` | read | Read one issue: state, author, labels, assignees, milestone, body. `comments: true` adds the first 30 comments people wrote, without GitLab's system notes. |
+| `issue_comment` | write | Add a comment. On a locked issue only project members can. |
+| `issue_close` | update | Close an issue, optionally leaving a comment first. GitLab has no close reason, and there is no tool to reopen. |
+| `issue_assign` | update | Add, remove or replace (`set`) the assignees, by username. Reports any person GitLab did not apply. |
+| `issue_label` | update | Add, remove or replace (`set`) the labels. Reports any label not as asked. |
+| `issue_lock` | update | Lock or unlock the discussion. GitLab takes no reason. |
+
+GitLab differs from GitHub here in four ways that show in these tools. A label that does not exist is
+created, so a misspelled label becomes a new one, and a name with a comma in it cannot be sent and is
+refused. A free plan keeps one assignee per issue, which is why the result lists who was not applied. A
+milestone is given by its id, not its title. And a comment's answer carries no address, so the link
+returned is built from the project path, and is left out for a project given by id.
+
 ## What this server does not expose
 
 | Not exposed | Why |
