@@ -5,7 +5,7 @@ description: Adding, changing or removing a tool changes what every client sees 
 
 # Tool Surface
 
-`src/tools/` is not a source folder. It is the **product**: every module in it is a tool a client
+`src/controllers/` is not a source folder. It is the **product**: every module in it is a tool a client
 can call, and a client's configuration, or a person's habits, may name any of them.
 
 A module added there is served on the next boot. There is no draft space and no staging area
@@ -15,8 +15,8 @@ inside it.
 
 | Change to… | Effect |
 |---|---|
-| `src/tools/**` | Changes the surface. A new tool is a **minor** release; a rename, a removal or a changed argument is a **major** one. |
-| `src/api.js`, `src/render.js`, `src/server.js`, `src/args.js` | Changes how every tool behaves. A release only when a client can see the difference. |
+| `src/controllers/**` | Changes the surface. A new tool is a **minor** release; a rename, a removal or a changed argument is a **major** one. |
+| `src/services/api.js`, `src/utils/render.js`, `src/routes/server.js`, `src/models/args.js` | Changes how every tool behaves. A release only when a client can see the difference. |
 | `.agents/**`, `wiki/**`, `test/**` | Local. Published to nobody. |
 
 ## The file contract
@@ -25,7 +25,7 @@ inside it.
   test holds files and tools together in both directions, so a stray file, or a tool in the wrong
   file, fails.
 * A module exports `TOOL` and `handle(args)`. A module that exports neither is skipped, so a helper
-  dropped into `src/tools/` is never callable — but helpers belong in `src/`, not here.
+  dropped into `src/controllers/` is never callable — but helpers belong in `src/`, not here.
 * `TOOL` has `name`, `description`, `inputSchema`, `outputSchema` and `annotations`, all required.
   The registry test fails on a tool without a useful description, an output schema, or the four
   hints.
@@ -40,7 +40,7 @@ inside it.
   project: its full path, `group/subgroup/project`, or its numeric id, parsed by `parseRepo`. Only
   `repo_create` and `repo_search` take none.
 * Validate arguments before the token is read.
-* Build every URL through `src/api.js`. A path segment that did not come from `parseRepo`,
+* Build every URL through `src/services/api.js`. A path segment that did not come from `parseRepo`,
   `refName`/`refPath` or `filePath` has not been validated.
 * A list takes `page` and `per_page` and returns `page`, `per_page` and `has_more`.
 * Long text — a file, a log, a diff — goes in `text`, cut to a stated limit with `truncated: true`
@@ -89,5 +89,5 @@ notice they get.
 
 ## Restart to see a change
 
-The registry is read once, at boot. Editing `src/tools/` has no effect on a running process:
+The registry is read once, at boot. Editing `src/controllers/` has no effect on a running process:
 restart the client or the server. `npm run inspect` shows the surface a fresh process would build.

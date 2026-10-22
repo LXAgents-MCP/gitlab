@@ -39,27 +39,27 @@ behaving:
 
 | File | Exposure | Guard |
 |---|---|---|
-| `src/auth.js` `configuredApiKey`, `src/api.js` `requireToken` | Anyone who can set the process environment | Read per call; never an argument; the registry test fails any tool whose input names a credential; a caller's bearer is never used as the GitLab key |
-| `src/http.js`, `src/auth.js` | The one listener, reachable by anyone who can open the port | Every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start without a token of at least 32 characters; 4 MB body cap; listens on all interfaces on port 3000 unless `PORT` and `HOST` say otherwise; a test shows the access token reaches GitLab in no part of a request |
-| `src/api.js` `gitlab()` | The only place the `Authorization` header is built | One call site; the header goes to `callApi` and nowhere else |
-| `src/api.js` `failure()` and `callApi` | Error text built from GitLab's answer or from the network | `redact` on every message; tests make GitLab echo the token and make the network error carry it |
-| `src/server.js` `callTool` | The unexpected-exception path | `redact` on the log line and on the returned text, with the GitLab key; a test makes a handler throw the key |
-| `src/log.js` | stderr | The logger writes what it is given, and nothing logs a request or a header |
+| `src/services/auth.js` `configuredApiKey`, `src/services/api.js` `requireToken` | Anyone who can set the process environment | Read per call; never an argument; the registry test fails any tool whose input names a credential; a caller's bearer is never used as the GitLab key |
+| `src/routes/http.js`, `src/services/auth.js` | The one listener, reachable by anyone who can open the port | Every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start without a token of at least 32 characters; 4 MB body cap; listens on all interfaces on port 3000 unless `PORT` and `HOST` say otherwise; a test shows the access token reaches GitLab in no part of a request |
+| `src/services/api.js` `gitlab()` | The only place the `Authorization` header is built | One call site; the header goes to `callApi` and nowhere else |
+| `src/services/api.js` `failure()` and `callApi` | Error text built from GitLab's answer or from the network | `redact` on every message; tests make GitLab echo the token and make the network error carry it |
+| `src/routes/server.js` `callTool` | The unexpected-exception path | `redact` on the log line and on the returned text, with the GitLab key; a test makes a handler throw the key |
+| `src/utils/log.js` | stderr | The logger writes what it is given, and nothing logs a request or a header |
 
 ### Which endpoint a call reaches
 
 | File | Exposure | Guard |
 |---|---|---|
-| `src/api.js` `parseRepo`, `refName`, `refPath`, `filePath` | Arguments from a model that may be steering on text it read | Validated and percent-encoded; empty, `.` and `..` segments refused; tests cover each |
-| `src/api.js` `gitlab()` | The path handed to it | Must start with `/` and carry no `?` or `#`; a violation is a programming error, not a refusal |
-| `src/config.js` `API_BASE` | The host | A constant: no argument or variable can change it |
-| `src/api.js` `callApi` | The address GitLab redirects a read to, when a project has moved | The destination comes from GitLab's answer and never from an argument; the token travels in `Authorization`, which the runtime drops when the host changes (GitLab's own `PRIVATE-TOKEN` header it would forward), and a test shows a second host receiving no token, over real sockets |
+| `src/services/api.js` `parseRepo`, `refName`, `refPath`, `filePath` | Arguments from a model that may be steering on text it read | Validated and percent-encoded; empty, `.` and `..` segments refused; tests cover each |
+| `src/services/api.js` `gitlab()` | The path handed to it | Must start with `/` and carry no `?` or `#`; a violation is a programming error, not a refusal |
+| `src/config/config.js` `API_BASE` | The host | A constant: no argument or variable can change it |
+| `src/services/api.js` `callApi` | The address GitLab redirects a read to, when a project has moved | The destination comes from GitLab's answer and never from an argument; the token travels in `Authorization`, which the runtime drops when the host changes (GitLab's own `PRIVATE-TOKEN` header it would forward), and a test shows a second host receiving no token, over real sockets |
 
 ### What a call can change
 
 | File | Exposure | Guard |
 |---|---|---|
-| `src/tools/repo-delete.js` | The most destructive tool: it removes a project with its issues and merge requests, or marks it for removal after a retention period | `confirm` must repeat the full path, and a test shows nothing is sent otherwise (a numeric id sends only the read that finds the path); annotated `destroy` |
+| `src/controllers/repo-delete.js` | The most destructive tool: it removes a project with its issues and merge requests, or marks it for removal after a retention period | `confirm` must repeat the full path, and a test shows nothing is sent otherwise (a numeric id sends only the read that finds the path); annotated `destroy` |
 
 ## Secrets
 
@@ -123,7 +123,7 @@ the same API either way.
 | stdout stays silent | `npm test` — the stdio tests for `--help`, `--version` and a bad flag | stdout empty |
 | A request needs the access token, and the key is the server's | `npm test` — `test/http.test.js`: the 401 cases, near-miss tokens, the access token absent from every GitLab request, no upstream call without it | pass |
 | HTTP will not start open | `npm test` — `test/http.test.js`: a real process with no, blank or short `MCP_AUTH_TOKEN` exits 1 | pass |
-| Only one file listens | ``grep -rln -e "node:http" -e "node:net" -e "node:cluster" -e express src`` | `src/http.js` and nothing else |
+| Only one file listens | ``grep -rln -e "node:http" -e "node:net" -e "node:cluster" -e express src`` | `src/routes/http.js` and nothing else |
 | Only two runtime dependencies | `npm ls --omit=dev --depth=0` | the MCP SDK and zod |
 | The image bakes in no secret | ``grep -n -e '^ENV' -e '^EXPOSE' -e '^ENTRYPOINT' Dockerfile`` | no output |
 
@@ -155,7 +155,7 @@ Open an issue on `LXAgents-MCP/gitlab`. If the finding involves a token that may
 
 ## Summary
 
-The whole security posture is one GitLab key handled in one place: it never leaves `src/api.js`
+The whole security posture is one GitLab key handled in one place: it never leaves `src/services/api.js`
 except as an `Authorization` header to `gitlab.com`, it is scrubbed from every message the
 server can produce, no argument can carry it or redirect a call, and the one listener refuses every
 request that does not bring the server's access token. What remains is authority — the key can do what it was granted, for everyone who holds the access token — which is

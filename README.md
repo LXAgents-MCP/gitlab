@@ -9,7 +9,7 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
   a pipe. HTTP with `MCP_TRANSPORT=http`, where every request carries the server's access token as
   `Authorization: Bearer <token>`; it will not start without one, listens on port 3000 on all interfaces
   unless told otherwise, and needs TLS in front before it faces a network.
-- **Surface:** one tool per module in `src/tools/`, named by what it acts on and what it does
+- **Surface:** one tool per module in `src/controllers/`, named by what it acts on and what it does
   (`repo_create`, `branch_list`, `pr_merge`, …). Every tool that acts on a repository takes one
   `repo` argument: the project's full path, such as `group/project`, or its numeric id. The names
   are the GitHub server's, with GitLab's words underneath: a repository is a project, a pull
@@ -22,10 +22,10 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 
 ## Key features
 
-- **One module, one tool.** A tool is a file in `src/tools/` named after it; the registry finds it
+- **One module, one tool.** A tool is a file in `src/controllers/` named after it; the registry finds it
   and nothing else needs editing. A test holds files and tools together in both directions.
 - **One place builds URLs.** A project, a branch or tag name and a file path are validated and
-  percent-encoded in `src/api.js`, so an argument cannot steer a call at another endpoint.
+  percent-encoded in `src/services/api.js`, so an argument cannot steer a call at another endpoint.
 - **The key never leaves its header.** It is not an argument, it is read per call, and it is
   removed from every message the server can produce — refusals and crashes alike. Over HTTP a request
   without the access token is refused before anything is read, and the access token is never sent to GitLab.
