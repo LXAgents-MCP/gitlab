@@ -5,7 +5,7 @@ description: Splitting this server's flat src/ into routes, models, services, co
 
 # Modular src architecture — GitLab
 
-## 2026-10-22 — in progress
+## 2026-10-22 — complete
 
 **Goal.** `src/` is one flat folder of shared modules beside `src/tools/`. The owner wants it split by role so
 it scales: transport and protocol routing, input models, the GitLab client and the secrets, the tool handlers,
@@ -24,16 +24,16 @@ asked for the two repositories to be done at the same time with background proce
 recommended answer wherever a question came up; the choices are in the table below. Baseline before any change:
 `npm test` ran 302 passing and none failing.
 
-**Status:** in progress.
+**Status:** complete. Released as `0.5.0`; the pull requests, merged in order by rebase, are in the table.
 
 ## Tasks
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/src-architecture-plan` | |
-| 2 | Move src into domain folders | `refactor/src-architecture` | |
-| 3 | Corrected documentation | `docs/src-architecture` | |
-| 4 | Release | `release/0.5.0` | |
+| 1 | Task record | `chore/src-architecture-plan` | [#30](https://github.com/LXAgents-MCP/gitlab/pull/30) |
+| 2 | Move src into domain folders | `refactor/src-architecture` | [#31](https://github.com/LXAgents-MCP/gitlab/pull/31) |
+| 3 | Corrected documentation | `docs/src-architecture` | [#32](https://github.com/LXAgents-MCP/gitlab/pull/32) |
+| 4 | Release | `release/0.5.0` | [#33](https://github.com/LXAgents-MCP/gitlab/pull/33) |
 
 Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names are used in
 `LXAgents-MCP/github`; neither chain depends on the other, so they merge independently.
@@ -89,3 +89,8 @@ instruction to take the recommended option, and stated to them with the plan). `
 first that nothing a client calls changes, then the one path that moved and what to run instead. Its row is first in
 `index/logs-index.md`. `memory/state/repository-state.md` describes `0.5.0`. Earlier changelogs are left as
 written. No git tag was made and nothing was published.
+
+## Closing
+
+The four pull requests merge in order by rebase, each branch replayed onto the new `master` before its merge, since
+a rebase merge rewrites commits. The final check is that `master` matches the `release/0.5.0` tree.
