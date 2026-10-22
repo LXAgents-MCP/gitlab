@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { requireToken } from "../src/api.js";
+import { requireToken } from "../src/services/api.js";
 import {
   authTokenProblem,
   bearerCredential,
@@ -9,8 +9,8 @@ import {
   credentialMatches,
   digest,
   tokenToScrub,
-} from "../src/auth.js";
-import { AUTH_ENV, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "../src/config.js";
+} from "../src/services/auth.js";
+import { AUTH_ENV, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "../src/config/config.js";
 import { isRefusal, setEnv, setToken, withToken, withoutToken, TOKEN } from "./helpers.js";
 
 /*

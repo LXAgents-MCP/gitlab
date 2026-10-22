@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SERVER_NAME, VERSION } from "../src/version.js";
+import { SERVER_NAME, VERSION } from "../src/config/version.js";
 import { TOOL_NAMES } from "./surface.js";
 
 /*

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TOOL as approve, handle as prApprove } from "../src/tools/pr-approve.js";
-import { TOOL as close, handle as prClose } from "../src/tools/pr-close.js";
-import { TOOL as comment, handle as prComment } from "../src/tools/pr-comment.js";
-import { TOOL as merge, handle as prMerge } from "../src/tools/pr-merge.js";
-import { TOOL as open, handle as prOpen } from "../src/tools/pr-open.js";
-import { TOOL as read, handle as prRead } from "../src/tools/pr-read.js";
-import { TOOL as request, handle as prReviewRequest } from "../src/tools/pr-review-request.js";
+import { TOOL as approve, handle as prApprove } from "../src/controllers/pr-approve.js";
+import { TOOL as close, handle as prClose } from "../src/controllers/pr-close.js";
+import { TOOL as comment, handle as prComment } from "../src/controllers/pr-comment.js";
+import { TOOL as merge, handle as prMerge } from "../src/controllers/pr-merge.js";
+import { TOOL as open, handle as prOpen } from "../src/controllers/pr-open.js";
+import { TOOL as read, handle as prRead } from "../src/controllers/pr-read.js";
+import { TOOL as request, handle as prReviewRequest } from "../src/controllers/pr-review-request.js";
 import { expectOutput, isRefusal, mockApi, reply, withToken, withoutToken } from "./helpers.js";
 
 const API = "https://gitlab.com/api/v4";

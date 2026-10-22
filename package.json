@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "start": "node src/index.js",
-    "start:http": "node src/http.js",
+    "start:http": "node src/routes/http.js",
     "test": "node --test",
     "inspect": "npx @modelcontextprotocol/inspector node src/index.js"
   },

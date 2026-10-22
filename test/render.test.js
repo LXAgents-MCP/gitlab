@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MAX_OUTPUT } from "../src/config.js";
-import { describe, fence, renderPayload } from "../src/render.js";
-import { cutText, decodeText, firstLine, head, looksBinary, short, tail } from "../src/text.js";
+import { MAX_OUTPUT } from "../src/config/config.js";
+import { describe, fence, renderPayload } from "../src/utils/render.js";
+import { cutText, decodeText, firstLine, head, looksBinary, short, tail } from "../src/utils/text.js";
 
 test("a flat payload is a summary and one bullet per scalar, in order", () => {
   assert.equal(

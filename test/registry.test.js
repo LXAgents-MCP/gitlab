@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { REGISTRY, TOOLS, discoverTools, get } from "../src/tools/index.js";
+import { REGISTRY, TOOLS, discoverTools, get } from "../src/controllers/index.js";
 import { KIND_HINTS, NO_REPO_ARGUMENT, SURFACE, TOOL_NAMES } from "./surface.js";
 
-const TOOLS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "tools");
+const TOOLS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "controllers");
 
 test("the tools discovered are exactly the surface this server is meant to serve", () => {
   assert.deepEqual(TOOLS.map((tool) => tool.name).sort(), TOOL_NAMES);

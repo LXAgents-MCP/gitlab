@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createServer, toolResult } from "../src/server.js";
-import { get } from "../src/tools/index.js";
-import { SERVER_NAME, VERSION } from "../src/version.js";
+import { createServer, toolResult } from "../src/routes/server.js";
+import { get } from "../src/controllers/index.js";
+import { SERVER_NAME, VERSION } from "../src/config/version.js";
 import { KIND_HINTS, SURFACE, TOOL_NAMES } from "./surface.js";
 import { TOKEN, mockApi, reply, withToken, withoutToken } from "./helpers.js";
 
