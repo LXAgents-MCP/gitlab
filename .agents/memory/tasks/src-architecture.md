@@ -70,3 +70,14 @@ Tests: 302 passing, none failing — the same as before. `node src/index.js --ve
 `npm run start:http` serves on loopback with an access token set.
 
 Left for task 3: every living page that names an old path.
+
+### Task 3 — docs/src-architecture
+
+Landed. Every living page that named a module by its old path names the new one: `AGENTS.md`, `README.md`, both
+rules files, the repository map and security boundaries, the state file, and in `wiki/` the architecture, the
+reference, the security model and the environment pages. `wiki/information/architecture.md` gains "Where the code
+lives", the one place that says what each folder holds and that a folder imports only from the ones below it, which
+was checked over every import; the repository rules and the map link to it rather than restating it. Released
+changelogs and earlier records are left as written (A5).
+
+Checked: no relative link in any `.md` file is broken. Code is untouched in this task.

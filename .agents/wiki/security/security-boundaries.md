@@ -40,22 +40,22 @@ in front of you *before* the reasoning that would violate it, not after.
 
 | About to touch… | Verify before committing |
 |---|---|
-| `src/auth.js`, `requireToken`, `gitlab()`, `callApi` or `failure()` in `src/api.js` | The GitLab key still goes only into the `Authorization` header built in `gitlab()`, and is never a caller's bearer. Every message built from GitLab's text or a network error still passes `redact`. The tests that make GitLab, the network and a handler echo the token still pass — and fail when you remove the redaction, which is worth trying once. The token still travels as `Authorization: Bearer`, never as GitLab's own `PRIVATE-TOKEN` header, which the runtime would forward to another host on a redirect; redirects are still followed by the runtime and not by hand (nothing sets `redirect` to `manual`), and the redirect test still shows a second host receiving no token. |
-| `callTool` in `src/server.js` | The crash path still redacts both the log line and the returned text, with the GitLab key. |
-| `src/http.js` or `src/auth.js` | A request without the access token is still a 401 before any body is read or path matched; the comparison is still over SHA-256 digests with `timingSafeEqual`; HTTP still refuses to start without `MCP_AUTH_TOKEN` of 32 characters or more; the access token still appears in no request to GitLab (`test/http.test.js` searches for it) and `MCP_AUTH_TOKEN` is still never read over stdio; the default bind is still every interface on port 3000, so the 32-character access token is the only guard and must stay fail-closed. Try the mutation once: make the comparison always true and watch five tests fail. |
+| `src/services/auth.js`, `requireToken`, `gitlab()`, `callApi` or `failure()` in `src/services/api.js` | The GitLab key still goes only into the `Authorization` header built in `gitlab()`, and is never a caller's bearer. Every message built from GitLab's text or a network error still passes `redact`. The tests that make GitLab, the network and a handler echo the token still pass — and fail when you remove the redaction, which is worth trying once. The token still travels as `Authorization: Bearer`, never as GitLab's own `PRIVATE-TOKEN` header, which the runtime would forward to another host on a redirect; redirects are still followed by the runtime and not by hand (nothing sets `redirect` to `manual`), and the redirect test still shows a second host receiving no token. |
+| `callTool` in `src/routes/server.js` | The crash path still redacts both the log line and the returned text, with the GitLab key. |
+| `src/routes/http.js` or `src/services/auth.js` | A request without the access token is still a 401 before any body is read or path matched; the comparison is still over SHA-256 digests with `timingSafeEqual`; HTTP still refuses to start without `MCP_AUTH_TOKEN` of 32 characters or more; the access token still appears in no request to GitLab (`test/http.test.js` searches for it) and `MCP_AUTH_TOKEN` is still never read over stdio; the default bind is still every interface on port 3000, so the 32-character access token is the only guard and must stay fail-closed. Try the mutation once: make the comparison always true and watch five tests fail. |
 | `parseRepo`, `refName`, `refPath`, `filePath`, or how any tool builds a path | Every path segment still comes from these; empty, `.` and `..` segments are still refused; `gitlab()` still refuses a path with `?` or `#`. |
 | A tool's `inputSchema` | No key names a credential (the registry test fails it), and nothing lets a caller choose the host. |
-| `API_BASE` in `src/config.js`, or any new constant that looks like a host | It is still a constant. |
+| `API_BASE` in `src/config/config.js`, or any new constant that looks like a host | It is still a constant. |
 | A destructive tool, or any tool's annotations | Its kind in `test/surface.js` is `destroy`, its description tells the client to confirm with the owner, and `repo_delete` still refuses without a matching `confirm`. |
 | Dependencies in `package.json` | Still the MCP SDK and zod only (`npm ls --omit=dev --depth=0`). A third needs a decision record first. |
-| Anything under `src/` that could open a socket or serve | ``grep -rln -e "node:http" -e "node:net" -e "node:cluster" -e express src`` still prints only `src/http.js`. |
+| Anything under `src/` that could open a socket or serve | ``grep -rln -e "node:http" -e "node:net" -e "node:cluster" -e express src`` still prints only `src/routes/http.js`. |
 | The `Dockerfile` or `.dockerignore` | `--ignore-scripts` survives, the file still ends as `USER node`, and there is still no `ENV`, `EXPOSE` or `ENTRYPOINT` line (``grep -n -e '^ENV' -e '^EXPOSE' -e '^ENTRYPOINT' Dockerfile`` prints nothing). `.env*` and `.mcp.json` stay in `.dockerignore`. |
 
 ## C. What to escalate rather than decide
 
 Ask the user; do not resolve these on your own initiative.
 
-* **Any transport other than stdio and the HTTP one, any listener outside `src/http.js`, any route
+* **Any transport other than stdio and the HTTP one, any listener outside `src/routes/http.js`, any route
   beyond `POST /mcp` and `GET /healthz`, HTTP that starts without an access token or accepts a
   caller's own GitLab token, any use of the access token against GitLab, any storage of tokens between
   requests.** See

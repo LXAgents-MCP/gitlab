@@ -12,43 +12,47 @@ agent-facing orientation and links out rather than restating.
 
 `LXAgents-MCP/gitlab` — an MCP server named `lxagents-gitlab` that gives an LLM access to GitLab
 through the REST API, over stdio or HTTP. Plain JavaScript, Node ESM, no build step. It is a **consumer**
-of the shared instruction set and the **producer** of the tool surface in `src/tools/`; see
+of the shared instruction set and the **producer** of the tool surface in `src/controllers/`; see
 [`../../rules/repository.md`](../../rules/repository.md).
 
 ## What lives where
 
+`src/` is `index.js` plus six folders by role — `routes/`, `controllers/` (the tools), `services/`, `models/`,
+`utils/` and `config/`. Which module goes where, and why, is in
+[`wiki/information/architecture.md`](../../../wiki/information/architecture.md#where-the-code-lives).
+
 | Path | Contents | Touch it when |
 |---|---|---|
 | `src/index.js` | The one entry point: `--help`, `--version`, `MCP_TRANSPORT`, the stdio transport, `SIGINT` and `SIGTERM`. | The process contract. |
-| `src/http.js` | The HTTP transport and the only listener: `POST /mcp`, `GET /healthz`, a fresh stateless server per request, `PORT` and `HOST`. Also what `npm run start:http` runs. | Anything about serving over HTTP. |
-| `src/auth.js` | The two secrets: the access token for HTTP (`MCP_AUTH_TOKEN`: the 32-character floor, the bearer parser, the constant-time comparison) and the GitLab key (`GITLAB_API_KEY`). | Anything about either secret. |
-| `src/server.js` | Builds one `McpServer`, registers every tool, shapes results, and carries the `instructions` text every client reads at `initialize`. | The protocol surface. |
-| `src/api.js` | The GitLab client: the token, addressing (`parseRepo`, `refName`, `refPath`, `filePath`), `callApi`, `gitlab()`, the wording of every failure, paging. | How a call is addressed, made, or fails. |
-| `src/args.js` | Argument checks: text, flags, whole numbers, choices, lists, label lists. | A new kind of argument. |
-| `src/users.js` | Username to user id, refusing an unknown name before any write. | A tool that names a person. |
-| `src/render.js` | The one renderer from a payload to the text the model reads. | How a result reads. |
-| `src/schemas.js` | Shared zod fragments (`repoArg`, paging) and the four annotation sets. | A fragment or hint several tools share. |
-| `src/text.js` | `short`, `firstLine`, `head`, `tail`, `cleanLog`. | Cutting or shortening text. |
-| `src/shapes.js` | GitLab's objects as the tools report them — a project, a release, an issue or a job — each a schema and the function that fills it, and `expectBody`, which checks an answer is the object expected. | A second tool returns an object another already does. |
-| `src/merge-status.js`, `src/wait.js` | What GitLab says about whether a merge request can be merged; the one `sleep`, so a test can replace the clock. | Merging, or waiting on GitLab. |
-| `src/config.js` | Every constant: the variable name, site and API base and version pin, timeout, limits, the HTTP defaults. | Changing a limit. |
-| `src/errors.js`, `src/log.js`, `src/version.js` | `Refused`; the stderr logger; `ROOT`, `VERSION` and `SERVER_NAME`. | Rarely. |
-| `src/tools/` | `index.js`, the registry, and one module per tool. | Adding or changing a tool — **a release**. |
+| `src/routes/http.js` | The HTTP transport and the only listener: `POST /mcp`, `GET /healthz`, a fresh stateless server per request, `PORT` and `HOST`. Also what `npm run start:http` runs. | Anything about serving over HTTP. |
+| `src/services/auth.js` | The two secrets: the access token for HTTP (`MCP_AUTH_TOKEN`: the 32-character floor, the bearer parser, the constant-time comparison) and the GitLab key (`GITLAB_API_KEY`). | Anything about either secret. |
+| `src/routes/server.js` | Builds one `McpServer`, registers every tool, shapes results, and carries the `instructions` text every client reads at `initialize`. | The protocol surface. |
+| `src/services/api.js` | The GitLab client: the token, addressing (`parseRepo`, `refName`, `refPath`, `filePath`), `callApi`, `gitlab()`, the wording of every failure, paging. | How a call is addressed, made, or fails. |
+| `src/models/args.js` | Argument checks: text, flags, whole numbers, choices, lists, label lists. | A new kind of argument. |
+| `src/services/users.js` | Username to user id, refusing an unknown name before any write. | A tool that names a person. |
+| `src/utils/render.js` | The one renderer from a payload to the text the model reads. | How a result reads. |
+| `src/models/schemas.js` | Shared zod fragments (`repoArg`, paging) and the four annotation sets. | A fragment or hint several tools share. |
+| `src/utils/text.js` | `short`, `firstLine`, `head`, `tail`, `cleanLog`. | Cutting or shortening text. |
+| `src/models/shapes.js` | GitLab's objects as the tools report them — a project, a release, an issue or a job — each a schema and the function that fills it, and `expectBody`, which checks an answer is the object expected. | A second tool returns an object another already does. |
+| `src/services/merge-status.js`, `src/utils/wait.js` | What GitLab says about whether a merge request can be merged; the one `sleep`, so a test can replace the clock. | Merging, or waiting on GitLab. |
+| `src/config/config.js` | Every constant: the variable name, site and API base and version pin, timeout, limits, the HTTP defaults. | Changing a limit. |
+| `src/utils/errors.js`, `src/utils/log.js`, `src/config/version.js` | `Refused`; the stderr logger; `ROOT`, `VERSION` and `SERVER_NAME`. | Rarely. |
+| `src/controllers/` | `index.js`, the registry, and one module per tool. | Adding or changing a tool — **a release**. |
 | `Dockerfile`, `.dockerignore` | The image (stdio by default, HTTP when told to): `node:22-alpine`, `npm ci --ignore-scripts --omit=dev`, `USER node`, `CMD ["node", "src/index.js"]`, and nothing else. It has never been built. | The image changes — and say it is unbuilt if it still is. |
 | `test/` | One file per subject, plus `helpers.js` and `surface.js`, which every other file imports. | Always. Every behavioural change ships with a test. |
 | `.agents/` | This repository's own rules, indexes, agent wiki and memory. | You are changing something true only here. |
 | `wiki/` | Human documentation, and `wiki/logs/` for release history. | A person needs to read it. |
 
-There is no `dist/`, no `src/transport/` and no `content/`; HTTP is `src/http.js` and nothing else. If a file you are about to
+There is no `dist/`, no `src/transport/` and no `content/`; HTTP is `src/routes/http.js` and nothing else. If a file you are about to
 edit is under one of the first three, it does not exist here.
 
 ## Entry point
 
 There is **one**: `src/index.js`, what an MCP client spawns. It reads `MCP_TRANSPORT`: stdio connects a
 stdio transport and exits by itself when its client goes away, because stdin closes; `http` hands over to
-`src/http.js`. Either handles `SIGINT` and `SIGTERM`, and nothing writes to stdout. Behind it,
-`src/server.js` calls `createServer()`, which registers whatever `src/tools/index.js` discovered. (`npm run
-start:http` runs `src/http.js` directly.)
+`src/routes/http.js`. Either handles `SIGINT` and `SIGTERM`, and nothing writes to stdout. Behind it,
+`src/routes/server.js` calls `createServer()`, which registers whatever `src/controllers/index.js` discovered. (`npm run
+start:http` runs `src/routes/http.js` directly.)
 
 ## Commands
 

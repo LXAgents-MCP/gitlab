@@ -64,7 +64,7 @@ writes to stdout; diagnostics go to stderr, which is why `--help` and `--version
 
 ## Tool changes require a restart
 
-The registry is read once, at startup. Editing `src/tools/` has no effect on a running process:
+The registry is read once, at startup. Editing `src/controllers/` has no effect on a running process:
 restart the client or the server.
 
 ## Related pages

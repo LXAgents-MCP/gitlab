@@ -13,7 +13,7 @@ consumes the shared agent instruction set through a connector rather than copyin
 | Local — this repository's own | [`.agents/`](.agents/) | Rules, indexes, agent wiki and memory that are true here and nowhere else. |
 
 This repository **consumes** the shared set and **produces** one thing: the GitLab tool surface in
-[`src/tools/`](src/tools/). It publishes no instructions, so it has no `content/`; a copy of the
+[`src/controllers/`](src/controllers/). It publishes no instructions, so it has no `content/`; a copy of the
 shared set here would override the original by `name` and then go stale.
 
 The routing question for a new rule is *is this true for more than this repository?* If yes, it is
@@ -108,7 +108,7 @@ a second table is a second place to forget to update. The rows below are this re
 
 | When you are about to… | Load and obey |
 |---|---|
-| Add, rename, remove or change a tool, or touch anything under `src/tools/` | [`.agents/rules/tool-surface.md`](.agents/rules/tool-surface.md) |
+| Add, rename, remove or change a tool, or touch anything under `src/controllers/` | [`.agents/rules/tool-surface.md`](.agents/rules/tool-surface.md) |
 | Need project facts, commands, or orientation | [`.agents/wiki/context/repository-map.md`](.agents/wiki/context/repository-map.md) |
 | Work on the token, a destructive tool, error text, logging, a dependency, or anything else security | [`.agents/wiki/security/security-boundaries.md`](.agents/wiki/security/security-boundaries.md) |
 | Do anything at all in this repository | [`.agents/rules/repository.md`](.agents/rules/repository.md) |
@@ -148,7 +148,7 @@ instruction body until that instruction has been selected.
 * Release logs → `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md`.
 * Server code → `src/`. Tests → `test/`.
 
-A module added to `src/tools/` is served as a tool on the next boot, so it is not a draft space —
+A module added to `src/controllers/` is served as a tool on the next boot, so it is not a draft space —
 see [`.agents/rules/tool-surface.md`](.agents/rules/tool-surface.md).
 
 ## Discovery protocol

@@ -16,7 +16,7 @@ description: Current known state of LXAgents-MCP/gitlab — what exists, what is
 **What it is.** An MCP server, stdio by default and HTTP behind an access token, `lxagents-gitlab`, over the GitLab REST API at `gitlab.com`.
 Plain JavaScript, Node ESM, no build step, two runtime dependencies: the MCP SDK and zod.
 
-**Surface.** One tool per module in `src/tools/`. The full list is pinned in `test/surface.js` and
+**Surface.** One tool per module in `src/controllers/`. The full list is pinned in `test/surface.js` and
 described in `wiki/reference/mcp-surface.md`: projects, branches, files and directories, commits,
 tags and releases, issues, merge requests and pipelines. A tool count is deliberately not stated
 here: it goes stale at the next module. `repo_create` was moved here from the `cli` server, where it

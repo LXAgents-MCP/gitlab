@@ -16,16 +16,16 @@ set already carries.
 | Role | Meaning |
 |---|---|
 | **Consumer** | It follows the shared instruction set, read through the connector, plus the local additions in `.agents/`. |
-| **Producer** | It serves the GitLab tool surface: one module per tool in `src/tools/`. |
+| **Producer** | It serves the GitLab tool surface: one module per tool in `src/controllers/`. |
 
-Keep them apart. `.agents/` is this repository's own instruction set; `src/tools/` is the product.
+Keep them apart. `.agents/` is this repository's own instruction set; `src/controllers/` is the product.
 Nothing from the shared set is copied here.
 
 ## What lives where
 
 | Path | Holds |
 |---|---|
-| `src/` | The server. `src/tools/` is the tool surface; everything else in `src/` is shared by it. |
+| `src/` | The server: `index.js` and one folder per role — `routes/`, `controllers/`, `services/`, `models/`, `utils/`, `config/` (see [Where the code lives](../../wiki/information/architecture.md#where-the-code-lives)). `src/controllers/` is the tool surface; everything else in `src/` is shared by it. |
 | `test/` | The server's tests. |
 | `.agents/` | This repository's own rules, indexes, agent wiki and memory. |
 | `wiki/` | Human documentation, and the release logs under `wiki/logs/`. |
@@ -55,15 +55,15 @@ code rather than an uninstalled tree. Install first, then trust the number.
 
 * **ESM only.** `import`/`export`, `.js` extensions in relative specifiers, no `require`.
 * **Nothing writes to stdout.** On stdio, stdout *is* the JSON-RPC channel. Diagnostics go through
-  `src/log.js`, which writes to stderr, on the HTTP transport too. There is no `console.log` anywhere
+  `src/utils/log.js`, which writes to stderr, on the HTTP transport too. There is no `console.log` anywhere
   in `src/`.
 * **One `McpServer` per connection.** `createServer()` builds a fresh instance; never hoist one to
   module scope.
-* **Every URL is built in `src/api.js`.** A project, a reference and a file path are validated
+* **Every URL is built in `src/services/api.js`.** A project, a reference and a file path are validated
   and percent-encoded there, and a tool never concatenates its own.
 * **Arguments are checked before the token is read**, so a bad call costs no request and the
   refusal names the argument.
-* **The GitLab key is read per call**, through `src/auth.js` and nowhere else, from `GITLAB_API_KEY`, on
+* **The GitLab key is read per call**, through `src/services/auth.js` and nowhere else, from `GITLAB_API_KEY`, on
   both transports. It is never an argument, and is scrubbed from every message — refusals and crashes
   alike. **The access token is a different secret**: `MCP_AUTH_TOKEN` guards the HTTP door, is compared
   and dropped, and is never used against GitLab or read over stdio.
@@ -92,7 +92,7 @@ which define no tests, so the runner's total includes them.
 * A build step, or any compiled output committed to the repository.
 * A dependency added to serve one call site. The runtime dependencies are the MCP SDK and zod; a
   third needs its own record under `.agents/memory/decisions/` before it lands, not after.
-* A transport other than stdio and the HTTP one in `src/http.js`, a listener anywhere else, a route
+* A transport other than stdio and the HTTP one in `src/routes/http.js`, a listener anywhere else, a route
   beyond `POST /mcp` and `GET /healthz`, a way for an HTTP request to get through without the access
   token, HTTP starting without one, a client's bearer used as the GitLab key (or the other way round),
   or a store of tokens between requests. See
@@ -103,8 +103,8 @@ which define no tests, so the runner's total includes them.
   `--help` and `--version`; another of either is a change to a public surface, not an implementation
   detail.
 * A tool argument that carries a credential, or any way for a caller to choose the host. The API
-  base is a constant in `src/config.js`, which is also why self-managed GitLab instances are not supported.
-* A URL built anywhere but `src/api.js`.
+  base is a constant in `src/config/config.js`, which is also why self-managed GitLab instances are not supported.
+* A URL built anywhere but `src/services/api.js`.
 * A third documentation tree. `wiki/` and `.agents/wiki/` are the only two.
 * `content/`, or any copy of the shared set. This repository reads it through the connector.
 

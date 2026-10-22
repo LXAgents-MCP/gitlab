@@ -2,7 +2,7 @@
 
 Everything `lxagents-gitlab` exposes.
 
-**It exposes tools, and nothing else.** One per module in `src/tools/`. There are no prompts and no
+**It exposes tools, and nothing else.** One per module in `src/controllers/`. There are no prompts and no
 resources, and two transports: stdio and HTTP. See [What this server does not expose](#what-this-server-does-not-expose).
 
 ## Server identity
@@ -10,8 +10,8 @@ resources, and two transports: stdio and HTTP. See [What this server does not ex
 | Field | Value |
 |---|---|
 | `name` | `lxagents-gitlab` |
-| `version` | from `package.json`, read at import by `src/version.js` |
-| transport | stdio by default (`src/index.js`); HTTP with `MCP_TRANSPORT=http` (`src/http.js`), where every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>` |
+| `version` | from `package.json`, read at import by `src/config/version.js` |
+| transport | stdio by default (`src/index.js`); HTTP with `MCP_TRANSPORT=http` (`src/routes/http.js`), where every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>` |
 
 `initialize` also returns `instructions`: that every tool needs `GITLAB_API_KEY` in the server's environment, that
 a project is named by its full path or numeric id, and that tools which delete or merge are
@@ -22,7 +22,7 @@ destructive and should be confirmed with the owner first.
 ### Naming
 
 A tool is `{thing}_{action}`: `repo_create`, `branch_list`, `pr_merge`. The module that defines it
-is the same name in kebab case, `src/tools/pr-merge.js`. The names are the GitHub server's: here
+is the same name in kebab case, `src/controllers/pr-merge.js`. The names are the GitHub server's: here
 `repo_` acts on a project, `pr_` on a merge request and `workflow_` on a pipeline.
 
 ### Addressing a repository
@@ -30,7 +30,7 @@ is the same name in kebab case, `src/tools/pr-merge.js`. The names are the GitHu
 Every tool that acts on a repository takes one `repo` argument: the project's full path, such as
 `group/project` or `group/subgroup/project`, or its numeric id. The two that cannot are
 `repo_create`, which has no project yet, and `repo_search`, which looks across all of them. `repo` is
-parsed once, in `src/api.js`, and a value that is neither a path of valid names nor a number is
+parsed once, in `src/services/api.js`, and a value that is neither a path of valid names nor a number is
 refused before any request. A path is sent as the single encoded segment GitLab expects.
 
 ### Results
