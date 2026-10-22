@@ -81,3 +81,11 @@ was checked over every import; the repository rules and the map link to it rathe
 changelogs and earlier records are left as written (A5).
 
 Checked: no relative link in any `.md` file is broken. Code is untouched in this task.
+
+### Task 4 — release/0.5.0
+
+Landed. The version is `0.5.0` in `package.json` and the lockfile's own two entries (A3: chosen under the owner's
+instruction to take the recommended option, and stated to them with the plan). `wiki/logs/0/5/0/CHANGELOG.md` says
+first that nothing a client calls changes, then the one path that moved and what to run instead. Its row is first in
+`index/logs-index.md`. `memory/state/repository-state.md` describes `0.5.0`. Earlier changelogs are left as
+written. No git tag was made and nothing was published.

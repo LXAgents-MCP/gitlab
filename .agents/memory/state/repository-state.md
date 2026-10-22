@@ -5,13 +5,13 @@ description: Current known state of LXAgents-MCP/gitlab — what exists, what is
 
 # Repository State
 
-## 2026-10-10
+## 2026-10-22
 
-**Version `0.4.0`.** `package.json` and the lockfile carry it, and the release log is
-`wiki/logs/0/4/0/CHANGELOG.md`; earlier releases are `0/3/0`, `0/2/0` and `0/1/0`. 0.4.0 moved the HTTP defaults to
-`shared-instruction`'s, port 3000 on every interface. No git tag was made, by decision (D3 in
-`tasks/forge-servers.md`, D8 in `tasks/http-token-auth.md`, T7 in `tasks/two-token-auth.md`, H3 in
-`tasks/http-defaults.md`).
+**Version `0.5.0`.** `package.json` and the lockfile carry it, and the release log is
+`wiki/logs/0/5/0/CHANGELOG.md`; earlier releases are `0/4/0`, `0/3/0`, `0/2/0` and `0/1/0`. 0.5.0 split `src/` into
+`routes/`, `controllers/` (was `src/tools/`), `services/`, `models/`, `utils/` and `config/`, with no change to the
+tools. No git tag was made, by decision (D3 in `tasks/forge-servers.md`, D8 in `tasks/http-token-auth.md`, T7 in
+`tasks/two-token-auth.md`, H3 in `tasks/http-defaults.md`, A3 in `tasks/src-architecture.md`).
 
 **What it is.** An MCP server, stdio by default and HTTP behind an access token, `lxagents-gitlab`, over the GitLab REST API at `gitlab.com`.
 Plain JavaScript, Node ESM, no build step, two runtime dependencies: the MCP SDK and zod.
