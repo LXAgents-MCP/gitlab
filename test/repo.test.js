@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TOKEN_ENV } from "../src/config.js";
-import { Refused } from "../src/errors.js";
-import { TOOL as create, handle as repoCreate } from "../src/tools/repo-create.js";
-import { TOOL as del, handle as repoDelete } from "../src/tools/repo-delete.js";
-import { TOOL as fork, handle as repoFork } from "../src/tools/repo-fork.js";
-import { TOOL as read, handle as repoRead } from "../src/tools/repo-read.js";
-import { TOOL as search, handle as repoSearch } from "../src/tools/repo-search.js";
-import { TOOL as update, handle as repoUpdate } from "../src/tools/repo-update.js";
-import { VERSION } from "../src/version.js";
+import { TOKEN_ENV } from "../src/config/config.js";
+import { Refused } from "../src/utils/errors.js";
+import { TOOL as create, handle as repoCreate } from "../src/controllers/repo-create.js";
+import { TOOL as del, handle as repoDelete } from "../src/controllers/repo-delete.js";
+import { TOOL as fork, handle as repoFork } from "../src/controllers/repo-fork.js";
+import { TOOL as read, handle as repoRead } from "../src/controllers/repo-read.js";
+import { TOOL as search, handle as repoSearch } from "../src/controllers/repo-search.js";
+import { TOOL as update, handle as repoUpdate } from "../src/controllers/repo-update.js";
+import { VERSION } from "../src/config/version.js";
 import { TOKEN, expectOutput, isRefusal, mockApi, reply, withToken, withoutToken } from "./helpers.js";
 
 /* ------------------------------------------------------------------ repo_create

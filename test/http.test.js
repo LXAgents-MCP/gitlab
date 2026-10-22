@@ -5,9 +5,9 @@ import { request } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { DEFAULT_HOST, DEFAULT_PORT, MAX_BODY_BYTES } from "../src/config.js";
-import { httpSettings, startHttpServer } from "../src/http.js";
-import { SERVER_NAME, VERSION } from "../src/version.js";
+import { DEFAULT_HOST, DEFAULT_PORT, MAX_BODY_BYTES } from "../src/config/config.js";
+import { httpSettings, startHttpServer } from "../src/routes/http.js";
+import { SERVER_NAME, VERSION } from "../src/config/version.js";
 import { mockApi, reply, TOKEN, withToken, withoutToken } from "./helpers.js";
 import { TOOL_NAMES } from "./surface.js";
 

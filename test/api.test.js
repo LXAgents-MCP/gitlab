@@ -14,10 +14,10 @@ import {
   refName,
   refPath,
   requireToken,
-} from "../src/api.js";
-import { API_TIMEOUT_MS } from "../src/config.js";
-import { Refused } from "../src/errors.js";
-import { VERSION } from "../src/version.js";
+} from "../src/services/api.js";
+import { API_TIMEOUT_MS } from "../src/config/config.js";
+import { Refused } from "../src/utils/errors.js";
+import { VERSION } from "../src/config/version.js";
 import { TOKEN, isRefusal, mockApi, reply, withToken, withoutToken } from "./helpers.js";
 
 /** Set an environment variable for one test and put it back afterwards. */

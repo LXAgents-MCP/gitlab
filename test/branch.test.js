@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TOOL as create, handle as branchCreate } from "../src/tools/branch-create.js";
-import { TOOL as del, handle as branchDelete } from "../src/tools/branch-delete.js";
-import { TOOL as list, handle as branchList } from "../src/tools/branch-list.js";
-import { TOOL as merge, handle as branchMerge } from "../src/tools/branch-merge.js";
-import { TOOL as read, handle as branchRead } from "../src/tools/branch-read.js";
-import { mergeability } from "../src/merge-status.js";
+import { TOOL as create, handle as branchCreate } from "../src/controllers/branch-create.js";
+import { TOOL as del, handle as branchDelete } from "../src/controllers/branch-delete.js";
+import { TOOL as list, handle as branchList } from "../src/controllers/branch-list.js";
+import { TOOL as merge, handle as branchMerge } from "../src/controllers/branch-merge.js";
+import { TOOL as read, handle as branchRead } from "../src/controllers/branch-read.js";
+import { mergeability } from "../src/services/merge-status.js";
 import { expectOutput, isRefusal, mockApi, reply, withToken, withoutToken } from "./helpers.js";
 
 const API = "https://gitlab.com/api/v4";

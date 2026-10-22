@@ -11,7 +11,7 @@ import {
   requiredInt,
   requiredText,
   textList,
-} from "../src/args.js";
+} from "../src/models/args.js";
 import { isRefusal } from "./helpers.js";
 
 test("optionalText trims, drops blanks and refuses a non-string", () => {

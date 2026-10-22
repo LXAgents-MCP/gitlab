@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MAX_FILE_CHARS, MAX_WRITE_BYTES } from "../src/config.js";
-import { TOOL as create, handle as fileCreate } from "../src/tools/file-create.js";
-import { TOOL as del, handle as fileDelete } from "../src/tools/file-delete.js";
-import { TOOL as dir, handle as directoryList } from "../src/tools/directory-list.js";
-import { TOOL as read, handle as fileRead } from "../src/tools/file-read.js";
-import { TOOL as update, handle as fileUpdate } from "../src/tools/file-update.js";
+import { MAX_FILE_CHARS, MAX_WRITE_BYTES } from "../src/config/config.js";
+import { TOOL as create, handle as fileCreate } from "../src/controllers/file-create.js";
+import { TOOL as del, handle as fileDelete } from "../src/controllers/file-delete.js";
+import { TOOL as dir, handle as directoryList } from "../src/controllers/directory-list.js";
+import { TOOL as read, handle as fileRead } from "../src/controllers/file-read.js";
+import { TOOL as update, handle as fileUpdate } from "../src/controllers/file-update.js";
 import { expectOutput, isRefusal, mockApi, reply, withToken, withoutToken } from "./helpers.js";
 
 const API = "https://gitlab.com/api/v4";

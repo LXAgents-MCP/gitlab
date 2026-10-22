@@ -54,3 +54,19 @@ Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names
 
 Landed: this record and its row in `memory-index.md`. Nothing outside `.agents/` changes in this task. The `PR`
 column is filled by the release task once the pull requests exist, so no earlier branch needs a rebase.
+
+### Task 2 — refactor/src-architecture
+
+Landed. `src/` holds `index.js` and six folders, every file moved with `git mv` so history follows it:
+`routes/` (`http.js`, `server.js`), `models/`, `services/`, `controllers/` (the former `src/tools/`, registry
+included), `utils/` and `config/`, with the unnamed modules placed as A1 says. Both repositories were moved by one
+script running the two as background processes, and their imports rewritten the same way: a Node script read git's
+own rename list and recomputed every relative specifier in `src/` and `test/` from it (64 files moved, 304
+specifiers rewritten). Three paths that are not imports changed by hand: `ROOT` in `src/config/version.js` is now
+two levels up, `test/registry.test.js` walks `src/controllers`, and `npm run start:http` runs
+`src/routes/http.js` (A2). Comments that named a module by path name the new one. No code inside a module changed.
+
+Tests: 302 passing, none failing — the same as before. `node src/index.js --version` prints 0.4.0 and
+`npm run start:http` serves on loopback with an access token set.
+
+Left for task 3: every living page that names an old path.

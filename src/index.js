@@ -7,7 +7,7 @@
  *
  * - GITLAB_API_KEY is the GitLab token, used for every call on both transports.
  * - MCP_AUTH_TOKEN is this server's own access token, which an HTTP client must present as
- *   `Authorization: Bearer <token>` (src/http.js). stdio never reads it.
+ *   `Authorization: Bearer <token>` (src/routes/http.js). stdio never reads it.
  *
  * stdio: the client starts this process and speaks to it over a pipe; register it with the GitLab
  * token in its `env` block.
@@ -26,9 +26,9 @@
  */
 import { parseArgs } from "node:util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { log } from "./log.js";
-import { createServer } from "./server.js";
-import { SERVER_NAME, VERSION } from "./version.js";
+import { log } from "./utils/log.js";
+import { createServer } from "./routes/server.js";
+import { SERVER_NAME, VERSION } from "./config/version.js";
 
 const USAGE = `LXAgents GitLab MCP Server
 
@@ -79,7 +79,7 @@ const transportName = (process.env.MCP_TRANSPORT ?? "").trim().toLowerCase() || 
 
 if (transportName === "http" || transportName === "streamable-http") {
   // Imported only now, so the stdio process never loads the HTTP code.
-  const { main } = await import("./http.js");
+  const { main } = await import("./routes/http.js");
   await main();
 } else if (transportName === "stdio") {
   const server = createServer();

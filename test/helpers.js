@@ -4,8 +4,8 @@
  */
 import assert from "node:assert/strict";
 import { z } from "zod";
-import { TOKEN_ENV } from "../src/config.js";
-import { Refused } from "../src/errors.js";
+import { TOKEN_ENV } from "../src/config/config.js";
+import { Refused } from "../src/utils/errors.js";
 
 export const TOKEN = "glpat-test-token-1234";
 
