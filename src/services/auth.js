@@ -2,9 +2,11 @@
  * The two secrets this server deals with, and which one is for what.
  *
  * - **`MCP_AUTH_TOKEN` guards the door.** It is the server's own secret for the HTTP transport: a
- *   client proves it holds it with `Authorization: Bearer <token>`, and the server refuses to
- *   serve HTTP without one. stdio is a pipe the client spawns on its own machine, so there is
- *   nobody to authenticate and `src/index.js` never reads it on that path.
+ *   client proves it holds it with `Authorization: Bearer <token>`, and a server install - one that
+ *   listens where other machines can reach it - refuses to serve HTTP without one. A local install
+ *   listens on loopback only and may leave it unset; the `Host` and `Origin` checks in
+ *   `src/routes/http.js` then stand where the token would. stdio is a pipe the client spawns on its
+ *   own machine, so there is nobody to authenticate and `src/index.js` never reads it on that path.
  * - **`GITLAB_API_KEY` is the key to GitLab.** It is the token every GitLab call is made with, on
  *   both transports, read from this process's environment when a tool is called. A client never
  *   supplies it and never sees it, and the bearer a client presents is never sent to GitLab.
@@ -77,6 +79,32 @@ export function bearerCredential(header) {
  */
 export function credentialMatches(credential, expected) {
   return timingSafeEqual(digest(credential), expected);
+}
+
+/* ------------------------------------------------------------------ local installs: loopback */
+
+/**
+ * Whether `name` is this machine: `localhost`, an address in `127.0.0.0/8`, or `::1`, with or without
+ * the brackets a URL puts round an IPv6 address. Used for where the HTTP transport listens, which
+ * decides whether it is a local install, and for the host a request says it is addressed to.
+ *
+ * Only these literal forms count. A name that merely resolves to loopback does not, because what it
+ * resolves to can change after the check, which is how DNS rebinding works.
+ *
+ * @param {string | undefined} name
+ * @returns {boolean}
+ */
+export function isLoopbackHost(name) {
+  const host = String(name ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\[(.*)\]$/, "$1")
+    .replace(/\.$/, "");
+  if (host === "localhost" || host === "::1") return true;
+  // A dotted IPv4 address in 127.0.0.0/8, matched by hand so that only src/routes/http.js loads a
+  // network module.
+  const octets = /^127\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  return octets !== null && octets.slice(1).every((octet) => Number(octet) <= 255);
 }
 
 /* ------------------------------------------------------------------ the key: GITLAB_API_KEY */

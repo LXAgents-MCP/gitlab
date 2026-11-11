@@ -8,6 +8,7 @@ import {
   configuredAuthToken,
   credentialMatches,
   digest,
+  isLoopbackHost,
   tokenToScrub,
 } from "../src/services/auth.js";
 import { AUTH_ENV, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "../src/config/config.js";
@@ -96,4 +97,27 @@ test("GITLAB_API_KEY is not an access token: it does not satisfy the HTTP door",
   assert.equal(configuredAuthToken(), "");
   assert.equal(authTokenProblem(), "MCP_AUTH_TOKEN is not set");
   assert.equal(credentialMatches(TOKEN, digest(ACCESS)), false);
+});
+
+test("isLoopbackHost knows this machine only by its literal names, never by what a name resolves to", () => {
+  for (const name of ["localhost", "LOCALHOST", "localhost.", " localhost ", "127.0.0.1", "127.1.2.3", "127.255.255.255", "::1", "[::1]"]) {
+    assert.equal(isLoopbackHost(name), true, name);
+  }
+  for (const name of [
+    "0.0.0.0",
+    "::",
+    "10.0.0.1",
+    "192.168.1.10",
+    "128.0.0.1",
+    "127.0.0.1.nip.io",
+    "localhost.example.com",
+    "evil-localhost",
+    "127.0.0",
+    "127.0.0.256",
+    "[::1",
+    "",
+    undefined,
+  ]) {
+    assert.equal(isLoopbackHost(name), false, String(name));
+  }
 });

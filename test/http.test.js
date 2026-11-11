@@ -5,8 +5,8 @@ import { request } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { DEFAULT_HOST, DEFAULT_PORT, MAX_BODY_BYTES } from "../src/config/config.js";
-import { httpSettings, startHttpServer } from "../src/routes/http.js";
+import { DEFAULT_HOST, DEFAULT_PORT, LOCAL_HOST, MAX_BODY_BYTES } from "../src/config/config.js";
+import { httpSettings, localRequestProblem, startHttpServer } from "../src/routes/http.js";
 import { SERVER_NAME, VERSION } from "../src/config/version.js";
 import { mockApi, reply, TOKEN, withToken, withoutToken } from "./helpers.js";
 import { TOOL_NAMES } from "./surface.js";
@@ -26,6 +26,13 @@ const ACCESS = "f00dfacecafe0123456789abcdef".padEnd(64, "9");
 /** A running server on a free loopback port, guarded by ACCESS, closed when the test ends. */
 async function serve(t) {
   const running = await startHttpServer({ port: 0, host: "127.0.0.1", authToken: ACCESS });
+  t.after(() => running.close());
+  return `http://127.0.0.1:${running.port}`;
+}
+
+/** A local install on a free loopback port: no access token at all. Closed when the test ends. */
+async function serveLocal(t) {
+  const running = await startHttpServer({ port: 0, host: "127.0.0.1", authToken: "" });
   t.after(() => running.close());
   return `http://127.0.0.1:${running.port}`;
 }
@@ -261,17 +268,26 @@ test("startHttpServer will not listen without an access token of 32 characters, 
   await assert.rejects(startHttpServer({ port: 0, authToken: "short" }), /MCP_AUTH_TOKEN is 5 characters, and it must be at least 32/);
 });
 
-test("httpSettings defaults to shared-instruction's: port 3000 on every interface", () => {
-  assert.deepEqual(httpSettings({}), { port: 3000, host: "0.0.0.0" });
-  assert.deepEqual(httpSettings({ PORT: "", HOST: "" }), { port: 3000, host: "0.0.0.0" });
-  assert.deepEqual(httpSettings({ PORT: "   ", HOST: "   " }), { port: 3000, host: "0.0.0.0" });
+test("httpSettings with an access token defaults to shared-instruction's: port 3000 on every interface", () => {
+  const token = { MCP_AUTH_TOKEN: ACCESS };
+  assert.deepEqual(httpSettings(token), { port: 3000, host: "0.0.0.0" });
+  assert.deepEqual(httpSettings({ ...token, PORT: "", HOST: "" }), { port: 3000, host: "0.0.0.0" });
+  assert.deepEqual(httpSettings({ ...token, PORT: "   ", HOST: "   " }), { port: 3000, host: "0.0.0.0" });
   assert.equal(DEFAULT_PORT, 3000);
   assert.equal(DEFAULT_HOST, "0.0.0.0");
 });
 
+test("httpSettings without an access token defaults to this machine only, a local install", () => {
+  assert.deepEqual(httpSettings({}), { port: 3000, host: "127.0.0.1" });
+  assert.deepEqual(httpSettings({ PORT: "", HOST: "" }), { port: 3000, host: "127.0.0.1" });
+  assert.deepEqual(httpSettings({ MCP_AUTH_TOKEN: "   " }), { port: 3000, host: "127.0.0.1" }, "a blank token is no token");
+  assert.equal(LOCAL_HOST, "127.0.0.1");
+  assert.deepEqual(httpSettings({ HOST: "0.0.0.0" }), { port: 3000, host: "0.0.0.0" }, "HOST still wins; the start refuses it");
+});
+
 test("httpSettings lets PORT and HOST override, accepts 0, and refuses a PORT that is not a port", () => {
   assert.deepEqual(httpSettings({ PORT: " 8080 ", HOST: " 127.0.0.1 " }), { port: 8080, host: "127.0.0.1" });
-  assert.deepEqual(httpSettings({ PORT: "0" }), { port: 0, host: "0.0.0.0" }, "0 asks the system for a free port");
+  assert.deepEqual(httpSettings({ PORT: "0", MCP_AUTH_TOKEN: ACCESS }), { port: 0, host: "0.0.0.0" }, "0 asks the system for a free port");
   for (const bad of ["abc", "70000", "-1", "80.5", "1e9"]) {
     assert.throws(() => httpSettings({ PORT: bad }), new RegExp(`PORT must be a whole number from 0 to 65535, got '${bad}'`), bad);
   }
@@ -386,12 +402,14 @@ test("HTTP without a GitLab key starts and says so, because a tool will refuse",
   await run.exited;
 });
 
-test("HTTP will not start without a usable access token: it exits 1, names the variable, and listens on nothing", async (t) => {
+test("HTTP other machines can reach will not start without a usable access token, and a set token is always checked", async (t) => {
   for (const [env, reason] of [
-    [{}, /MCP_AUTH_TOKEN is not set/],
-    [{ MCP_AUTH_TOKEN: "   " }, /MCP_AUTH_TOKEN is not set/],
+    [{ HOST: "0.0.0.0" }, /MCP_AUTH_TOKEN is not set/],
+    [{ HOST: "0.0.0.0", MCP_AUTH_TOKEN: "   " }, /MCP_AUTH_TOKEN is not set/],
+    [{ HOST: "192.0.2.1" }, /MCP_AUTH_TOKEN is not set/],
     [{ MCP_AUTH_TOKEN: "too-short" }, /MCP_AUTH_TOKEN is 9 characters, and it must be at least 32/],
-    [{ GITLAB_API_KEY: "glpat-only_the_key_1234" }, /MCP_AUTH_TOKEN is not set/],
+    [{ HOST: "127.0.0.1", MCP_AUTH_TOKEN: "too-short" }, /MCP_AUTH_TOKEN is 9 characters, and it must be at least 32/],
+    [{ HOST: "0.0.0.0", GITLAB_API_KEY: "glpat-only_the_key_1234" }, /MCP_AUTH_TOKEN is not set/],
   ]) {
     const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: "0", ...env });
     assert.equal(await exitCodeWithin(run), 1, JSON.stringify(env));
@@ -399,6 +417,7 @@ test("HTTP will not start without a usable access token: it exits 1, names the v
     assert.match(stderr, reason);
     assert.match(stderr, /will not start the HTTP transport/);
     assert.match(stderr, /openssl rand -hex 32/);
+    assert.match(stderr, /A local install needs no access token: leave HOST unset/);
     assert.equal(stdout, "");
     assert.doesNotMatch(stderr, /serving over http/);
     assert.ok(!stderr.includes("too-short"), "the value is never logged");
@@ -416,4 +435,104 @@ test("an unknown MCP_TRANSPORT, or a PORT that is not a port, exits 2 with the r
     assert.match(run.output().stderr, reason);
     assert.equal(run.output().stdout, "");
   }
+});
+
+/* ------------------------------------------------------------------ a local install: no access token */
+
+test("startHttpServer takes no access token only on loopback", async (t) => {
+  for (const host of ["0.0.0.0", "192.0.2.1"]) {
+    await assert.rejects(startHttpServer({ port: 0, host, authToken: "" }), /^Error: MCP_AUTH_TOKEN is not set$/, host);
+  }
+  const base = await serveLocal(t);
+  assert.equal((await send(base, { method: "GET", path: "/healthz" })).status, 200);
+});
+
+test("a local install serves a request addressed to loopback without any token", async (t) => {
+  const base = await serveLocal(t);
+  const port = new URL(base).port;
+
+  for (const host of [undefined, `localhost:${port}`, "localhost", `127.0.0.1:${port}`, `[::1]:${port}`]) {
+    const answer = await send(base, {
+      headers: { ...JSON_RPC, ...(host ? { Host: host } : {}) },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+    });
+    assert.equal(answer.status, 200, String(host));
+    assert.deepEqual(answer.json.result.tools.map((tool) => tool.name).sort(), [...TOOL_NAMES].sort());
+  }
+
+  const fromLocalPage = await send(base, {
+    headers: { ...JSON_RPC, Origin: "http://localhost:5173" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+  });
+  assert.equal(fromLocalPage.status, 200, "a page served from this machine");
+});
+
+test("a local install refuses a request a web page could have rebound to it, before anything is read", async (t) => {
+  const base = await serveLocal(t);
+  const port = new URL(base).port;
+
+  for (const headers of [
+    { Host: "evil.example" },
+    { Host: `evil.example:${port}` },
+    { Host: `localhost.evil.example:${port}` },
+    { Host: `localhost@evil.example:${port}` },
+    { Host: `127.0.0.1.nip.io:${port}` },
+    { Origin: "http://evil.example" },
+    { Origin: `http://evil.example:${port}` },
+    { Origin: "null" },
+    { Origin: "file://" },
+  ]) {
+    const answer = await send(base, { headers: { ...JSON_RPC, ...headers }, body: "this is not json" });
+    assert.equal(answer.status, 403, JSON.stringify(headers));
+    assert.equal(answer.json.error.code, -32001, JSON.stringify(headers));
+    assert.match(answer.json.error.message, /^Forbidden: this server has no access token/, JSON.stringify(headers));
+  }
+
+  // The one open route stays open, as it is with a token.
+  assert.equal((await send(base, { method: "GET", path: "/healthz", headers: { Host: "evil.example" } })).status, 200);
+});
+
+test("a local install still routes like a server install once the request is addressed to loopback", async (t) => {
+  const base = await serveLocal(t);
+
+  assert.equal((await send(base, { method: "GET", path: "/mcp" })).status, 405);
+  assert.equal((await send(base, { method: "POST", path: "/other", headers: JSON_RPC, body: "{}" })).status, 404);
+  assert.equal((await send(base, { headers: JSON_RPC, body: "this is not json" })).status, 400);
+});
+
+test("localRequestProblem reads Host whole and Origin only as a web origin", () => {
+  const problem = (headers) => localRequestProblem({ headers });
+  assert.equal(problem({ host: "127.0.0.1:3000" }), null);
+  assert.equal(problem({ host: "[::1]:3000", origin: "https://localhost" }), null);
+  assert.match(problem({}), /addressed to localhost/);
+  assert.match(problem({ host: "127.0.0.1:3000/evil" }), /addressed to localhost/);
+  assert.match(problem({ host: "127.0.0.1:3000", origin: "ftp://localhost" }), /another origin/);
+  assert.match(problem({ host: "127.0.0.1:3000", origin: "not a url" }), /another origin/);
+});
+
+test("with neither MCP_AUTH_TOKEN nor HOST, a real process is a local install: loopback, no token, and it says so", async (t) => {
+  const port = await freePort();
+  const run = startProcess(t, { MCP_TRANSPORT: "http", PORT: String(port), GITLAB_API_KEY: "glpat-process_key_value_9876" });
+
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`no startup line: ${run.output().stderr}`)), 10_000);
+    run.child.stderr.on("data", () => {
+      if (/local install/.test(run.output().stderr)) {
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+  });
+
+  const { stderr } = run.output();
+  assert.match(stderr, new RegExp(`serving over http on http://127\\.0\\.0\\.1:${port}/mcp`));
+  assert.match(stderr, /local install: MCP_AUTH_TOKEN is not set, so only this machine can reach the server/);
+  assert.doesNotMatch(stderr, /all interfaces/);
+
+  const base = `http://127.0.0.1:${port}`;
+  assert.equal((await rpc(base, null, "tools/list", {})).status, 200);
+
+  run.child.kill("SIGTERM");
+  assert.deepEqual(await run.exited, { code: 0, signal: null });
+  assert.equal(run.output().stdout, "");
 });

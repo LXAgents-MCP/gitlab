@@ -7,7 +7,8 @@
  *
  * - GITLAB_API_KEY is the GitLab token, used for every call on both transports.
  * - MCP_AUTH_TOKEN is this server's own access token, which an HTTP client must present as
- *   `Authorization: Bearer <token>` (src/routes/http.js). stdio never reads it.
+ *   `Authorization: Bearer <token>` (src/routes/http.js). A server install - HTTP that other machines
+ *   can reach - needs it; a local install, on loopback, does not. stdio never reads it.
  *
  * stdio: the client starts this process and speaks to it over a pipe; register it with the GitLab
  * token in its `env` block.
@@ -17,9 +18,10 @@
  *     "env": {"GITLAB_API_KEY": "<token>"}}}}
  *
  * The key this server uses can change and delete projects. A pipe can only be reached by the
- * client that spawned it; the HTTP transport can be reached by anyone who can open its port, so it
- * listens on port 3000 on all interfaces unless PORT and HOST say otherwise, refuses to start without an
- * access token, and refuses any request that does not carry it. The only other network traffic is outbound, to gitlab.com,
+ * client that spawned it; the HTTP transport can be reached by anyone who can open its port. With
+ * an access token it listens on port 3000 on all interfaces unless PORT and HOST say otherwise, and
+ * refuses any request that does not carry the token. Without one it listens on 127.0.0.1 only, refuses
+ * to start on any address that is not loopback, and refuses any request not addressed to loopback. The only other network traffic is outbound, to gitlab.com,
  * and only when a tool is called.
  *
  * Nothing here may write to stdout: on stdio, stdout is the JSON-RPC channel.
@@ -39,9 +41,11 @@ an argument:
   GITLAB_API_KEY  the GitLab token; set it in the environment of this process, read when a tool
                   is called. Used on both transports.
   MCP_AUTH_TOKEN  http only: the server's access token, at least 32 characters, which every
-                  request must carry as Authorization: Bearer <token>. HTTP will not start
-                  without it. stdio does not read it.
-  PORT (default 3000) and HOST (default 0.0.0.0, every interface) say where HTTP listens.
+                  request must carry as Authorization: Bearer <token>. Required for a server
+                  install, where other machines can reach HTTP; optional for a local install,
+                  on loopback. stdio does not read it.
+  PORT (default 3000) and HOST say where HTTP listens. HOST defaults to 0.0.0.0, every
+  interface, when MCP_AUTH_TOKEN is set, and to 127.0.0.1, this machine only, when it is not.
 
 Options:
   -h, --help       Show this help
