@@ -70,3 +70,36 @@ Landed. `@modelcontextprotocol/sdk` to `^1.32.2` and `zod` to `^4.6.7`, their la
 `--omit=dev` install leaves out. `npm audit fix` moved body-parser, fast-uri, ip-address and qs inside the
 lockfile; `npm audit` now reports 0 vulnerabilities and `npm outdated` nothing. No source file changes, and
 `npm test` still runs 310 passing.
+
+### Task 3 — refactor/typescript
+
+Landed. Every `.js` file in `src/` and `test/` is renamed to `.ts` (`git mv`, so history follows), and
+`tsconfig.json` compiles `src/` to `dist/` (`ES2022`, `NodeNext`, `strict`); `tsconfig.test.json`
+type-checks `src/` and `test/` together without emitting, run by `npm run typecheck`. Both pass with no
+error and no implicit `any`.
+
+* Types are in the code and the JSDoc types are gone; the descriptions they carried stay.
+  New named types: `ToolDefinition`, `ToolOutcome`, `ToolHandler` and `ToolSpec` in
+  `controllers/index.ts`; `Repo` in `models/address.ts`; `PageQuery` and `Paging`; `IntRange` and
+  `ListOptions` in `models/args.ts`; `ApiAnswer` and `CallOptions` in `services/client.ts`;
+  `GitlabOptions` in `services/api.ts`; `FailedCall`, `Mergeability`, `FoundUser`; `HttpOptions` and
+  `RunningServer` in `routes/http.ts`; the `*Fields` result types in `models/shapes.ts`. The MCP SDK's
+  own `ToolAnnotations` and `CallToolResult` type the hints and results.
+* `models/api-body.ts` holds `ApiBody`, the one loose type: JSON from GitLab (T3).
+* `rawText` gained overloads, so a call with `required: true` is typed `string`. No body changed.
+* The registry finds `.ts` modules under tsx and `.js` modules in `dist/` (T4).
+* `package.json`: `main` and `bin` are `dist/index.js`, `files` ships `dist`, `build` is `tsc`, `start`
+  and `start:http` run `dist/`, `test` is `node --import tsx --test test/*.test.ts`, `inspect` runs
+  `dist/index.js`. `--help` names `node dist/index.js`.
+* `dist/` is in `.gitignore` and `.dockerignore`. The `Dockerfile` builds in two stages and runs
+  `node dist/index.js` (T5); it has not been built, as there is no Docker daemon here.
+* The process tests spawn `node --import tsx src/index.ts`.
+
+Checked: `npm run build` and `npm run typecheck` pass; `npm test` runs 308 tests, 308 passing. The count
+is 2 lower than 310 only because the glob no longer runs `test/helpers.ts` and `test/surface.ts`, which
+`node --test` used to count as two passing files with no tests in them. The compiled server answered
+`--version`, listed 45 tools over a real stdio pipe, refused `repo_read` for a missing key, and served
+`GET /healthz` over HTTP from `dist/routes/http.js`.
+
+Left for task 4: every page that says plain JavaScript, no build step, `node src/index.js` or a `.js`
+path under `src/`.
