@@ -21,14 +21,14 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
   both transports, read when a tool is called. `MCP_AUTH_TOKEN` is the access token a client presents to
   the HTTP transport of a server install (at least 32 characters, never sent to GitLab); a local install and
   stdio do not need it.
-- **Requirements:** Node >= 20. ESM, no build step.
+- **Requirements:** Node >= 20. TypeScript, Node ESM, compiled to `dist/` with `npm run build`.
 
 ## Key features
 
 - **One module, one tool.** A tool is a file in `src/controllers/` named after it; the registry finds it
   and nothing else needs editing. A test holds files and tools together in both directions.
 - **One place builds URLs.** A project, a branch or tag name and a file path are validated and
-  percent-encoded in `src/models/address.js` and joined into a URL only in `src/services/api.js`, so an argument cannot steer a call at another endpoint.
+  percent-encoded in `src/models/address.ts` and joined into a URL only in `src/services/api.ts`, so an argument cannot steer a call at another endpoint.
 - **The key never leaves its header.** It is not an argument, it is read per call, and it is
   removed from every message the server can produce — refusals and crashes alike. Over HTTP a request
   without the access token is refused before anything is read, and the access token is never sent to GitLab.
@@ -46,8 +46,12 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 
 ```bash
 npm install
+npm run build
 npm test
 ```
+
+`npm run build` compiles `src/` to `dist/`, which is what every command below runs; build again after a
+change. The tests run the TypeScript sources through `tsx` and need no build.
 
 Serve it to an MCP client over stdio, with the GitLab key in the environment:
 
@@ -78,15 +82,15 @@ Full instructions are in [`wiki/environments/setup.md`](wiki/environments/setup.
 
 ## Connect it
 
-Add it to the client's configuration, with the GitLab key in the `env` block, then **restart the
-client**. For Claude Desktop, in `claude_desktop_config.json`:
+Build it once with `npm run build`, add it to the client's configuration, with the GitLab key in the `env`
+block, then **restart the client**. For Claude Desktop, in `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "lxagents-gitlab": {
       "command": "node",
-      "args": ["/absolute/path/to/gitlab/src/index.js"],
+      "args": ["/absolute/path/to/gitlab/dist/index.js"],
       "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }

@@ -16,21 +16,21 @@ inside it.
 | Change to… | Effect |
 |---|---|
 | `src/controllers/**` | Changes the surface. A new tool is a **minor** release; a rename, a removal or a changed argument is a **major** one. |
-| `src/services/api.js`, `src/services/client.js`, `src/services/failure.js`, `src/models/address.js`, `src/utils/render.js`, `src/routes/server.js`, `src/models/args.js` | Changes how every tool behaves. A release only when a client can see the difference. |
+| `src/services/api.ts`, `src/services/client.ts`, `src/services/failure.ts`, `src/models/address.ts`, `src/utils/render.ts`, `src/routes/server.ts`, `src/models/args.ts` | Changes how every tool behaves. A release only when a client can see the difference. |
 | `.agents/**`, `wiki/**`, `test/**` | Local. Published to nobody. |
 
 ## The file contract
 
-* The file name is the tool name in kebab case: `repo-create.js` is `repo_create`. The registry
+* The file name is the tool name in kebab case: `repo-create.ts` is `repo_create`. The registry
   test holds files and tools together in both directions, so a stray file, or a tool in the wrong
   file, fails.
-* A module exports `TOOL` and `handle(args)`. A module that exports neither is skipped, so a helper
+* A module exports `TOOL` (a `ToolDefinition`) and `handle(args)`, typed `Promise<ToolOutcome>`. A module that exports neither is skipped, so a helper
   dropped into `src/controllers/` is never callable — but helpers belong in `src/`, not here.
 * `TOOL` has `name`, `description`, `inputSchema`, `outputSchema` and `annotations`, all required.
   The registry test fails on a tool without a useful description, an output schema, or the four
   hints.
 * `handle` returns `{ payload, ok }`. The payload is a one-sentence `summary` plus fields that
-  satisfy the `outputSchema`, which `expectOutput` in `test/helpers.js` checks. A failure is a
+  satisfy the `outputSchema`, which `expectOutput` in `test/helpers.ts` checks. A failure is a
   thrown `Refused`.
 * Two modules with one tool name fail at boot, not at first call.
 
@@ -40,7 +40,7 @@ inside it.
   project: its full path, `group/subgroup/project`, or its numeric id, parsed by `parseRepo`. Only
   `repo_create` and `repo_search` take none.
 * Validate arguments before the token is read.
-* Build every URL through `src/services/api.js`. A path segment that did not come from `parseRepo`,
+* Build every URL through `src/services/api.ts`. A path segment that did not come from `parseRepo`,
   `refName`/`refPath` or `filePath` has not been validated.
 * A list takes `page` and `per_page` and returns `page`, `per_page` and `has_more`.
 * Long text — a file, a log, a diff — goes in `text`, cut to a stated limit with `truncated: true`
@@ -50,7 +50,7 @@ inside it.
 
 ## The pinned list
 
-`test/surface.js` writes out every tool and tags it `read`, `write`, `update` or `destroy`. The
+`test/surface.ts` writes out every tool and tags it `read`, `write`, `update` or `destroy`. The
 registry, protocol and stdio tests all compare against it, and the registry test holds each tool's
 annotations to its kind. Adding a tool is one line there; a tool that appears or vanishes without
 one fails three tests.

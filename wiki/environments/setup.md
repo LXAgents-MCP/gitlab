@@ -5,10 +5,13 @@ the transport is chosen by `MCP_TRANSPORT`.
 
 ## Requirements
 
-Node.js 20 or newer. There is no build step — the server is plain JavaScript (ESM).
+Node.js 20 or newer. The server is TypeScript (Node ESM), compiled by `tsc` from `src/` to `dist/`, which
+is what runs and is never committed.
 
 ```bash
 npm install
+npm run build       # src/ to dist/; again after every change
+npm run typecheck   # src/ and test/, no output
 npm test
 ```
 
@@ -18,8 +21,9 @@ fails with `ERR_MODULE_NOT_FOUND`, which reads as broken code rather than an uni
 The suite replaces `fetch` and reaches no host beyond loopback. It drives a real MCP client against the
 server on an in-memory transport, spawns the real process to check what only a pipe shows (a stray
 write to stdout, a process that outlives its client), and tests each tool for the exact request it
-sends, the payload it returns, and the refusals it makes. `node --test` also executes the two
-support files under `test/`, which define no tests, so the runner's total includes them.
+sends, the payload it returns, and the refusals it makes. It runs the TypeScript sources through `tsx`
+(`node --import tsx --test test/*.test.ts`), so it needs no build, and the two support files under
+`test/` are imported by the tests rather than run.
 
 ## Run
 
@@ -50,8 +54,8 @@ GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http
 See [Set up HTTP with two tokens](../guides/setup-http-token.md). The two flags:
 
 ```bash
-node src/index.js --help       # usage, on stderr
-node src/index.js --version    # name and version, on stderr
+node dist/index.js --help       # usage, on stderr
+node dist/index.js --version    # name and version, on stderr
 ```
 
 ## Inspect it

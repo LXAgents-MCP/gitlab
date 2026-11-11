@@ -15,7 +15,7 @@ do whatever you granted it.
 ## 2. Register the server
 
 The package is private and is not published, so the client runs the server by path.
-Clone the repository, run `npm install` once, then add the server to the client.
+Clone the repository, run `npm install` and `npm run build` once, then add the server to the client.
 
 **Claude Desktop** — edit `claude_desktop_config.json`:
 
@@ -27,7 +27,7 @@ Clone the repository, run `npm install` once, then add the server to the client.
   "mcpServers": {
     "lxagents-gitlab": {
       "command": "node",
-      "args": ["/absolute/path/to/gitlab/src/index.js"],
+      "args": ["/absolute/path/to/gitlab/dist/index.js"],
       "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }
@@ -39,7 +39,7 @@ Clone the repository, run `npm install` once, then add the server to the client.
 ```bash
 claude mcp add lxagents-gitlab \
   --env GITLAB_API_KEY=<your GitLab token> \
-  -- node /absolute/path/to/gitlab/src/index.js
+  -- node /absolute/path/to/gitlab/dist/index.js
 ```
 
 Or commit a project `.mcp.json` that reads the token from the environment instead of holding it:
@@ -49,7 +49,7 @@ Or commit a project `.mcp.json` that reads the token from the environment instea
   "mcpServers": {
     "lxagents-gitlab": {
       "command": "node",
-      "args": ["/absolute/path/to/gitlab/src/index.js"],
+      "args": ["/absolute/path/to/gitlab/dist/index.js"],
       "env": { "GITLAB_API_KEY": "${GITLAB_TOKEN}" }
     }
   }

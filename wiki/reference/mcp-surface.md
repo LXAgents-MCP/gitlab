@@ -10,8 +10,8 @@ resources, and two transports: stdio and HTTP. See [What this server does not ex
 | Field | Value |
 |---|---|
 | `name` | `lxagents-gitlab` |
-| `version` | from `package.json`, read at import by `src/config/version.js` |
-| transport | stdio by default (`src/index.js`); HTTP with `MCP_TRANSPORT=http` (`src/routes/http.js`): a server install needs `Authorization: Bearer <MCP_AUTH_TOKEN>` on every route but `GET /healthz`; a local install, on loopback with no token, needs a request addressed to loopback |
+| `version` | from `package.json`, read at import by `src/config/version.ts` |
+| transport | stdio by default (`src/index.ts`); HTTP with `MCP_TRANSPORT=http` (`src/routes/http.ts`): a server install needs `Authorization: Bearer <MCP_AUTH_TOKEN>` on every route but `GET /healthz`; a local install, on loopback with no token, needs a request addressed to loopback |
 
 `initialize` also returns `instructions`: that every tool needs `GITLAB_API_KEY` in the server's environment, that
 a project is named by its full path or numeric id, and that tools which delete or merge are
@@ -22,7 +22,7 @@ destructive and should be confirmed with the owner first.
 ### Naming
 
 A tool is `{thing}_{action}`: `repo_create`, `branch_list`, `pr_merge`. The module that defines it
-is the same name in kebab case, `src/controllers/pr-merge.js`. The names are the GitHub server's: here
+is the same name in kebab case, `src/controllers/pr-merge.ts`. The names are the GitHub server's: here
 `repo_` acts on a project, `pr_` on a merge request and `workflow_` on a pipeline.
 
 ### Addressing a repository
@@ -30,7 +30,7 @@ is the same name in kebab case, `src/controllers/pr-merge.js`. The names are the
 Every tool that acts on a repository takes one `repo` argument: the project's full path, such as
 `group/project` or `group/subgroup/project`, or its numeric id. The two that cannot are
 `repo_create`, which has no project yet, and `repo_search`, which looks across all of them. `repo` is
-parsed once, in `src/models/address.js`, and a value that is neither a path of valid names nor a number is
+parsed once, in `src/models/address.ts`, and a value that is neither a path of valid names nor a number is
 refused before any request. A path is sent as the single encoded segment GitLab expects.
 
 ### Results
@@ -53,7 +53,7 @@ and `has_more`. Ask for the next page while `has_more` is true.
 | `update` | Changes something that exists | idempotent |
 | `destroy` | Deletes, overwrites or merges | destructive, idempotent |
 
-All four set `openWorldHint`, because every tool talks to GitLab. `test/surface.js` pins every
+All four set `openWorldHint`, because every tool talks to GitLab. `test/surface.ts` pins every
 tool's kind, and a test holds the annotations to it.
 
 ### Failures

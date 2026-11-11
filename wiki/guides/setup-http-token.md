@@ -65,7 +65,7 @@ servers the same value, or whoever holds one can use the other.
 
 ## 3. Start the server
 
-Set both variables in the server's environment, then start it. From a checkout, once `npm install` has run:
+Set both variables in the server's environment, then start it. From a checkout, once `npm install` and `npm run build` have run:
 
 ```bash
 export GITLAB_API_KEY=<your GitLab token>
@@ -95,7 +95,7 @@ starts, says so on stderr, and every tool refuses naming the variable until it i
 | `MCP_AUTH_TOKEN` | none, **required for a server install** | The access token. At least 32 characters. HTTP will not start without it on an address other than loopback. |
 | `PORT` | `3000` | The port to listen on, the same default as `shared-instruction` and the GitHub server. To run more than one on a machine, give all but one its own `PORT`. |
 | `HOST` | `0.0.0.0` with a token, `127.0.0.1` without | The interface to listen on: with an access token, every one by default, as `shared-instruction` does, and `HOST=127.0.0.1` keeps it to this machine; without one, this machine only. |
-| `MCP_TRANSPORT` | `stdio` | `http` (or `streamable-http`) selects this transport when you start `src/index.js`. |
+| `MCP_TRANSPORT` | `stdio` | `http` (or `streamable-http`) selects this transport when you start `src/index.ts`. |
 
 ```bash
 PORT=8080 npm run start:http
