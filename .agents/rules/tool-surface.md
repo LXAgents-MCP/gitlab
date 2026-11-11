@@ -16,7 +16,7 @@ inside it.
 | Change to… | Effect |
 |---|---|
 | `src/controllers/**` | Changes the surface. A new tool is a **minor** release; a rename, a removal or a changed argument is a **major** one. |
-| `src/services/api.js`, `src/utils/render.js`, `src/routes/server.js`, `src/models/args.js` | Changes how every tool behaves. A release only when a client can see the difference. |
+| `src/services/api.js`, `src/services/client.js`, `src/services/failure.js`, `src/models/address.js`, `src/utils/render.js`, `src/routes/server.js`, `src/models/args.js` | Changes how every tool behaves. A release only when a client can see the difference. |
 | `.agents/**`, `wiki/**`, `test/**` | Local. Published to nobody. |
 
 ## The file contract

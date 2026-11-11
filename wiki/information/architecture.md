@@ -14,12 +14,12 @@ and a tool never reaches into the transport.
 |---|---|---|
 | `src/routes/` | The ways in: the HTTP transport and its two routes, and the MCP server that registers the tools. | `http.js`, `server.js` |
 | `src/controllers/` | One module per tool, and `index.js`, the registry that discovers them. The product. | `repo-create.js`, … |
-| `src/services/` | Talking to GitLab: the one client that builds every URL, the two secrets, and the calls several tools share. | `api.js`, `auth.js`, `contents.js`, `users.js`, `merge-status.js` |
-| `src/models/` | What goes in and comes out: argument checks, the shared zod fragments, and GitLab's objects as the tools report them. | `args.js`, `schemas.js`, `shapes.js` |
-| `src/utils/` | Helpers with no GitLab knowledge: rendering, text, `Refused`, the stderr logger. | `render.js`, `text.js`, `diffs.js`, `errors.js`, `log.js`, `wait.js` |
-| `src/config/` | Constants, and the version read from `package.json`. | `config.js`, `version.js` |
+| `src/services/` | Talking to GitLab: the one client that builds every URL, the two secrets, and the calls several tools share. | `api.js` (builds every URL and makes the call), `client.js` (one request, capped), `failure.js` (a status becomes a message), `auth.js`, `contents.js`, `users.js`, `merge-status.js` |
+| `src/models/` | What goes in and comes out: argument checks, the shared zod fragments, and GitLab's objects as the tools report them. | `args.js`, `address.js` (project, reference and path parts, validated and encoded), `paging.js`, `schemas.js`, `shapes.js` |
+| `src/utils/` | Helpers with no GitLab knowledge: rendering, text, `Refused`, the stderr logger. | `render.js`, `text.js`, `diffs.js`, `errors.js`, `log.js`, `wait.js`, `redact.js`, `http.js` (JSON-RPC refusals, the capped body reader) |
+| `src/config/` | Constants, and the version read from `package.json`. | `config.js`, `http-settings.js` (`PORT` and `HOST`), `version.js` |
 
-A new module goes in the folder for what it does. A helper is never put in `src/controllers/`: anything there that
+Each file has one job; a file that grows a second one is split. A new module goes in the folder for what it does. A helper is never put in `src/controllers/`: anything there that
 exports `TOOL` and `handle` is served as a tool.
 
 ## The tool surface is discovered, not declared
@@ -35,13 +35,13 @@ directions. Two modules with one name stop the process at startup, not at the fi
 
 1. **The client calls a tool.** The MCP SDK checks the arguments against the tool's input schema,
    which catches a wrong type.
-2. **The handler checks the values.** `parseRepo`, `refName`, `filePath` and the helpers in
-   `src/models/args.js` refuse a bad project, a name git would reject, a `..` segment or an out-of-range
+2. **The handler checks the values.** `parseRepo`, `refName`, `filePath` (`src/models/address.js`) and the
+   helpers in `src/models/args.js` refuse a bad project, a name git would reject, a `..` segment or an out-of-range
    page — before the token is read and before anything is sent.
-3. **`gitlab()` builds the request.** It reads the token from the environment, builds the URL under
+3. **`gitlab()` builds the request** (`src/services/api.js`). It reads the token from the environment, builds the URL under
    the API base, and sends the token as a bearer credential with a `User-Agent`. It is the only code
    that builds a URL.
-4. **`callApi` sends it.** One request, with a 30 second timeout, and at most 20 MB of the answer
+4. **`callApi` sends it** (`src/services/client.js`). One request, with a 30 second timeout, and at most 20 MB of the answer
    is read.
 5. **The status decides.** A 2xx answer, or a status the tool listed as an answer in its own right,
    goes back to the handler. Anything else becomes a `Refused` whose message names the status and

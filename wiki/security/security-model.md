@@ -39,10 +39,10 @@ behaving:
 
 | File | Exposure | Guard |
 |---|---|---|
-| `src/services/auth.js` `configuredApiKey`, `src/services/api.js` `requireToken` | Anyone who can set the process environment | Read per call; never an argument; the registry test fails any tool whose input names a credential; a caller's bearer is never used as the GitLab key |
+| `src/services/auth.js` `configuredApiKey`, `src/services/auth.js` `requireToken` | Anyone who can set the process environment | Read per call; never an argument; the registry test fails any tool whose input names a credential; a caller's bearer is never used as the GitLab key |
 | `src/routes/http.js`, `src/services/auth.js` | The one listener, reachable by anyone who can open the port | With an access token, every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start on an address other than loopback without a token of at least 32 characters; on loopback without one, every route but `GET /healthz` needs a `Host`, and an `Origin` when sent, that names loopback, checked before the body is parsed; 4 MB body cap; listens on all interfaces on port 3000 unless `PORT` and `HOST` say otherwise; a test shows the access token reaches GitLab in no part of a request |
 | `src/services/api.js` `gitlab()` | The only place the `Authorization` header is built | One call site; the header goes to `callApi` and nowhere else |
-| `src/services/api.js` `failure()` and `callApi` | Error text built from GitLab's answer or from the network | `redact` on every message; tests make GitLab echo the token and make the network error carry it |
+| `src/services/failure.js` `failure()` and `src/services/client.js` `callApi` | Error text built from GitLab's answer or from the network | `redact` on every message; tests make GitLab echo the token and make the network error carry it |
 | `src/routes/server.js` `callTool` | The unexpected-exception path | `redact` on the log line and on the returned text, with the GitLab key; a test makes a handler throw the key |
 | `src/utils/log.js` | stderr | The logger writes what it is given, and nothing logs a request or a header |
 
@@ -50,10 +50,10 @@ behaving:
 
 | File | Exposure | Guard |
 |---|---|---|
-| `src/services/api.js` `parseRepo`, `refName`, `refPath`, `filePath` | Arguments from a model that may be steering on text it read | Validated and percent-encoded; empty, `.` and `..` segments refused; tests cover each |
+| `src/models/address.js` `parseRepo`, `refName`, `refPath`, `filePath` | Arguments from a model that may be steering on text it read | Validated and percent-encoded; empty, `.` and `..` segments refused; tests cover each |
 | `src/services/api.js` `gitlab()` | The path handed to it | Must start with `/` and carry no `?` or `#`; a violation is a programming error, not a refusal |
 | `src/config/config.js` `API_BASE` | The host | A constant: no argument or variable can change it |
-| `src/services/api.js` `callApi` | The address GitLab redirects a read to, when a project has moved | The destination comes from GitLab's answer and never from an argument; the token travels in `Authorization`, which the runtime drops when the host changes (GitLab's own `PRIVATE-TOKEN` header it would forward), and a test shows a second host receiving no token, over real sockets |
+| `src/services/client.js` `callApi` | The address GitLab redirects a read to, when a project has moved | The destination comes from GitLab's answer and never from an argument; the token travels in `Authorization`, which the runtime drops when the host changes (GitLab's own `PRIVATE-TOKEN` header it would forward), and a test shows a second host receiving no token, over real sockets |
 
 ### What a call can change
 
@@ -160,7 +160,7 @@ Open an issue on `LXAgents-MCP/gitlab`. If the finding involves a token that may
 
 ## Summary
 
-The whole security posture is one GitLab key handled in one place: it never leaves `src/services/api.js`
+The whole security posture is one GitLab key handled in one place: it never leaves `src/services/` (read in `auth.js`, put in its header in `api.js`)
 except as an `Authorization` header to `gitlab.com`, it is scrubbed from every message the
 server can produce, no argument can carry it or redirect a call, and the one listener refuses every
 request that does not bring the server's access token. What remains is authority — the key can do what it was granted, for everyone who holds the access token — which is

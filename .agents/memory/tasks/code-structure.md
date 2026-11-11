@@ -84,3 +84,13 @@ unused. `npm test` runs 310 passing and none failing, the same as before.
 
 Left for task 3: the rules, the repository map, the security boundaries and the wiki pages name
 `src/services/api.js` for validation, and the architecture page lists the files of each folder.
+
+### Task 3 — docs/code-structure
+
+Landed. Every living page that named `src/services/api.js` for something that moved names the new file:
+`README.md`, the repository and tool-surface rules, the repository map (new rows for the client, the
+failure wording, the address and paging models), the security boundaries, and in `wiki/` the
+architecture, reference and security model pages. The rule "every URL is built in `src/services/api.js`"
+stands, and now says the parts are validated in `src/models/address.js`. The architecture page's folder
+table lists the new files and says a file that grows a second job is split. Released changelogs,
+earlier task records and decisions keep the old paths.
