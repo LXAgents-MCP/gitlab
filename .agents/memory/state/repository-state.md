@@ -7,15 +7,15 @@ description: Current known state of LXAgents-MCP/gitlab — what exists, what is
 
 ## 2026-11-11
 
-**Version `0.6.0`.** `package.json` and the lockfile carry it, and the release log is
-`wiki/logs/0/6/0/CHANGELOG.md`; earlier releases are `0/5/0`, `0/4/0`, `0/3/0`, `0/2/0` and `0/1/0`. 0.6.0 lets a
+**Version `0.7.0`.** `package.json` and the lockfile carry it, and the release log is
+`wiki/logs/0/7/0/CHANGELOG.md`; earlier releases are `0/6/1`, `0/6/0`, `0/5/0`, `0/4/0`, `0/3/0`, `0/2/0` and `0/1/0`. 0.7.0 moves the server to TypeScript compiled to `dist/`; 0.6.0 lets a
 local install of the HTTP transport, on loopback, run without `MCP_AUTH_TOKEN`; a server install still requires it. No git tag was made, by decision (D3 in `tasks/forge-servers.md`, D8 in `tasks/http-token-auth.md`, T7 in
-`tasks/two-token-auth.md`, H3 in `tasks/http-defaults.md`, A3 in `tasks/src-architecture.md`, L6 in `tasks/local-auth-token.md`).
+`tasks/two-token-auth.md`, H3 in `tasks/http-defaults.md`, A3 in `tasks/src-architecture.md`, L6 in `tasks/local-auth-token.md`, D4 in `tasks/code-structure.md`, T7 in `tasks/typescript.md`).
 
 **What it is.** An MCP server, stdio by default and HTTP behind an access token, `lxagents-gitlab`, over the GitLab REST API at `gitlab.com`.
-Plain JavaScript, Node ESM, no build step, two runtime dependencies: the MCP SDK and zod.
+TypeScript under `strict`, Node ESM, compiled by `tsc` to `dist/` (ignored, never committed); tests run the sources through `tsx`. Two runtime dependencies: the MCP SDK and zod.
 
-**Surface.** One tool per module in `src/controllers/`. The full list is pinned in `test/surface.js` and
+**Surface.** One tool per module in `src/controllers/`. The full list is pinned in `test/surface.ts` and
 described in `wiki/reference/mcp-surface.md`: projects, branches, files and directories, commits,
 tags and releases, issues, merge requests and pipelines. A tool count is deliberately not stated
 here: it goes stale at the next module. `repo_create` was moved here from the `cli` server, where it
@@ -28,7 +28,7 @@ with no token, answers only requests whose `Host` and `Origin` name loopback (`d
 `MCP_TRANSPORT`, `PORT` (default 3000) and `HOST` (default `0.0.0.0` with a token, `127.0.0.1` without) are the only other variables, and the
 only flags are `--help` and `--version`.
 
-**Verified.** The suite (310 tests) replaces `fetch` and reaches no host beyond loopback. Every request shape is
+**Verified.** The suite (308 tests, plus `npm run typecheck`) replaces `fetch` and reaches no host beyond loopback. Every request shape is
 checked against GitLab's documentation and against mocks, and a read shape against public data on
 `gitlab.com` where that was possible. The production-only dependency tree the image would install
 serves every tool over a real stdio pipe, and the HTTP transport is tested over real
