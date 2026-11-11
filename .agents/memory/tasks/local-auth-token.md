@@ -55,3 +55,26 @@ Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names
 
 Landed: this record and its row in `memory-index.md`. Nothing outside `.agents/` changes in this task. The `PR`
 column is filled by the release task, so no later branch needs a rebase.
+
+### Task 2 — feat/local-http
+
+Landed. `src/routes/http.js` tells a local install from a server install by where it listens (L1): with no
+`MCP_AUTH_TOKEN` and a loopback `HOST`, `main()` and `startHttpServer` start without a token; with any other `HOST`
+they refuse as before, and `main()` now names the address and says a local install can leave `HOST` unset (L3). A
+set token is checked and required wherever the server listens (L4). `httpSettings` defaults `HOST` to `0.0.0.0` when
+the token is set and to `LOCAL_HOST`, `127.0.0.1`, a new constant in `src/config/config.js`, when it is not (L2).
+Without a token, `localRequestProblem` refuses with `403` any request whose `Host`, or `Origin` when sent, is not
+loopback, before the body is read (L5); `isLoopbackHost` in `src/services/auth.js` matches the literal names only,
+by hand, so `src/routes/http.js` is still the only module that loads a network module. The start-up line says
+`local install` and what that means. `src/index.js`'s usage text and the module headers say the same. The decision
+is `.agents/memory/decisions/local-install-without-token.md`.
+
+Tests: 310 passing, none failing (302 before). New: the two `HOST` defaults; a start refused on `0.0.0.0` and on
+another address without a token, and with a short token on loopback; a local install serving `tools/list` with no
+token for every loopback `Host` form and a loopback `Origin`; refusals for a foreign, rebound or look-alike `Host` and
+a foreign, `null` or `file:` `Origin`, before the body is read; routing unchanged after the check; and a real process
+with neither variable set serving on `127.0.0.1` and saying `local install`. Turning the `Host` check off fails a
+test, which was tried. By hand: with neither variable the process served `tools/list` to curl on `localhost` and
+refused `Host: evil.example` with `403`; with `HOST=0.0.0.0` and no token it exited 1 with the new message.
+
+Left for task 3: every page and rule that says HTTP always needs the token.

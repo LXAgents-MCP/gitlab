@@ -26,6 +26,7 @@ same commit that creates it.
 | [`../memory/decisions/http-token-transport.md`](../memory/decisions/http-token-transport.md) | Partly superseded: why this server also serves HTTP, and the passthrough design of 0.2.0. |
 | [`../memory/decisions/two-token-auth.md`](../memory/decisions/two-token-auth.md) | Why this server holds two secrets, `MCP_AUTH_TOKEN` for the client and `GITLAB_API_KEY` for GitLab, and what that costs compared with passing the client's token through. |
 | [`../memory/decisions/http-bind-defaults.md`](../memory/decisions/http-bind-defaults.md) | Why the HTTP transport defaults to port 3000 on all interfaces, as `shared-instruction` does, what guards a server that listens everywhere by default, and the one place its `PORT` parsing is not copied. |
+| [`../memory/decisions/local-install-without-token.md`](../memory/decisions/local-install-without-token.md) | Why a local install of the HTTP transport, on loopback, runs without `MCP_AUTH_TOKEN`, how local is told from server, and the `Host` and `Origin` checks that stand in for the token there. |
 
 ## tasks/
 

@@ -4,7 +4,7 @@
  * There are no command-line flags and no configuration file. The only input from outside the
  * tool arguments is two secrets and three settings, all variables: `GITLAB_API_KEY`, the token
  * every GitLab call is made with; `MCP_AUTH_TOKEN`, the secret a client must present to reach the
- * HTTP transport; and `MCP_TRANSPORT`, `PORT` and `HOST` (`src/routes/http.js`). A server without the
+ * HTTP transport when other machines can reach it; and `MCP_TRANSPORT`, `PORT` and `HOST` (`src/routes/http.js`). A server without the
  * GitLab key still starts and says what is missing when a tool is used.
  */
 
@@ -17,7 +17,9 @@ export const TOKEN_ENV = "GITLAB_API_KEY";
 /**
  * The environment variable that holds the server's own access token for HTTP, named as
  * `shared-instruction` names its own. A client presents it as `Authorization: Bearer <token>`. It
- * is not a GitLab credential and is never sent to GitLab; stdio never reads it.
+ * is not a GitLab credential and is never sent to GitLab; stdio never reads it. It is required of a server
+ * install, which listens where other machines can reach it, and optional for a local install, which
+ * listens on loopback only; when it is set it is required on every request, wherever the server listens.
  */
 export const AUTH_ENV = "MCP_AUTH_TOKEN";
 
@@ -25,13 +27,19 @@ export const AUTH_ENV = "MCP_AUTH_TOKEN";
 export const MIN_AUTH_TOKEN_LENGTH = 32;
 
 /**
- * The port and interface of the HTTP transport when `PORT` and `HOST` are not set, the ones
- * `shared-instruction` uses: 3000 on every interface, so a container's published port reaches it. The
- * process holds a GitLab key, so what guards it is the access token it refuses to start without, and
- * TLS is the operator's. `HOST=127.0.0.1` narrows it to this machine.
+ * The port and interface of the HTTP transport when `PORT` and `HOST` are not set and `MCP_AUTH_TOKEN`
+ * is, the ones `shared-instruction` uses: 3000 on every interface, so a container's published port
+ * reaches it. The process holds a GitLab key, so what guards it is the access token, and TLS is the
+ * operator's. `HOST=127.0.0.1` narrows it to this machine.
  */
 export const DEFAULT_PORT = 3000;
 export const DEFAULT_HOST = "0.0.0.0";
+
+/**
+ * The interface when neither `HOST` nor `MCP_AUTH_TOKEN` is set: this machine only. That is a local
+ * install, which needs no access token because nothing beyond this machine can reach it.
+ */
+export const LOCAL_HOST = "127.0.0.1";
 
 /** Bytes. The largest request body the HTTP transport reads: a 1 MB file write is about 1.4 MB as base64. */
 export const MAX_BODY_BYTES = 4_000_000;
