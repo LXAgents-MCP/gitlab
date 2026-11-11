@@ -5,7 +5,7 @@ description: Letting a local install of this server's HTTP transport run without
 
 # Access token only for server installs — GitLab
 
-## 2026-11-11 — in progress
+## 2026-11-11 — complete
 
 **Goal.** A local install should not need `MCP_AUTH_TOKEN`; only a server install should. stdio already never
 reads it, but the HTTP transport refuses to start without it even when nothing beyond this machine can reach it,
@@ -23,16 +23,16 @@ said to plan and proceed, open the pull requests, and merge them in order by reb
 option wherever a choice was open; the choices are below. Baseline before any change: `npm test` ran 302
 passing and none failing.
 
-**Status:** in progress.
+**Status:** complete. Released as `0.6.0`; the pull requests, merged in order by rebase, are in the table.
 
 ## Tasks
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `plan/local-auth-token` | |
-| 2 | No access token on loopback | `feat/local-http` | |
-| 3 | Corrected documentation and rules | `docs/local-http` | |
-| 4 | Release | `release/0.6.0` | |
+| 1 | Task record | `plan/local-auth-token` | [#34](https://github.com/LXAgents-MCP/gitlab/pull/34) |
+| 2 | No access token on loopback | `feat/local-http` | [#35](https://github.com/LXAgents-MCP/gitlab/pull/35) |
+| 3 | Corrected documentation and rules | `docs/local-http` | [#36](https://github.com/LXAgents-MCP/gitlab/pull/36) |
+| 4 | Release | `release/0.6.0` | [#37](https://github.com/LXAgents-MCP/gitlab/pull/37) |
 
 Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names are used in
 `LXAgents-MCP/github`; neither chain depends on the other, so they merge independently.
