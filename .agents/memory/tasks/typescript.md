@@ -118,3 +118,11 @@ earlier task records and decisions keep the old paths.
 
 Checked before writing the Docker page: each image stage's steps run in a scratch directory with only
 what that stage copies, and the production tree with `dist/` served all 45 tools over stdio.
+
+### Task 5 — release/0.7.0
+
+Landed. `package.json` and the lockfile are at `0.7.0`, a minor release (T7); the release log is
+`wiki/logs/0/7/0/CHANGELOG.md` and the logs index leads with its row; the repository state says
+TypeScript. Final checks on this branch: `npm run build` and `npm run typecheck` pass, `npm test` runs
+308 passing and none failing, `npm audit` finds 0 vulnerabilities, and `node dist/index.js --version`
+prints `lxagents-gitlab 0.7.0`. No tag is made and nothing is published.
