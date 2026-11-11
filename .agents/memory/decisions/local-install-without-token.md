@@ -31,7 +31,7 @@ a page from another site is refused by its `Origin`. A client that is not a brow
 
 | Cost | Answer |
 |---|---|
-| Any program running on this machine, as any user, can use the GitLab key through a local install | The same is true of the key itself in this process's environment. A shared machine should set `MCP_AUTH_TOKEN`, which turns the check back on. |
+| Any program running on this machine, run by any user, can use the GitLab key through a local install | On a machine only its owner uses, those programs already run as the owner. A shared machine should set `MCP_AUTH_TOKEN`, which turns the check back on. |
 | A container run without a token listens on its own loopback, which `-p` cannot reach | It says so at start, and a container is a server install: the documentation says to set the token. It fails closed, never open. |
 | Someone who moved a token-less server onto loopback gains an unauthenticated port | Only by setting `HOST` to loopback and removing the token, both deliberate. |
 

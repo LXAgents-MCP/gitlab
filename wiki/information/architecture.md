@@ -81,8 +81,10 @@ where the server is the first process and would otherwise ignore it.
 server's environment when a tool is called and used for every GitLab call on both transports; a request never
 supplies it. **`MCP_AUTH_TOKEN`** guards the HTTP door: every request but `GET /healthz` must carry it as
 `Authorization: Bearer <token>`, compared in constant time against the server's own, before the body is parsed
-or a path matched. It is not forwarded, and HTTP will not start without one of at least 32 characters. stdio is
-a pipe the client spawned, so it has no access token and never reads the variable. The server stores nothing
+or a path matched. It is not forwarded, and HTTP that other machines can reach will not start without one of at
+least 32 characters. A local install, listening on loopback with no token set, needs none: it answers only
+requests whose `Host`, and `Origin` when sent, name this machine, which keeps a web page from reaching it through
+DNS rebinding. stdio is a pipe the client spawned, so it has no access token and never reads the variable. The server stores nothing
 between requests. See [Security model](../security/security-model.md).
 
 ## No local path is ever read from a caller

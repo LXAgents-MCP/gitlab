@@ -65,8 +65,9 @@ code rather than an uninstalled tree. Install first, then trust the number.
   refusal names the argument.
 * **The GitLab key is read per call**, through `src/services/auth.js` and nowhere else, from `GITLAB_API_KEY`, on
   both transports. It is never an argument, and is scrubbed from every message — refusals and crashes
-  alike. **The access token is a different secret**: `MCP_AUTH_TOKEN` guards the HTTP door, is compared
-  and dropped, and is never used against GitLab or read over stdio.
+  alike. **The access token is a different secret**: `MCP_AUTH_TOKEN` guards the HTTP door of a server
+  install, is compared and dropped, and is never used against GitLab or read over stdio. A local install,
+  on loopback with no token, is guarded by the `Host` and `Origin` checks in `src/routes/http.js` instead.
 * **A failure is a thrown `Refused`** that says what to do next. A tool never returns an error
   payload, and never lets a bare exception reach the client as its explanation.
 * **Comments explain why, not what.**
@@ -94,7 +95,8 @@ which define no tests, so the runner's total includes them.
   third needs its own record under `.agents/memory/decisions/` before it lands, not after.
 * A transport other than stdio and the HTTP one in `src/routes/http.js`, a listener anywhere else, a route
   beyond `POST /mcp` and `GET /healthz`, a way for an HTTP request to get through without the access
-  token, HTTP starting without one, a client's bearer used as the GitLab key (or the other way round),
+  token when one is set, HTTP starting without one on an address that is not loopback, a local install
+  without the `Host` and `Origin` checks, a client's bearer used as the GitLab key (or the other way round),
   or a store of tokens between requests. See
   [`../memory/decisions/two-token-auth.md`](../memory/decisions/two-token-auth.md). The
   image follows: no `EXPOSE`, no `ENTRYPOINT`, no `ENV` line holding a secret, no compose file.

@@ -11,7 +11,7 @@ resources, and two transports: stdio and HTTP. See [What this server does not ex
 |---|---|
 | `name` | `lxagents-gitlab` |
 | `version` | from `package.json`, read at import by `src/config/version.js` |
-| transport | stdio by default (`src/index.js`); HTTP with `MCP_TRANSPORT=http` (`src/routes/http.js`), where every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>` |
+| transport | stdio by default (`src/index.js`); HTTP with `MCP_TRANSPORT=http` (`src/routes/http.js`): a server install needs `Authorization: Bearer <MCP_AUTH_TOKEN>` on every route but `GET /healthz`; a local install, on loopback with no token, needs a request addressed to loopback |
 
 `initialize` also returns `instructions`: that every tool needs `GITLAB_API_KEY` in the server's environment, that
 a project is named by its full path or numeric id, and that tools which delete or merge are

@@ -6,9 +6,11 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 - **Server id:** `lxagents-gitlab`
 - **Package:** `@lxagents-mcp/gitlab` — private; not published to npm.
 - **Transport:** stdio by default: the client starts the server as a subprocess and talks to it through
-  a pipe. HTTP with `MCP_TRANSPORT=http`, where every request carries the server's access token as
-  `Authorization: Bearer <token>`; it will not start without one, listens on port 3000 on all interfaces
-  unless told otherwise, and needs TLS in front before it faces a network.
+  a pipe. HTTP with `MCP_TRANSPORT=http`, on port 3000. **A local install** needs no access token: with
+  `MCP_AUTH_TOKEN` unset it listens on `127.0.0.1` only and serves requests addressed to this machine.
+  **A server install** sets `MCP_AUTH_TOKEN`, listens on all interfaces unless told otherwise, requires the
+  token as `Authorization: Bearer <token>` on every request, will not start on a reachable address
+  without one, and needs TLS in front before it faces a network.
 - **Surface:** one tool per module in `src/controllers/`, named by what it acts on and what it does
   (`repo_create`, `branch_list`, `pr_merge`, …). Every tool that acts on a repository takes one
   `repo` argument: the project's full path, such as `group/project`, or its numeric id. The names
@@ -17,7 +19,8 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
   [MCP surface](wiki/reference/mcp-surface.md).
 - **Tokens:** two, and never arguments. `GITLAB_API_KEY` is the GitLab token every call is made with, on
   both transports, read when a tool is called. `MCP_AUTH_TOKEN` is the access token a client presents to
-  the HTTP transport (at least 32 characters, never sent to GitLab); stdio does not read it.
+  the HTTP transport of a server install (at least 32 characters, never sent to GitLab); a local install and
+  stdio do not need it.
 - **Requirements:** Node >= 20. ESM, no build step.
 
 ## Key features
@@ -52,7 +55,13 @@ Serve it to an MCP client over stdio, with the GitLab key in the environment:
 GITLAB_API_KEY=<token> npm start
 ```
 
-Or over HTTP, where clients present an access token of your making (see
+Or over HTTP on this machine only, a local install, with no access token:
+
+```bash
+GITLAB_API_KEY=<token> npm run start:http   # http://127.0.0.1:3000/mcp, this machine only
+```
+
+Or over HTTP as a server, where clients present an access token of your making (see
 [Set up HTTP with two tokens](wiki/guides/setup-http-token.md)):
 
 ```bash

@@ -23,8 +23,10 @@ here: it goes stale at the next module. `repo_create` was moved here from the `c
 was `create_gitlab_repo`.
 
 **Tokens.** Two. `GITLAB_API_KEY` is the GitLab token, read when a tool is called, on both transports.
-`MCP_AUTH_TOKEN` is the access token HTTP requires of a client (32 characters or more; HTTP exits 1 without it) and
-is never read over stdio or sent to GitLab. `MCP_TRANSPORT`, `PORT` (default 3000) and `HOST` (default `0.0.0.0`) are the only other variables, and the
+`MCP_AUTH_TOKEN` is the access token a server install requires of a client (32 characters or more; HTTP on an address
+that is not loopback exits 1 without it) and is never read over stdio or sent to GitLab. A local install, on loopback
+with no token, answers only requests whose `Host` and `Origin` name loopback (`decisions/local-install-without-token.md`).
+`MCP_TRANSPORT`, `PORT` (default 3000) and `HOST` (default `0.0.0.0` with a token, `127.0.0.1` without) are the only other variables, and the
 only flags are `--help` and `--version`.
 
 **Verified.** The suite (302 tests) replaces `fetch` and reaches no host beyond loopback. Every request shape is
