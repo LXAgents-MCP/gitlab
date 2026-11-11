@@ -94,3 +94,11 @@ address that is not loopback, and forbid a local install without the `Host` and 
 records are left as written.
 
 Left for task 4: the version, the release log, the logs index row and the `PR` column.
+
+### Task 4 — release/0.6.0
+
+Landed. `package.json` and the lockfile are `0.6.0` (L6): new behaviour, and nothing that worked in `0.5.0` stops
+working, so a minor release in the 0.x line. The release log is `wiki/logs/0/6/0/CHANGELOG.md`, with what a client
+must do (nothing, unless it wants a local install without a token; keep the token in a container), and the logs
+index has its row. The state file names the version and the test count. No git tag is made and nothing is
+published. The `PR` column is filled in a closing commit on this branch once every pull request is open.
