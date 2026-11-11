@@ -78,3 +78,19 @@ test, which was tried. By hand: with neither variable the process served `tools/
 refused `Host: evil.example` with `403`; with `HOST=0.0.0.0` and no token it exited 1 with the new message.
 
 Left for task 3: every page and rule that says HTTP always needs the token.
+
+### Task 3 — docs/local-http
+
+Landed. Every living page that said HTTP always needs `MCP_AUTH_TOKEN` now tells a local install from a server
+install: the README (transport, tokens, and a local quick start), `wiki/environments/` (`env.md`'s `MCP_AUTH_TOKEN` and
+`HOST` rows, `setup.md`, and `docker.md`, which says a container is a server install), `wiki/guides/setup-http-token.md`
+(a new section "Local install or server install", the variable table, the start-up refusal, and three new rows in
+"When something is wrong"), `wiki/guides/smoke-test.md` (H1 on `0.0.0.0`, and a new H1b for a local install),
+`wiki/information/` (overview and architecture), `wiki/reference/mcp-surface.md` and `wiki/security/security-model.md`
+(the listener row, the transport section and two verification rows). The two rules that forbade HTTP starting without
+a token, `.agents/rules/repository.md` and `.agents/wiki/security/security-boundaries.md`, now forbid it on an
+address that is not loopback, and forbid a local install without the `Host` and `Origin` checks (L7);
+`.agents/wiki/context/repository-map.md` and the state file say the same. Released changelogs and earlier task
+records are left as written.
+
+Left for task 4: the version, the release log, the logs index row and the `PR` column.

@@ -33,8 +33,15 @@ GITLAB_API_KEY=<token> npm start
 It then waits on stdin for a client. Press Ctrl-C to stop it, or close its stdin. Without the
 variable it still starts; a tool then refuses and names the variable.
 
-To serve HTTP instead, give it the GitLab key and an access token for clients (at least 32 characters; it will
-not start without one):
+To serve HTTP on this machine only, a local install, give it the GitLab key and nothing else. It listens on
+`127.0.0.1` and asks for no access token:
+
+```bash
+GITLAB_API_KEY=<token> npm run start:http   # http://127.0.0.1:3000/mcp, this machine only
+```
+
+To serve HTTP to other machines, a server install, also give it an access token for clients (at least 32
+characters; on any address but loopback it will not start without one):
 
 ```bash
 GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # port 3000, all interfaces

@@ -84,9 +84,11 @@ docker run --rm -p 127.0.0.1:3000:3000 -e MCP_TRANSPORT=http \
 ```
 
 `GITLAB_API_KEY` is the GitLab token the server uses; `MCP_AUTH_TOKEN` is the access token, at least 32
-characters, which the container refuses to start HTTP without. Inside the container the server
-listens on every interface on port 3000 by default, which is what lets a published port reach it, so `HOST` is not
-set; `127.0.0.1:` in `-p` keeps the port reachable from this host only, and leaving it off publishes the port to the
+characters. **A container is a server install:** with the access token set, the server inside it listens on every
+interface on port 3000 by default, which is what lets a published port reach it, so `HOST` is not set. Without the
+token it would listen on the container's own loopback, which `-p` cannot reach, and it says so at start; with
+`HOST=0.0.0.0` and no token it refuses to start. A local install with no token is `npm run start:http` on the
+machine itself, not a container. `127.0.0.1:` in `-p` keeps the port reachable from this host only, and leaving it off publishes the port to the
 network. Clients then connect to `http://127.0.0.1:3000/mcp` with `Authorization: Bearer <MCP_AUTH_TOKEN>`; see
 [Set up HTTP with two tokens](../guides/setup-http-token.md). Put TLS in front before publishing the port beyond
 the host. **This path, like the rest of the image, has not been run in a container.**

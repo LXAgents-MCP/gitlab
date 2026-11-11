@@ -13,7 +13,7 @@ the access token, decides who may use the key, and it never leaves this server.
 
 A credentialed API client with no state. It reads no local file but its own `package.json`, runs no
 command and persists nothing. Over stdio it listens on nothing; over HTTP it listens on one port, on
-all interfaces unless told otherwise. Its input is tool arguments from a client; its
+all interfaces when an access token is set and on loopback when none is, unless told otherwise. Its input is tool arguments from a client; its
 output is HTTPS requests to `gitlab.com` and results back to the same client. The interesting
 risk is not data theft from the server — there is no data in it — but **authority**: whatever the
 token may do, an agent calling this server may do.
@@ -40,7 +40,7 @@ behaving:
 | File | Exposure | Guard |
 |---|---|---|
 | `src/services/auth.js` `configuredApiKey`, `src/services/api.js` `requireToken` | Anyone who can set the process environment | Read per call; never an argument; the registry test fails any tool whose input names a credential; a caller's bearer is never used as the GitLab key |
-| `src/routes/http.js`, `src/services/auth.js` | The one listener, reachable by anyone who can open the port | Every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start without a token of at least 32 characters; 4 MB body cap; listens on all interfaces on port 3000 unless `PORT` and `HOST` say otherwise; a test shows the access token reaches GitLab in no part of a request |
+| `src/routes/http.js`, `src/services/auth.js` | The one listener, reachable by anyone who can open the port | With an access token, every route but `GET /healthz` needs `Authorization: Bearer <MCP_AUTH_TOKEN>`, compared as SHA-256 digests in constant time before the body is parsed or a path matched; HTTP will not start on an address other than loopback without a token of at least 32 characters; on loopback without one, every route but `GET /healthz` needs a `Host`, and an `Origin` when sent, that names loopback, checked before the body is parsed; 4 MB body cap; listens on all interfaces on port 3000 unless `PORT` and `HOST` say otherwise; a test shows the access token reaches GitLab in no part of a request |
 | `src/services/api.js` `gitlab()` | The only place the `Authorization` header is built | One call site; the header goes to `callApi` and nowhere else |
 | `src/services/api.js` `failure()` and `callApi` | Error text built from GitLab's answer or from the network | `redact` on every message; tests make GitLab echo the token and make the network error carry it |
 | `src/routes/server.js` `callTool` | The unexpected-exception path | `redact` on the log line and on the returned text, with the GitLab key; a test makes a handler throw the key |
@@ -86,9 +86,13 @@ delete projects cannot be talked into deleting one.
 
 Two transports. **stdio** is the default: the client spawns the process on its own machine, and the
 only caller is whoever already runs it, so there is no authentication on it and no reason for any.
-**HTTP** is opt-in with `MCP_TRANSPORT=http`, and it is reachable by anyone who can open its port, so it
-will not start without `MCP_AUTH_TOKEN` and every request but `GET /healthz` must carry it as
-`Authorization: Bearer <token>`.
+**HTTP** is opt-in with `MCP_TRANSPORT=http`, and it is reachable by anyone who can open its port. As a
+**server install**, on any address but loopback, it will not start without `MCP_AUTH_TOKEN`, and every request
+but `GET /healthz` must carry it as `Authorization: Bearer <token>`. As a **local install**, on loopback with no
+token set, only this machine can open the port, so there is no token to present. A web page open on this machine
+still could, through DNS rebinding, so a request must name loopback in `Host`, and in `Origin` when it sends one,
+or it is refused with `403`. Any program on this machine, run by any user, can still use a local install, so on a
+machine other people use, set the token, which is then required on loopback too. See `.agents/memory/decisions/local-install-without-token.md`.
 
 **What this costs.** Everyone who holds the access token acts as the owner of `GITLAB_API_KEY`, with all of its
 permissions, `repo_delete` included, and GitLab's audit events name the key's owner, not the client. There is no
@@ -122,7 +126,8 @@ the same API either way.
 | The token is not sent to a redirect target | `npm test` — the `callApi` redirect test | passes |
 | stdout stays silent | `npm test` — the stdio tests for `--help`, `--version` and a bad flag | stdout empty |
 | A request needs the access token, and the key is the server's | `npm test` — `test/http.test.js`: the 401 cases, near-miss tokens, the access token absent from every GitLab request, no upstream call without it | pass |
-| HTTP will not start open | `npm test` — `test/http.test.js`: a real process with no, blank or short `MCP_AUTH_TOKEN` exits 1 | pass |
+| HTTP will not start open | `npm test` — `test/http.test.js`: a real process with no or blank `MCP_AUTH_TOKEN` on an address that is not loopback, or a short one anywhere, exits 1 | pass |
+| A local install answers only this machine | `npm test` — `test/http.test.js`: without a token, a foreign, rebound or look-alike `Host` and a foreign, `null` or `file:` `Origin` are a 403 before the body is read | pass |
 | Only one file listens | ``grep -rln -e "node:http" -e "node:net" -e "node:cluster" -e express src`` | `src/routes/http.js` and nothing else |
 | Only two runtime dependencies | `npm ls --omit=dev --depth=0` | the MCP SDK and zod |
 | The image bakes in no secret | ``grep -n -e '^ENV' -e '^EXPOSE' -e '^ENTRYPOINT' Dockerfile`` | no output |

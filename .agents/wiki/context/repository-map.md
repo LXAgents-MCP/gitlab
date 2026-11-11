@@ -60,7 +60,7 @@ start:http` runs `src/routes/http.js` directly.)
 npm install
 npm test
 npm start                                   # stdio; GITLAB_API_KEY comes from the environment
-npm run start:http                          # HTTP on :3000, all interfaces; needs MCP_AUTH_TOKEN (32+ chars) too
+npm run start:http                          # HTTP on :3000: with MCP_AUTH_TOKEN (32+ chars) on all interfaces, without it on 127.0.0.1 only
 GITLAB_API_KEY=<token> npm run inspect      # the MCP Inspector, to drive it by hand
 ```
 
@@ -68,9 +68,10 @@ GITLAB_API_KEY=<token> npm run inspect      # the MCP Inspector, to drive it by 
 
 * **Nothing writes to stdout.** stdout is the JSON-RPC channel. A stray write corrupts the stream
   and the client reports a JSON parse error that points at the payload, not at the logging.
-* **Starting without the GitLab key is fine; HTTP without the access token is not.** The key is read when
+* **Starting without the GitLab key is fine; HTTP without the access token is fine only on loopback.** The key is read when
   a tool runs; without it the tool refuses and names `GITLAB_API_KEY`, which is not a broken server. HTTP
-  with no `MCP_AUTH_TOKEN`, or under 32 characters, exits 1 on purpose.
+  with no `MCP_AUTH_TOKEN` on an address that is not loopback, or a token under 32 characters anywhere, exits 1 on
+  purpose. With neither `MCP_AUTH_TOKEN` nor `HOST` set it is a local install on `127.0.0.1`, and says so.
 * **A server registered mid-session is absent until the session restarts.** The client loads its
   connectors at start.
 * **The tool list is pinned.** Add a tool without its line in `test/surface.js` and three tests

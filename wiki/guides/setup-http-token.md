@@ -18,12 +18,30 @@ see [What this means for who can do what](#what-this-means-for-who-can-do-what).
 |---|---|---|
 | Who starts it | The client, as a subprocess | You, once, and clients connect to it |
 | GitLab key | `GITLAB_API_KEY` in the server's `env` block | `GITLAB_API_KEY` in the server's environment |
-| Access token | Not used | `MCP_AUTH_TOKEN`, required |
-| Who can reach it | Only the client that spawned it | Anyone who can open its port and holds the access token |
+| Access token | Not used | `MCP_AUTH_TOKEN`: required for a server install, optional for a local one |
+| Who can reach it | Only the client that spawned it | A server install: anyone who can open its port and holds the access token. A local install: this machine only |
 | One instance for several clients | No, one process per client | Yes, and they share the one key |
 
 Use stdio when a single client runs the server on its own machine; it is simpler and needs no port or access
 token. Use HTTP when several clients should share one running server, or the server runs on another host.
+
+## Local install or server install
+
+| | Local install | Server install |
+|---|---|---|
+| Where it listens | Loopback only: `127.0.0.1` by default, or `HOST` set to `127.0.0.0/8`, `::1` or `localhost` | Anywhere else: `0.0.0.0` by default, or any other `HOST` |
+| `MCP_AUTH_TOKEN` | Not needed. If you set it, every request must carry it | **Required.** It will not start without one of at least 32 characters |
+| Who can reach it | Programs on this machine, through a request addressed to `localhost`, `127.0.0.1` or `[::1]` | Anyone who can open the port and holds the access token |
+| Start it | `GITLAB_API_KEY=<token> npm run start:http` | Steps 1 to 3 below |
+
+The two are told apart by where the server listens, so a server cannot be open by mistake: with no access token
+and `HOST` unset it listens on `127.0.0.1`, and with no access token and a `HOST` other machines can reach it exits
+1. For a local install, skip step 2 and leave `MCP_AUTH_TOKEN` out of step 3 and out of the client's headers in
+step 5; it prints `local install` at start. Without a token it answers only requests whose `Host`, and `Origin`
+when sent, name this machine, so a web page you open cannot reach it by rebinding a name of its own. On a machine
+other people use, set the token anyway. A container is a server install: see [7. In a container](#7-in-a-container).
+
+The rest of this guide sets up a server install.
 
 ## 1. Create the GitLab key
 
@@ -62,8 +80,10 @@ lxagents-gitlab <version> serving over http on :3000/mcp (all interfaces)
 the access token in MCP_AUTH_TOKEN is required on every route except GET /healthz.
 ```
 
-**It will not start without a usable access token.** With `MCP_AUTH_TOKEN` unset, empty or shorter than 32
-characters it exits 1, says which, and listens on nothing. A missing `GITLAB_API_KEY` is not fatal: the server
+**It will not start without a usable access token** on an address other machines can reach. With
+`MCP_AUTH_TOKEN` unset or empty and `HOST` set to such an address, or with a token shorter than 32 characters
+anywhere, it exits 1, says which, and listens on nothing. With `MCP_AUTH_TOKEN` unset and `HOST` unset it is a
+local install instead, on `127.0.0.1`. A missing `GITLAB_API_KEY` is not fatal: the server
 starts, says so on stderr, and every tool refuses naming the variable until it is set.
 
 `MCP_TRANSPORT=http npm start` does the same where the shell accepts a variable prefix; in PowerShell set
@@ -72,9 +92,9 @@ starts, says so on stderr, and every tool refuses naming the variable until it i
 | Variable | Default | What it does |
 |---|---|---|
 | `GITLAB_API_KEY` | none | The GitLab token. Required for any tool to work. |
-| `MCP_AUTH_TOKEN` | none, **required** | The access token. At least 32 characters. HTTP will not start without it. |
+| `MCP_AUTH_TOKEN` | none, **required for a server install** | The access token. At least 32 characters. HTTP will not start without it on an address other than loopback. |
 | `PORT` | `3000` | The port to listen on, the same default as `shared-instruction` and the GitHub server. To run more than one on a machine, give all but one its own `PORT`. |
-| `HOST` | `0.0.0.0` | The interface to listen on: every one, by default, as `shared-instruction` does. `HOST=127.0.0.1` keeps it to this machine. |
+| `HOST` | `0.0.0.0` with a token, `127.0.0.1` without | The interface to listen on: with an access token, every one by default, as `shared-instruction` does, and `HOST=127.0.0.1` keeps it to this machine; without one, this machine only. |
 | `MCP_TRANSPORT` | `stdio` | `http` (or `streamable-http`) selects this transport when you start `src/index.js`. |
 
 ```bash
@@ -132,8 +152,8 @@ its server list at session start, so a server added mid-session is absent until 
 
 ## 6. Who can reach it
 
-**By default, anyone who can reach the machine.** The server listens on every interface, so the port is open on
-whatever network the machine is on from the first start. What stands between that network and your GitLab key is
+**With an access token, by default, anyone who can reach the machine.** The server listens on every interface, so
+the port is open on whatever network the machine is on from the first start. What stands between that network and your GitLab key is
 the access token: the server refuses to start without one of at least 32 characters, and refuses every request
 that does not carry it. To keep it to this machine, set `HOST=127.0.0.1`.
 
@@ -146,7 +166,7 @@ To reach it from another machine, or to leave it open as it is:
 2. Treat the port as reachable by anyone: a request needs the access token to do anything, and the token is only
    as private as the path it travelled.
 
-There is no allow-list for the `Host` header and no rate limit in this server. GitLab rate limits authenticated
+With an access token there is no allow-list for the `Host` header, and there is no rate limit in this server. GitLab rate limits authenticated
 requests per user, and a request body is capped at 4 MB.
 
 ## 7. In a container
@@ -195,7 +215,9 @@ A stdio registration still carrying `MCP_AUTH_TOKEN` starts, and its first tool 
 
 | You see | Cause | Fix |
 |---|---|---|
-| The server exits 1 saying `will not start the HTTP transport` | `MCP_AUTH_TOKEN` is unset, empty or under 32 characters | Set it to a secret of at least 32 characters |
+| The server exits 1 saying `will not start the HTTP transport` | `MCP_AUTH_TOKEN` is unset or empty and `HOST` is not loopback, or the token is under 32 characters | For a server install, set it to a secret of at least 32 characters; for a local install, leave `HOST` unset and the token unset |
+| `403` saying `this server has no access token` | A local install got a request whose `Host` or `Origin` is not `localhost`, `127.0.0.1` or `[::1]` | Use `http://127.0.0.1:<port>/mcp` or `http://localhost:<port>/mcp`; to serve other names or machines, make it a server install |
+| A container started without a token cannot be reached | Without a token the server inside listens on the container's own loopback | Pass `-e MCP_AUTH_TOKEN`: a container is a server install |
 | `401` with `WWW-Authenticate: Bearer realm="mcp"` | No `Authorization: Bearer <token>` header, another scheme, or more than one credential | Send the header with the access token alone |
 | `401` with `error="invalid_token"` | The credential is not the server's `MCP_AUTH_TOKEN` | Send the value the server was started with; check for a trailing newline or a stale copy |
 | A tool says `GITLAB_API_KEY is not set` | The server has no GitLab key | Set `GITLAB_API_KEY` in the server's environment and restart it |
