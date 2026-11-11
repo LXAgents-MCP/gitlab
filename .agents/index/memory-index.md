@@ -38,3 +38,4 @@ same commit that creates it.
 | [`../memory/tasks/http-defaults.md`](../memory/tasks/http-defaults.md) | Giving the HTTP transport the same defaults as `shared-instruction`, port 3000 on all interfaces; released as 0.4.0. |
 | [`../memory/tasks/src-architecture.md`](../memory/tasks/src-architecture.md) | Splitting the flat `src/` into `routes/`, `models/`, `services/`, `controllers/` (was `src/tools/`), `utils/` and `config/`, alongside `github`; released as 0.5.0. |
 | [`../memory/tasks/local-auth-token.md`](../memory/tasks/local-auth-token.md) | Letting a local install of the HTTP transport run without `MCP_AUTH_TOKEN` while a server install still requires it, alongside `github`. |
+| [`../memory/tasks/code-structure.md`](../memory/tasks/code-structure.md) | Splitting `src/services/api.js` and `src/routes/http.js` into one job per file, with no change a client can see; released as 0.6.1. |
