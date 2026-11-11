@@ -62,3 +62,11 @@ and `template`; no chain depends on another.
 
 Landed: this record and its row in `memory-index.md`. Nothing outside `.agents/` changes. The `PR`
 column is filled by the release task.
+
+### Task 2 — build/dependencies
+
+Landed. `@modelcontextprotocol/sdk` to `^1.32.2` and `zod` to `^4.6.7`, their latest; `typescript`
+(`^7.0.2`), `@types/node` (`^26.6.6`) and `tsx` (`^4.23.15`) added as dev dependencies, which the image's
+`--omit=dev` install leaves out. `npm audit fix` moved body-parser, fast-uri, ip-address and qs inside the
+lockfile; `npm audit` now reports 0 vulnerabilities and `npm outdated` nothing. No source file changes, and
+`npm test` still runs 310 passing.
