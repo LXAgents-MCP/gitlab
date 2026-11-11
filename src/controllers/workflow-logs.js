@@ -1,6 +1,7 @@
 /** Read the logs of the jobs of a CI/CD pipeline. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { optionalFlag, optionalInt, requiredInt } from "../models/args.js";
 import { MAX_LOG_CHARS, MAX_LOG_JOBS, MAX_PER_PAGE } from "../config/config.js";
 import { Refused } from "../utils/errors.js";

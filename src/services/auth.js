@@ -15,6 +15,7 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { AUTH_ENV, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "../config/config.js";
+import { Refused } from "../utils/errors.js";
 
 /* ------------------------------------------------------------------ the door: MCP_AUTH_TOKEN */
 
@@ -121,4 +122,25 @@ export function configuredApiKey() {
  */
 export function tokenToScrub() {
   return configuredApiKey();
+}
+
+/**
+ * The GitLab token a call is made with, read when the call is made.
+ *
+ * Read per call and not at startup, so a server without a token still starts and says what is
+ * missing when a tool is used. It comes from `GITLAB_API_KEY` in this process's environment, set in
+ * the `env` block of the client's configuration over stdio and in the server's own environment
+ * over HTTP, and is the same on both: the bearer token an HTTP client presents authenticates it to
+ * this server and is never used here (see `configuredAuthToken` above). It is never a tool argument, so it never
+ * appears in a prompt or a transcript.
+ *
+ * @returns {string}
+ */
+export function requireToken() {
+  const token = configuredApiKey();
+  if (token) return token;
+  throw new Refused(
+    `${TOKEN_ENV} is not set. Add it to the \`env\` block of this server's entry in the ` +
+      "client configuration, or to the environment of the HTTP server process, then restart it.",
+  );
 }

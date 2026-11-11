@@ -1,20 +1,13 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import test from "node:test";
-import {
-  SEGMENT,
-  apiDetail,
-  callApi,
-  filePath,
-  gitlab,
-  pageQuery,
-  paging,
-  parseRepo,
-  redact,
-  refName,
-  refPath,
-  requireToken,
-} from "../src/services/api.js";
+import { gitlab } from "../src/services/api.js";
+import { SEGMENT, filePath, parseRepo, refName, refPath } from "../src/models/address.js";
+import { apiDetail } from "../src/services/failure.js";
+import { callApi } from "../src/services/client.js";
+import { pageQuery, paging } from "../src/models/paging.js";
+import { redact } from "../src/utils/redact.js";
+import { requireToken } from "../src/services/auth.js";
 import { API_TIMEOUT_MS } from "../src/config/config.js";
 import { Refused } from "../src/utils/errors.js";
 import { VERSION } from "../src/config/version.js";

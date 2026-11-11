@@ -1,6 +1,7 @@
 /** Close an issue. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { rawText, requiredInt } from "../models/args.js";
 import { Refused } from "../utils/errors.js";
 import { UPDATE, repoArg } from "../models/schemas.js";

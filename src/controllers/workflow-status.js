@@ -1,6 +1,7 @@
 /** Read the state of a CI/CD pipeline and its jobs. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName } from "../models/address.js";
 import { optionalInt, optionalText } from "../models/args.js";
 import { MAX_PER_PAGE } from "../config/config.js";
 import { Refused } from "../utils/errors.js";

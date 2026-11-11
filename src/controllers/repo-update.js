@@ -1,6 +1,7 @@
 /** Change a project's settings. */
 import { z } from "zod";
-import { SEGMENT, gitlab, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { SEGMENT, parseRepo, refName } from "../models/address.js";
 import { maybeFlag, oneOf, optionalText, rawText } from "../models/args.js";
 import { Refused } from "../utils/errors.js";
 import { UPDATE, repoArg } from "../models/schemas.js";

@@ -1,5 +1,6 @@
 /** Read one project. */
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { READ, repoArg } from "../models/schemas.js";
 import { describeProject, expectBody, projectFields, projectShape } from "../models/shapes.js";
 

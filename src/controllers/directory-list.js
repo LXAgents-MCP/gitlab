@@ -1,6 +1,8 @@
 /** List what is in a directory of a repository. */
 import { z } from "zod";
-import { filePath, gitlab, pageQuery, paging, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { filePath, parseRepo, refName } from "../models/address.js";
+import { pageQuery, paging } from "../models/paging.js";
 import { READ, pagingArgs, pagingOut, repoArg } from "../models/schemas.js";
 
 // GitLab's names for what a tree holds, in the words a path is spoken in.

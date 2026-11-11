@@ -1,6 +1,7 @@
 /** Open a merge request. */
 import { z } from "zod";
-import { branchOrDefault, gitlab, parseRepo, refName } from "../services/api.js";
+import { branchOrDefault, gitlab } from "../services/api.js";
+import { parseRepo, refName } from "../models/address.js";
 import { maybeFlag, rawText, requiredText } from "../models/args.js";
 import { WRITE, repoArg } from "../models/schemas.js";
 import { expectBody } from "../models/shapes.js";

@@ -5,7 +5,7 @@
  * The tool surface is not written here - it is whatever `src/controllers/` discovers.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { redact } from "../services/api.js";
+import { redact } from "../utils/redact.js";
 import { tokenToScrub } from "../services/auth.js";
 import { Refused } from "../utils/errors.js";
 import { log } from "../utils/log.js";

@@ -1,6 +1,8 @@
 /** List a project's releases. */
 import { z } from "zod";
-import { gitlab, pageQuery, paging, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { pageQuery, paging } from "../models/paging.js";
+import { parseRepo } from "../models/address.js";
 import { READ, pagingArgs, pagingOut, repoArg } from "../models/schemas.js";
 
 export const TOOL = {

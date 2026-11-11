@@ -1,6 +1,7 @@
 /** Read one issue, and optionally its discussion. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { optionalFlag, requiredInt } from "../models/args.js";
 import { MAX_COMMENTS_SHOWN } from "../config/config.js";
 import { READ, repoArg } from "../models/schemas.js";

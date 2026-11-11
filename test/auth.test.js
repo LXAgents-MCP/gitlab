@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { requireToken } from "../src/services/api.js";
+import { requireToken } from "../src/services/auth.js";
 import {
   authTokenProblem,
   bearerCredential,

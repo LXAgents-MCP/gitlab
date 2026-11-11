@@ -5,7 +5,8 @@
  * and the wording of its refusals are unchanged.
  */
 import { z } from "zod";
-import { SEGMENT, gitlab, isNamespacePath } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { SEGMENT, isNamespacePath } from "../models/address.js";
 import { optionalFlag, optionalText, requiredText } from "../models/args.js";
 import { Refused } from "../utils/errors.js";
 import { WRITE } from "../models/schemas.js";

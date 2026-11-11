@@ -1,6 +1,8 @@
 /** List a project's recent pipelines. */
 import { z } from "zod";
-import { gitlab, pageQuery, paging, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { pageQuery, paging } from "../models/paging.js";
+import { parseRepo, refName } from "../models/address.js";
 import { oneOf } from "../models/args.js";
 import { READ, pagingArgs, pagingOut, repoArg } from "../models/schemas.js";
 

@@ -1,6 +1,7 @@
 /** Read one tag. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName, refPath } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName, refPath } from "../models/address.js";
 import { Refused } from "../utils/errors.js";
 import { READ, repoArg } from "../models/schemas.js";
 import { short } from "../utils/text.js";
