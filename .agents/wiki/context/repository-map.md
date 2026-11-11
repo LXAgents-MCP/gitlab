@@ -24,10 +24,12 @@ of the shared instruction set and the **producer** of the tool surface in `src/c
 | Path | Contents | Touch it when |
 |---|---|---|
 | `src/index.js` | The one entry point: `--help`, `--version`, `MCP_TRANSPORT`, the stdio transport, `SIGINT` and `SIGTERM`. | The process contract. |
-| `src/routes/http.js` | The HTTP transport and the only listener: `POST /mcp`, `GET /healthz`, a fresh stateless server per request, `PORT` and `HOST`. Also what `npm run start:http` runs. | Anything about serving over HTTP. |
+| `src/routes/http.js` | The HTTP transport and the only listener: `POST /mcp`, `GET /healthz`, a fresh stateless server per request; `PORT` and `HOST` are read in `src/config/http-settings.js`. Also what `npm run start:http` runs. | Anything about serving over HTTP. |
 | `src/services/auth.js` | The two secrets: the access token for HTTP (`MCP_AUTH_TOKEN`: the 32-character floor, the bearer parser, the constant-time comparison) and the GitLab key (`GITLAB_API_KEY`). | Anything about either secret. |
 | `src/routes/server.js` | Builds one `McpServer`, registers every tool, shapes results, and carries the `instructions` text every client reads at `initialize`. | The protocol surface. |
-| `src/services/api.js` | The GitLab client: the token, addressing (`parseRepo`, `refName`, `refPath`, `filePath`), `callApi`, `gitlab()`, the wording of every failure, paging. | How a call is addressed, made, or fails. |
+| `src/services/api.js` | `gitlab()` and `branchOrDefault`: the one place a GitLab URL is built and a call is made. | How a call is addressed. |
+| `src/services/client.js`, `src/services/failure.js` | `callApi`, one request with a timeout and a size cap; and the wording of every failure. | How a call is made, or fails. |
+| `src/models/address.js`, `src/models/paging.js` | `parseRepo`, `refName`, `refPath`, `filePath`, `isNamespacePath`: path parts validated and encoded; `pageQuery` and `paging`. | A new kind of path part, or paging. |
 | `src/models/args.js` | Argument checks: text, flags, whole numbers, choices, lists, label lists. | A new kind of argument. |
 | `src/services/users.js` | Username to user id, refusing an unknown name before any write. | A tool that names a person. |
 | `src/utils/render.js` | The one renderer from a payload to the text the model reads. | How a result reads. |

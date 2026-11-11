@@ -30,7 +30,7 @@ is the same name in kebab case, `src/controllers/pr-merge.js`. The names are the
 Every tool that acts on a repository takes one `repo` argument: the project's full path, such as
 `group/project` or `group/subgroup/project`, or its numeric id. The two that cannot are
 `repo_create`, which has no project yet, and `repo_search`, which looks across all of them. `repo` is
-parsed once, in `src/services/api.js`, and a value that is neither a path of valid names nor a number is
+parsed once, in `src/models/address.js`, and a value that is neither a path of valid names nor a number is
 refused before any request. A path is sent as the single encoded segment GitLab expects.
 
 ### Results

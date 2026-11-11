@@ -28,7 +28,7 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
 - **One module, one tool.** A tool is a file in `src/controllers/` named after it; the registry finds it
   and nothing else needs editing. A test holds files and tools together in both directions.
 - **One place builds URLs.** A project, a branch or tag name and a file path are validated and
-  percent-encoded in `src/services/api.js`, so an argument cannot steer a call at another endpoint.
+  percent-encoded in `src/models/address.js` and joined into a URL only in `src/services/api.js`, so an argument cannot steer a call at another endpoint.
 - **The key never leaves its header.** It is not an argument, it is read per call, and it is
   removed from every message the server can produce — refusals and crashes alike. Over HTTP a request
   without the access token is refused before anything is read, and the access token is never sent to GitLab.

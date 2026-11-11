@@ -60,7 +60,7 @@ code rather than an uninstalled tree. Install first, then trust the number.
 * **One `McpServer` per connection.** `createServer()` builds a fresh instance; never hoist one to
   module scope.
 * **Every URL is built in `src/services/api.js`.** A project, a reference and a file path are validated
-  and percent-encoded there, and a tool never concatenates its own.
+  and percent-encoded in `src/models/address.js`, and a tool never concatenates its own.
 * **Arguments are checked before the token is read**, so a bad call costs no request and the
   refusal names the argument.
 * **The GitLab key is read per call**, through `src/services/auth.js` and nowhere else, from `GITLAB_API_KEY`, on
