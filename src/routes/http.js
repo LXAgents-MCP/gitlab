@@ -32,7 +32,9 @@
 import { createServer as createHttpServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { redact } from "../services/api.js";
+import { AUTH_ENV, DEFAULT_HOST, DEFAULT_PORT, MIN_AUTH_TOKEN_LENGTH, TOKEN_ENV } from "../config/config.js";
+import { httpSettings } from "../config/http-settings.js";
+import { SERVER_NAME, VERSION } from "../config/version.js";
 import {
   authTokenProblem,
   bearerCredential,
@@ -42,45 +44,10 @@ import {
   digest,
   isLoopbackHost,
 } from "../services/auth.js";
-import {
-  AUTH_ENV,
-  DEFAULT_HOST,
-  DEFAULT_PORT,
-  LOCAL_HOST,
-  MAX_BODY_BYTES,
-  MIN_AUTH_TOKEN_LENGTH,
-  TOKEN_ENV,
-} from "../config/config.js";
+import { readBody, rpcError, unauthorized } from "../utils/http.js";
 import { log } from "../utils/log.js";
+import { redact } from "../utils/redact.js";
 import { createServer } from "./server.js";
-import { SERVER_NAME, VERSION } from "../config/version.js";
-
-/**
- * Send a JSON-RPC error: the envelope every other refusal on this transport uses, so a client never
- * has to branch on content type to find out it was refused.
- */
-function rpcError(res, status, code, message, headers = {}) {
-  const body = JSON.stringify({ jsonrpc: "2.0", error: { code, message }, id: null });
-  res.writeHead(status, { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), ...headers });
-  res.end(body);
-}
-
-/**
- * The refusal for a request that does not carry the access token. A request that sent a credential
- * which did not match also gets `error="invalid_token"`, so a client can tell a missing header from
- * a wrong one. Neither answer says anything about the token itself.
- */
-function unauthorized(res, presented) {
-  rpcError(
-    res,
-    401,
-    -32001,
-    presented
-      ? "Unauthorized: the token is not valid"
-      : "Unauthorized: send the server's access token as Authorization: Bearer <token>",
-    { "WWW-Authenticate": presented ? 'Bearer realm="mcp", error="invalid_token"' : 'Bearer realm="mcp"' },
-  );
-}
 
 /**
  * Why a request to a local install - loopback, no access token - is refused, or `null` when it is not.
@@ -113,33 +80,6 @@ export function localRequestProblem(req) {
     }
   }
   return null;
-}
-
-/**
- * Read a request body, refusing one larger than `MAX_BODY_BYTES`.
- *
- * @param {import("node:http").IncomingMessage} req
- * @returns {Promise<string>}
- */
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    let refused = false;
-    req.on("data", (chunk) => {
-      if (refused) return;
-      size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        refused = true;
-        req.pause();
-        reject(Object.assign(new Error("request body too large"), { status: 413 }));
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => !refused && resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
 }
 
 /**
@@ -192,29 +132,6 @@ async function handle(req, res, expected) {
 
   await server.connect(transport);
   await transport.handleRequest(req, res, parsed);
-}
-
-/**
- * Read `PORT` and `HOST`: 3000 when `PORT` is unset or blank, as in `shared-instruction`. When `HOST` is
- * unset or blank it follows the access token: `0.0.0.0` when `MCP_AUTH_TOKEN` is set, as in
- * `shared-instruction`, and `127.0.0.1` when it is not, so a local install needs neither. Unlike
- * its `Number(PORT) || 3000`, a `PORT` that is set and is not a port is an error and not a silent 3000,
- * and `0` is accepted and asks the system for a free port.
- *
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {{ port: number, host: string }}
- */
-export function httpSettings(env = process.env) {
-  const raw = (env.PORT ?? "").trim();
-  let port = DEFAULT_PORT;
-  if (raw !== "") {
-    port = Number(raw);
-    if (!Number.isInteger(port) || port < 0 || port > 65535) {
-      throw new Error(`PORT must be a whole number from 0 to 65535, got '${raw}'.`);
-    }
-  }
-  const token = (env[AUTH_ENV] ?? "").trim();
-  return { port, host: (env.HOST ?? "").trim() || (token === "" ? LOCAL_HOST : DEFAULT_HOST) };
 }
 
 /**

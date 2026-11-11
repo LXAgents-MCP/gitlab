@@ -1,6 +1,7 @@
 /** Read one text file from a repository. */
 import { z } from "zod";
-import { filePath, gitlab, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { filePath, parseRepo, refName } from "../models/address.js";
 import { MAX_FILE_CHARS, MAX_READ_BYTES } from "../config/config.js";
 import { filesPath } from "../services/contents.js";
 import { Refused } from "../utils/errors.js";

@@ -1,6 +1,7 @@
 /** Comment on a merge request's discussion. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { rawText, requiredInt } from "../models/args.js";
 import { WEB_BASE } from "../config/config.js";
 import { Refused } from "../utils/errors.js";

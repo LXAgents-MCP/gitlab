@@ -1,6 +1,7 @@
 /** Delete a branch. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName, refPath } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName, refPath } from "../models/address.js";
 import { DESTROY, repoArg } from "../models/schemas.js";
 
 export const TOOL = {

@@ -1,6 +1,8 @@
 /** Say whether a tag exists. */
 import { z } from "zod";
-import { apiDetail, gitlab, parseRepo, refName, refPath } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { apiDetail } from "../services/failure.js";
+import { parseRepo, refName, refPath } from "../models/address.js";
 import { Refused } from "../utils/errors.js";
 import { READ, repoArg } from "../models/schemas.js";
 import { short } from "../utils/text.js";

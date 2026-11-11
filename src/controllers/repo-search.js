@@ -1,6 +1,7 @@
 /** Search projects across GitLab. */
 import { z } from "zod";
-import { gitlab, pageQuery, paging } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { pageQuery, paging } from "../models/paging.js";
 import { oneOf, requiredText } from "../models/args.js";
 import { READ, pagingArgs, pagingOut } from "../models/schemas.js";
 

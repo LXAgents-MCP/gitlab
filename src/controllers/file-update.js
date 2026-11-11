@@ -1,6 +1,7 @@
 /** Replace a file's content as one commit. */
 import { z } from "zod";
-import { branchOrDefault, filePath, gitlab, parseRepo, refName } from "../services/api.js";
+import { branchOrDefault, gitlab } from "../services/api.js";
+import { filePath, parseRepo, refName } from "../models/address.js";
 import { optionalText, rawText, requiredText } from "../models/args.js";
 import { encodeContent, explainCommit, filesPath } from "../services/contents.js";
 import { UPDATE, repoArg } from "../models/schemas.js";

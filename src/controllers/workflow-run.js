@@ -1,6 +1,7 @@
 /** Start a CI/CD pipeline. */
 import { z } from "zod";
-import { branchOrDefault, gitlab, parseRepo, refName } from "../services/api.js";
+import { branchOrDefault, gitlab } from "../services/api.js";
+import { parseRepo, refName } from "../models/address.js";
 import { MAX_PIPELINE_VARIABLES } from "../config/config.js";
 import { Refused } from "../utils/errors.js";
 import { WRITE, repoArg } from "../models/schemas.js";

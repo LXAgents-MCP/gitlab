@@ -1,6 +1,7 @@
 /** Merge one branch into another, through a merge request that is accepted at once. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName } from "../models/address.js";
 import { optionalText } from "../models/args.js";
 import { MERGE_POLL_MS, MERGE_POLL_TRIES } from "../config/config.js";
 import { Refused } from "../utils/errors.js";

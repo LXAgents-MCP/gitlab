@@ -1,6 +1,7 @@
 /** Ask people to review a merge request. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { requiredInt, textList } from "../models/args.js";
 import { UPDATE, repoArg } from "../models/schemas.js";
 import { expectBody, namesIn } from "../models/shapes.js";

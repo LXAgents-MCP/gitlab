@@ -1,6 +1,8 @@
 /** List a project's branches. */
 import { z } from "zod";
-import { gitlab, pageQuery, paging, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { pageQuery, paging } from "../models/paging.js";
+import { parseRepo } from "../models/address.js";
 import { optionalText } from "../models/args.js";
 import { READ, pagingArgs, pagingOut, repoArg } from "../models/schemas.js";
 

@@ -1,6 +1,7 @@
 /** Fork a project. */
 import { z } from "zod";
-import { SEGMENT, gitlab, isNamespacePath, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { SEGMENT, isNamespacePath, parseRepo } from "../models/address.js";
 import { optionalText } from "../models/args.js";
 import { Refused } from "../utils/errors.js";
 import { WRITE, repoArg } from "../models/schemas.js";

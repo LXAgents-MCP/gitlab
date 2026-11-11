@@ -1,6 +1,7 @@
 /** Compare two refs. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName } from "../models/address.js";
 import { Refused } from "../utils/errors.js";
 import { MAX_COMMITS_SHOWN, MAX_FILES_SHOWN } from "../config/config.js";
 import { summarizeFile } from "../utils/diffs.js";

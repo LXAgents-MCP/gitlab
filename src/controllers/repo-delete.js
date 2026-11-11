@@ -1,6 +1,7 @@
 /** Delete a project. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { requiredText } from "../models/args.js";
 import { Refused } from "../utils/errors.js";
 import { DESTROY, repoArg } from "../models/schemas.js";

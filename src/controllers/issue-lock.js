@@ -1,6 +1,7 @@
 /** Lock or unlock an issue's discussion. */
 import { z } from "zod";
-import { gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo } from "../models/address.js";
 import { optionalFlag, requiredInt } from "../models/args.js";
 import { UPDATE, repoArg } from "../models/schemas.js";
 import { expectBody } from "../models/shapes.js";

@@ -1,6 +1,7 @@
 /** Read one commit. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName, refPath } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName, refPath } from "../models/address.js";
 import { optionalFlag } from "../models/args.js";
 import { MAX_DIFF_CHARS, MAX_FILES_SHOWN } from "../config/config.js";
 import { summarizeFile, unifiedDiff } from "../utils/diffs.js";

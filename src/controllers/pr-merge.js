@@ -1,6 +1,8 @@
 /** Merge a merge request. */
 import { z } from "zod";
-import { apiDetail, gitlab, parseRepo } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { apiDetail } from "../services/failure.js";
+import { parseRepo } from "../models/address.js";
 import { maybeFlag, optionalText, rawText, requiredInt } from "../models/args.js";
 import { Refused } from "../utils/errors.js";
 import { mergeability } from "../services/merge-status.js";

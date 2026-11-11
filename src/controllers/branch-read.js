@@ -1,6 +1,7 @@
 /** Read one branch. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName, refPath } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName, refPath } from "../models/address.js";
 import { READ, repoArg } from "../models/schemas.js";
 import { expectBody } from "../models/shapes.js";
 import { firstLine, short } from "../utils/text.js";

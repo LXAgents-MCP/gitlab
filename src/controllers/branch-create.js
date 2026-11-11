@@ -1,6 +1,7 @@
 /** Create a branch. */
 import { z } from "zod";
-import { gitlab, parseRepo, refName } from "../services/api.js";
+import { gitlab } from "../services/api.js";
+import { parseRepo, refName } from "../models/address.js";
 import { Refused } from "../utils/errors.js";
 import { WRITE, repoArg } from "../models/schemas.js";
 import { expectBody } from "../models/shapes.js";

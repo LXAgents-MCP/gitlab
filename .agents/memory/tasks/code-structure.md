@@ -66,3 +66,21 @@ Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names
 
 Landed: this record and its row in `memory-index.md`. Nothing outside `.agents/` changes. The `PR`
 column is filled by the release task.
+
+### Task 2 — refactor/code-structure
+
+Landed. A script moved each declaration whole, by name, with its leading comment, and wrote each new
+module's imports from what its code uses; every import of a moved name in `src/` and `test/` was
+rewritten to its new home. From `src/services/api.js`: path-part validation to `src/models/address.js`,
+`pageQuery` and `paging` to `src/models/paging.js`, `readText` and `callApi` to `src/services/client.js`,
+the status wording to `src/services/failure.js`, `redact` to `src/utils/redact.js` and `requireToken` to
+`src/services/auth.js`. From `src/routes/http.js`: `httpSettings` to `src/config/http-settings.js`,
+`rpcError`, `unauthorized` and `readBody` to `src/utils/http.js`. `api.js` gets a header that says what it
+now holds; two comments that named the old home of a function name the new one (D1). No code inside a
+function changed.
+
+Checked: no module imports from a folder above its own, every relative import resolves, and no import is
+unused. `npm test` runs 310 passing and none failing, the same as before.
+
+Left for task 3: the rules, the repository map, the security boundaries and the wiki pages name
+`src/services/api.js` for validation, and the architecture page lists the files of each folder.
