@@ -5,7 +5,7 @@ description: Migrating the server and its tests from plain JavaScript to TypeScr
 
 # TypeScript migration — GitLab
 
-## 2026-11-11 — in progress
+## 2026-11-11 — complete
 
 **Goal.** The owner asked for every Node.js repository to move to TypeScript, so the code carries its
 types in the language rather than in JSDoc, and a type error is caught by the compiler before a test or a
@@ -24,6 +24,8 @@ client finds it.
 * `npm run build` compiles with no error, `npm test` passes with the same tests as before, and a final
   `npm audit` is clean.
 
+**Status:** complete. Released as `0.7.0`; the pull requests, merged in order by rebase, are in the table.
+
 **Detail.** A conversion, not a rewrite: no tool, argument, description, variable, route, status or
 message changes, and each file keeps its one job. `dist/` is build output and is ignored, never committed.
 The repository rule "no build step, no TypeScript" is set aside by the owner's request; the documentation
@@ -35,11 +37,11 @@ and zod (moderate), all transitive or fixable in range.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `plan/typescript` | |
-| 2 | Latest dependencies and a clean audit | `build/dependencies` | |
-| 3 | Convert src/ and test/ to TypeScript | `refactor/typescript` | |
-| 4 | Corrected documentation | `docs/typescript` | |
-| 5 | Release | `release/0.7.0` | |
+| 1 | Task record | `plan/typescript` | [#42](https://github.com/LXAgents-MCP/gitlab/pull/42) |
+| 2 | Latest dependencies and a clean audit | `build/dependencies` | [#43](https://github.com/LXAgents-MCP/gitlab/pull/43) |
+| 3 | Convert src/ and test/ to TypeScript | `refactor/typescript` | [#44](https://github.com/LXAgents-MCP/gitlab/pull/44) |
+| 4 | Corrected documentation | `docs/typescript` | [#45](https://github.com/LXAgents-MCP/gitlab/pull/45) |
+| 5 | Release | `release/0.7.0` | [#46](https://github.com/LXAgents-MCP/gitlab/pull/46) |
 
 Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same chain runs in `github`, `cli`
 and `template`; no chain depends on another.
@@ -125,4 +127,5 @@ Landed. `package.json` and the lockfile are at `0.7.0`, a minor release (T7); th
 `wiki/logs/0/7/0/CHANGELOG.md` and the logs index leads with its row; the repository state says
 TypeScript. Final checks on this branch: `npm run build` and `npm run typecheck` pass, `npm test` runs
 308 passing and none failing, `npm audit` finds 0 vulnerabilities, and `node dist/index.js --version`
-prints `lxagents-gitlab 0.7.0`. No tag is made and nothing is published.
+prints `lxagents-gitlab 0.7.0`. No tag is made and nothing is published. A closing commit fills the `PR`
+column and marks the record complete.
