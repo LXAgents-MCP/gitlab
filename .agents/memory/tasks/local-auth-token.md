@@ -1,0 +1,57 @@
+---
+name: memory-tasks-local-auth-token
+description: Letting a local install of this server's HTTP transport run without MCP_AUTH_TOKEN, while a server install still requires it; done alongside LXAgents-MCP/github.
+---
+
+# Access token only for server installs — GitLab
+
+## 2026-11-11 — in progress
+
+**Goal.** A local install should not need `MCP_AUTH_TOKEN`; only a server install should. stdio already never
+reads it, but the HTTP transport refuses to start without it even when nothing beyond this machine can reach it,
+so running the server over HTTP on a laptop means inventing a 32-character secret for nobody.
+
+**Objective.** HTTP that only this machine can reach starts and serves without `MCP_AUTH_TOKEN`. HTTP that other
+machines can reach still refuses to start without a usable one, exactly as now. A token that is set is always
+checked and always required on every request, wherever the server listens. `npm test` is green and every page
+that says HTTP always needs the token is corrected.
+
+**Detail.** The owner asked for this in `gitlab` and `github` (not `cli`, which has no HTTP transport;
+`template` never reads `MCP_AUTH_TOKEN`, so nothing there changes). No new variable: whether an install is local
+is read from where it listens. The 45 tools, `GITLAB_API_KEY`, the routes and stdio do not change. The owner
+said to plan and proceed, open the pull requests, and merge them in order by rebase, taking the recommended
+option wherever a choice was open; the choices are below. Baseline before any change: `npm test` ran 302
+passing and none failing.
+
+**Status:** in progress.
+
+## Tasks
+
+| # | Title | Branch | PR |
+|---|---|---|---|
+| 1 | Task record | `plan/local-auth-token` | |
+| 2 | No access token on loopback | `feat/local-http` | |
+| 3 | Corrected documentation and rules | `docs/local-http` | |
+| 4 | Release | `release/0.6.0` | |
+
+Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names are used in
+`LXAgents-MCP/github`; neither chain depends on the other, so they merge independently.
+
+## Decisions
+
+| # | Decision |
+|---|---|
+| L1 | **Local means loopback.** An install is local when the HTTP transport listens on a loopback address (`127.0.0.0/8`, `::1` or `localhost`); anything else, `0.0.0.0` included, is a server install. Declined: a new variable such as `MCP_INSTALL=local`, which the repository rules forbid without the owner's say-so and which could claim "local" while listening everywhere. |
+| L2 | **With `HOST` unset, the bind follows the token.** `MCP_AUTH_TOKEN` set: `0.0.0.0`, as today. Unset: `127.0.0.1`. So a local `npm run start:http` needs no variable at all, and every configuration that works today keeps its bind. Declined: changing the default to loopback for everyone, which would move servers that have a token and rely on the `0.0.0.0` default; and keeping `0.0.0.0` for everyone, which would leave a local install needing `HOST=127.0.0.1` to skip the token. |
+| L3 | **No token and a non-loopback `HOST` still exits 1**, naming `MCP_AUTH_TOKEN` and saying that a local install can leave `HOST` unset. A server install is never open. |
+| L4 | **A token that is set is always enforced**, on loopback too, and a set token under 32 characters still exits 1. Setting it is how a local install opts back in. |
+| L5 | **Without a token, the `Host` header must name loopback, and an `Origin` header, if sent, must too.** Otherwise `403`, before the body is read. A loopback port with no token is reachable from any web page the person opens, through DNS rebinding; this is the guard that the token was. `GET /healthz` stays open, as it is today. |
+| L6 | **The release is `0.6.0`.** New behaviour, and nothing that works today stops working, so a minor release in the 0.x line. Chosen under the owner's instruction to take the recommended option. No git tag, nothing published. |
+| L7 | **Two rules are changed, on the owner's instruction.** `.agents/rules/repository.md` and `.agents/wiki/security/security-boundaries.md` forbid HTTP starting without an access token. The owner asked for exactly that on loopback, so both are corrected to say "on an address other machines can reach". |
+
+## Task entries
+
+### Task 1 — plan/local-auth-token
+
+Landed: this record and its row in `memory-index.md`. Nothing outside `.agents/` changes in this task. The `PR`
+column is filled by the release task, so no later branch needs a rebase.

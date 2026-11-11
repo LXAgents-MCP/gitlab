@@ -36,3 +36,4 @@ same commit that creates it.
 | [`../memory/tasks/two-token-auth.md`](../memory/tasks/two-token-auth.md) | Separating the token a client presents to this server (`MCP_AUTH_TOKEN`) from the key the server uses against GitLab (`GITLAB_API_KEY`); released as 0.3.0. |
 | [`../memory/tasks/http-defaults.md`](../memory/tasks/http-defaults.md) | Giving the HTTP transport the same defaults as `shared-instruction`, port 3000 on all interfaces; released as 0.4.0. |
 | [`../memory/tasks/src-architecture.md`](../memory/tasks/src-architecture.md) | Splitting the flat `src/` into `routes/`, `models/`, `services/`, `controllers/` (was `src/tools/`), `utils/` and `config/`, alongside `github`; released as 0.5.0. |
+| [`../memory/tasks/local-auth-token.md`](../memory/tasks/local-auth-token.md) | Letting a local install of the HTTP transport run without `MCP_AUTH_TOKEN` while a server install still requires it, alongside `github`. |
