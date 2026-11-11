@@ -8,7 +8,7 @@ client that spawns the server over stdio sets only the key, and so does a local 
 |---|---|---|
 | `GITLAB_API_KEY` | none | The GitLab token every tool uses, **on both transports**. Read when a tool is called, trimmed, and never taken as an argument. |
 | `MCP_AUTH_TOKEN` | none, **required for a server install** | The server's own access token: what a client must send as `Authorization: Bearer <token>` to use the HTTP transport. At least 32 characters. **HTTP will not start without it on an address other machines can reach.** A local install, on loopback, may leave it unset; when it is set it is required on every request, wherever the server listens. stdio never reads it, and it is never sent to GitLab. |
-| `MCP_TRANSPORT` | `stdio` | Which transport `src/index.js` speaks: `stdio`, or `http` (`streamable-http` is accepted too). Anything else exits 2. |
+| `MCP_TRANSPORT` | `stdio` | Which transport `src/index.ts` speaks: `stdio`, or `http` (`streamable-http` is accepted too). Anything else exits 2. |
 | `PORT` | `3000` | The port the HTTP transport listens on, the same as `shared-instruction`. A value that is not a port exits 2. The GitHub server also defaults to `3000`: set `PORT` to run both on one machine. |
 | `HOST` | `0.0.0.0` with `MCP_AUTH_TOKEN` set, `127.0.0.1` without | The interface it listens on. With an access token, every one, as `shared-instruction` does; `HOST=127.0.0.1` keeps it to this machine. Without one, this machine only, and an address that is not loopback (`127.0.0.0/8`, `::1`, `localhost`) refuses to start. The process holds a GitLab key, so what guards a server install is `MCP_AUTH_TOKEN`, and what guards a local install is that only this machine can reach it; see [Security model](../security/security-model.md). |
 
@@ -52,7 +52,7 @@ client:
   "mcpServers": {
     "lxagents-gitlab": {
       "command": "node",
-      "args": ["/absolute/path/to/gitlab/src/index.js"],
+      "args": ["/absolute/path/to/gitlab/dist/index.js"],
       "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }
@@ -118,7 +118,7 @@ this table.
 
 ## What configures the server instead
 
-The things that are constants, in `src/config/config.js`, because making them settings would be a change
+The things that are constants, in `src/config/config.ts`, because making them settings would be a change
 to a public surface: the API base (`https://gitlab.com/api/v4`), the 30 second
 request timeout, the 20 MB ceiling on an answer, the 30 000 character ceiling on a result, and the
 page sizes.

@@ -6,16 +6,21 @@ cannot run Node 20.
 
 > **This image has not been built.** The environment this was written in had a Docker client and no
 > daemon, so neither the `Dockerfile` nor the commands on this page have been run as written. What was
-> checked instead: every `COPY` source exists and is not excluded by `.dockerignore`; the install step,
-> `npm ci --ignore-scripts --omit=dev`, was run in a scratch directory holding only what the image
-> copies, and the production-only tree it produced served every tool over a real stdio pipe; and
-> `SIGTERM` is tested. Not checked: the base image, the `Dockerfile`'s syntax, and `USER node` in a real
-> container. Build it once and run the check at the end of this page before relying on it.
+> checked instead, for 0.7.0: every `COPY` source exists and is not excluded by `.dockerignore`; each
+> stage's steps were run in a scratch directory holding only what that stage copies, `npm ci
+> --ignore-scripts` and `npm run build` for the first and `npm ci --ignore-scripts --omit=dev` for the
+> second; and the production-only tree with the compiled `dist/` served every tool over a real stdio pipe.
+> `SIGTERM` is tested. Not checked: the base image, the `Dockerfile`'s syntax, `COPY --from`, the
+> compiler's native binary on Alpine, and `USER node` in a real container. Build it once and run the
+> check at the end of this page before relying on it.
 
 ## What a container is for here
 
 * **A pinned toolchain.** `node:22-alpine` instead of whatever is on the host. For exact
   reproducibility, pin the base image by digest.
+* **Two stages.** The first installs every dependency and runs `npm run build`; the second installs the
+  production tree only and copies `dist/` from the first, so neither the TypeScript sources nor the compiler
+  are in the image.
 * **A clean dependency tree.** `npm ci --ignore-scripts --omit=dev` from the lockfile. `npm ci` fails
   rather than resolving something the lockfile does not contain.
 * **A non-root process.** The image ends as `USER node`.
@@ -113,14 +118,14 @@ is no compose file either: a stdio server is not a service, and `docker compose 
 no stdin attached, so it would exit at once. A deployment — a registry, an orchestrator, a schedule — is
 the owner's decision, not this repository's.
 
-There is also no `ENTRYPOINT`. The whole default is `CMD ["node", "src/index.js"]`, so the base image's
+There is also no `ENTRYPOINT`. The whole default is `CMD ["node", "dist/index.js"]`, so the base image's
 own entrypoint stays and a command after the image name runs as written. An `ENTRYPOINT` of ours would
-turn `docker run <image> node src/index.js --version` into `node src/index.js node src/index.js --version`.
+turn `docker run <image> node dist/index.js --version` into `node dist/index.js node dist/index.js --version`.
 
 ## Verifying an image
 
 ```bash
-docker run --rm "lxagents-gitlab:$VERSION" node src/index.js --version
+docker run --rm "lxagents-gitlab:$VERSION" node dist/index.js --version
 ```
 
 Prints `lxagents-gitlab <version>` on stderr and exits 0. That shows the entrypoint resolves, the

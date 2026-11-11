@@ -103,3 +103,18 @@ is 2 lower than 310 only because the glob no longer runs `test/helpers.ts` and `
 
 Left for task 4: every page that says plain JavaScript, no build step, `node src/index.js` or a `.js`
 path under `src/`.
+
+### Task 4 — docs/typescript
+
+Landed. Every living page that said plain JavaScript, no build step, `node src/index.js` or a `.js` path
+under `src/` or `test/` now says TypeScript, `npm run build`, `node dist/index.js` and the `.ts` path:
+`README.md`; the repository rules (the stack line, which allowed no TypeScript, now says the build is
+`tsc` alone; the commands table gains `build` and `typecheck`; the conventions gain types in code and
+`ApiBody`), the tool-surface rule, the repository map (entry point, commands, `dist/` as generated, the
+image row, an `api-body.ts` row) and the security boundaries; in `wiki/`, setup, Docker (two stages, and
+what was checked without a daemon), connect a client, HTTP setup, environment, smoke test, architecture,
+reference and security model. A client config's `args` names `dist/index.js`. Released changelogs and
+earlier task records and decisions keep the old paths.
+
+Checked before writing the Docker page: each image stage's steps run in a scratch directory with only
+what that stage copies, and the production tree with `dist/` served all 45 tools over stdio.
