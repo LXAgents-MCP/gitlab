@@ -5,7 +5,7 @@ description: Splitting the two files that still held several jobs after 0.5.0, s
 
 # Code structure — GitLab
 
-## 2026-11-11 — in progress
+## 2026-11-11 — complete
 
 **Goal.** The owner asked for every repository to be checked against `CODE_PERF.md`: one job per
 file, no tangled dependencies, a layout that scales, no redundant logic. The folders are already right
@@ -33,6 +33,8 @@ files import `redact` from the API client.
 Imports still only flow downward: routes, controllers, services, models, utils, config. `npm test`
 passes with the same 310 tests.
 
+**Status:** complete. Released as `0.6.1`; the pull requests, merged in order by rebase, are in the table.
+
 **Detail.** A split, not a rewrite: no tool, argument, description, variable, route, status or message
 changes. Declarations move whole; only their imports, an `export` keyword and the API client's header
 comment change. No shim is left at an old place. Done after the 0.6.0 auth-token chain merged, since it
@@ -43,10 +45,10 @@ up. Baseline: 310 passing.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `plan/code-structure` | |
-| 2 | Split api.js and http.js by job | `refactor/code-structure` | |
-| 3 | Corrected documentation | `docs/code-structure` | |
-| 4 | Release | `release/0.6.1` | |
+| 1 | Task record | `plan/code-structure` | [#38](https://github.com/LXAgents-MCP/gitlab/pull/38) |
+| 2 | Split api.js and http.js by job | `refactor/code-structure` | [#39](https://github.com/LXAgents-MCP/gitlab/pull/39) |
+| 3 | Corrected documentation | `docs/code-structure` | [#40](https://github.com/LXAgents-MCP/gitlab/pull/40) |
+| 4 | Release | `release/0.6.1` | [#41](https://github.com/LXAgents-MCP/gitlab/pull/41) |
 
 Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same names are used in `github`,
 `cli` and `template`; no chain depends on another.
@@ -94,3 +96,9 @@ architecture, reference and security model pages. The rule "every URL is built i
 stands, and now says the parts are validated in `src/models/address.js`. The architecture page's folder
 table lists the new files and says a file that grows a second job is split. Released changelogs,
 earlier task records and decisions keep the old paths.
+
+### Task 4 — release/0.6.1
+
+Landed. `package.json` and the lockfile are at `0.6.1`, the release log is `wiki/logs/0/6/1/CHANGELOG.md`
+and the logs index leads with its row. This commit fills the `PR` column and closes the record. No tag is
+made and nothing is published.
