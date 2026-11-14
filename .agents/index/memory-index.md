@@ -27,6 +27,7 @@ same commit that creates it.
 | [`../memory/decisions/two-token-auth.md`](../memory/decisions/two-token-auth.md) | Why this server holds two secrets, `MCP_AUTH_TOKEN` for the client and `GITLAB_API_KEY` for GitLab, and what that costs compared with passing the client's token through. |
 | [`../memory/decisions/http-bind-defaults.md`](../memory/decisions/http-bind-defaults.md) | Why the HTTP transport defaults to port 3000 on all interfaces, as `shared-instruction` does, what guards a server that listens everywhere by default, and the one place its `PORT` parsing is not copied. |
 | [`../memory/decisions/local-install-without-token.md`](../memory/decisions/local-install-without-token.md) | Why a local install of the HTTP transport, on loopback, runs without `MCP_AUTH_TOKEN`, how local is told from server, and the `Host` and `Origin` checks that stand in for the token there. |
+| [`../memory/decisions/rust-runtime-dependencies.md`](../memory/decisions/rust-runtime-dependencies.md) | Why the Rust server depends on more than the MCP SDK, and what each runtime crate is for. |
 
 ## tasks/
 
@@ -40,3 +41,4 @@ same commit that creates it.
 | [`../memory/tasks/local-auth-token.md`](../memory/tasks/local-auth-token.md) | Letting a local install of the HTTP transport run without `MCP_AUTH_TOKEN` while a server install still requires it, alongside `github`. |
 | [`../memory/tasks/code-structure.md`](../memory/tasks/code-structure.md) | Splitting `src/services/api.js` and `src/routes/http.js` into one job per file, with no change a client can see; released as 0.6.1. |
 | [`../memory/tasks/typescript.md`](../memory/tasks/typescript.md) | Moving `src/` and `test/` from plain JavaScript to TypeScript compiled to `dist/`, with every dependency at its latest version and a clean `npm audit`. |
+| [`../memory/tasks/rust.md`](../memory/tasks/rust.md) | Rewriting `src/` and `test/` from TypeScript to Rust with `rmcp` and `axum`, with the same tools, tokens, variables and routes. |
