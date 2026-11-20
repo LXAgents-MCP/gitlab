@@ -165,7 +165,7 @@ Source of truth: the shared `discovery_protocol` tool.
 ## Version rule
 
 Never change the version without explicit user approval — see the shared `versioning` tool. That
-includes `package.json`, the lockfile's own version, a container image tag, a git tag, and creating
+includes `Cargo.toml`, the package's own entry in `Cargo.lock`, a container image tag, a git tag, and creating
 a new `wiki/logs/` directory.
 
 ## No session links

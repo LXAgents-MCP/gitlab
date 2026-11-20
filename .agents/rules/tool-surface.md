@@ -16,32 +16,32 @@ inside it.
 | Change to… | Effect |
 |---|---|
 | `src/controllers/**` | Changes the surface. A new tool is a **minor** release; a rename, a removal or a changed argument is a **major** one. |
-| `src/services/api.ts`, `src/services/client.ts`, `src/services/failure.ts`, `src/models/address.ts`, `src/utils/render.ts`, `src/routes/server.ts`, `src/models/args.ts` | Changes how every tool behaves. A release only when a client can see the difference. |
+| `src/services/api.rs`, `src/services/client.rs`, `src/services/failure.rs`, `src/models/address.rs`, `src/utils/render.rs`, `src/routes/server.rs`, `src/models/args.rs` | Changes how every tool behaves. A release only when a client can see the difference. |
 | `.agents/**`, `wiki/**`, `test/**` | Local. Published to nobody. |
 
 ## The file contract
 
-* The file name is the tool name in kebab case: `repo-create.ts` is `repo_create`. The registry
-  test holds files and tools together in both directions, so a stray file, or a tool in the wrong
-  file, fails.
-* A module exports `TOOL` (a `ToolDefinition`) and `handle(args)`, typed `Promise<ToolOutcome>`. A module that exports neither is skipped, so a helper
-  dropped into `src/controllers/` is never callable — but helpers belong in `src/`, not here.
-* `TOOL` has `name`, `description`, `inputSchema`, `outputSchema` and `annotations`, all required.
+* The file name is the tool name: `repo_create.rs` is `repo_create`. A module is served only once its
+  name is in the `tools!` list in `src/controllers/mod.rs`, in file-name order. The registry test holds
+  files, that list and tools together in all directions, so a stray file, an unlisted module, or a tool
+  in the wrong file, fails.
+* A module has `pub fn def() -> ToolDef` and `pub async fn handle(ctx: &Ctx, args: &Args) ->
+  Result<Outcome, Refused>`. Helpers belong in `src/`, not here.
+* `ToolDef` has `name`, `description`, `input_schema`, `output_schema` and `annotations`, all required.
   The registry test fails on a tool without a useful description, an output schema, or the four
   hints.
-* `handle` returns `{ payload, ok }`. The payload is a one-sentence `summary` plus fields that
-  satisfy the `outputSchema`, which `expectOutput` in `test/helpers.ts` checks. A failure is a
-  thrown `Refused`.
+* `handle` returns an `Outcome`: a one-sentence `summary`, the fields, and `ok`. The fields satisfy the
+  `output_schema`, which `expect_output` in `test/helpers.rs` checks. A failure is an `Err(Refused)`.
 * Two modules with one tool name fail at boot, not at first call.
 
 ## Arguments and results
 
 * `repo` is the first argument of every tool that acts on a repository, which GitLab calls a
-  project: its full path, `group/subgroup/project`, or its numeric id, parsed by `parseRepo`. Only
+  project: its full path, `group/subgroup/project`, or its numeric id, parsed by `parse_repo`. Only
   `repo_create` and `repo_search` take none.
 * Validate arguments before the token is read.
-* Build every URL through `src/services/api.ts`. A path segment that did not come from `parseRepo`,
-  `refName`/`refPath` or `filePath` has not been validated.
+* Build every URL through `src/services/api.rs`. A path segment that did not come from `parse_repo`,
+  `ref_name`/`ref_path` or `file_path` has not been validated.
 * A list takes `page` and `per_page` and returns `page`, `per_page` and `has_more`.
 * Long text — a file, a log, a diff — goes in `text`, cut to a stated limit with `truncated: true`
   when it was cut. The renderer fences it.
@@ -50,7 +50,7 @@ inside it.
 
 ## The pinned list
 
-`test/surface.ts` writes out every tool and tags it `read`, `write`, `update` or `destroy`. The
+`test/surface.rs` writes out every tool and tags it `read`, `write`, `update` or `destroy`. The
 registry, protocol and stdio tests all compare against it, and the registry test holds each tool's
 annotations to its kind. Adding a tool is one line there; a tool that appears or vanishes without
 one fails three tests.
@@ -83,11 +83,11 @@ notice they get.
 2. Add `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md`, with the **Clients must** line filled in:
    nothing, rename a tool they call, or move a token.
 3. Add its row to `.agents/index/logs-index.md`, newest first.
-4. Update `package.json` and the lockfile's own version.
+4. Update the version in `Cargo.toml` and the package's own entry in `Cargo.lock`.
 5. Add or change the tool's row in `wiki/reference/mcp-surface.md` **in the same commit as the
    tool**.
 
 ## Restart to see a change
 
-The registry is read once, at boot. Editing `src/controllers/` has no effect on a running process:
-restart the client or the server. `npm run inspect` shows the surface a fresh process would build.
+The registry is compiled in and read once, at boot. Editing `src/controllers/` has no effect until the binary is rebuilt and the
+process restarted: rebuild, then restart the client or the server. `npx @modelcontextprotocol/inspector target/release/lxagents-gitlab` shows the surface a fresh process would build.

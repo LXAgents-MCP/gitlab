@@ -23,7 +23,7 @@ wherever a question comes up, and allowed merging without review.
   counterpart and passes.
 * `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` pass.
 
-**Status:** planned. The full plan, with the file-for-file map, the design and the test map, is the project
+**Status:** in progress: tasks 1 to 3 merged or open. The full plan, with the file-for-file map, the design and the test map, is the project
 report `reports/rust-gitlab-plan.md`.
 
 **Detail.** A rewrite in another language, not a redesign: each file keeps its one job, in the same six
@@ -63,3 +63,22 @@ and `template`; no chain depends on another.
 
 Landed: this record, `decisions/rust-runtime-dependencies.md`, and their rows in `memory-index.md`. Nothing
 outside `.agents/` changes. The `PR` column is filled by the release task.
+
+### Task 2 — refactor/rust
+
+Landed: `Cargo.toml`, `Cargo.lock`, `src/**/*.rs`, `test/**/*.rs` with `test/fixtures/tools-list.json`, the
+Dockerfile and both ignore files; every TypeScript file and the npm files removed. `cargo fmt --check`,
+`cargo clippy --all-targets -- -D warnings` and `cargo test` pass, 306 tests: every TypeScript case has a
+counterpart, except two that only checked a function reading the environment when given no value, which the
+Rust functions do not do (the caller passes the value), folded into their neighbours. The port found two
+gaps, fixed: the signal handlers are installed before the startup line (a signal sent on seeing it ended the
+process with the default action), and request headers are read as Latin-1, as Node read them (a credential
+with a byte outside ASCII was a missing one, not a wrong one). The image's build stage ran in a container;
+the runtime stage could not reach Alpine's mirror from there and is unchecked.
+
+### Task 3 — docs/rust
+
+Landed: the stack lines, commands and paths in `README.md`, `AGENTS.md` (the version rule's files),
+`.agents/rules/repository.md`, `.agents/rules/tool-surface.md`, the repository map, the security
+boundaries, and the living `wiki/` pages. Factual corrections only; no new rule. Released changelogs and
+earlier task records keep their old paths on purpose.

@@ -5,25 +5,25 @@ the transport is chosen by `MCP_TRANSPORT`.
 
 ## Requirements
 
-Node.js 20 or newer. The server is TypeScript (Node ESM), compiled by `tsc` from `src/` to `dist/`, which
-is what runs and is never committed.
+Rust 1.88 or newer, with `cargo`. The server is Rust on the official MCP SDK (`rmcp`) and `axum`, built into
+one binary, `target/release/lxagents-gitlab`, which is what runs and is never committed.
 
 ```bash
-npm install
-npm run build       # src/ to dist/; again after every change
-npm run typecheck   # src/ and test/, no output
-npm test
+cargo build --release                        # target/release/lxagents-gitlab; again after every change
+cargo fmt --check                            # no output
+cargo clippy --all-targets -- -D warnings    # src/ and test/, no output
+cargo test
 ```
 
-`npm install` first, once per checkout: a fresh clone has no `node_modules`, and the suite then
-fails with `ERR_MODULE_NOT_FOUND`, which reads as broken code rather than an uninstalled tree.
+The first build or test run in a checkout downloads and compiles every dependency, which needs the network
+and takes minutes; later runs are quick.
 
-The suite replaces `fetch` and reaches no host beyond loopback. It drives a real MCP client against the
+The suite replaces the GitLab backend in each handler's context and reaches no host beyond loopback. It drives a real MCP client against the
 server on an in-memory transport, spawns the real process to check what only a pipe shows (a stray
 write to stdout, a process that outlives its client), and tests each tool for the exact request it
-sends, the payload it returns, and the refusals it makes. It runs the TypeScript sources through `tsx`
-(`node --import tsx --test test/*.test.ts`), so it needs no build, and the two support files under
-`test/` are imported by the tests rather than run.
+sends, the payload it returns, and the refusals it makes. It is one test binary, `test/main.rs`, whose
+modules are the files under `test/`; two of them, `helpers.rs` and `surface.rs`, are support and hold no
+tests.
 
 ## Run
 
@@ -31,7 +31,7 @@ A client normally starts the server, so "running" it means pointing the client a
 [Connect a client](../guides/connect-a-client.md). To run it by hand:
 
 ```bash
-GITLAB_API_KEY=<token> npm start
+GITLAB_API_KEY=<token> cargo run --release
 ```
 
 It then waits on stdin for a client. Press Ctrl-C to stop it, or close its stdin. Without the
@@ -41,27 +41,27 @@ To serve HTTP on this machine only, a local install, give it the GitLab key and 
 `127.0.0.1` and asks for no access token:
 
 ```bash
-GITLAB_API_KEY=<token> npm run start:http   # http://127.0.0.1:3000/mcp, this machine only
+GITLAB_API_KEY=<token> MCP_TRANSPORT=http cargo run --release   # http://127.0.0.1:3000/mcp, this machine only
 ```
 
 To serve HTTP to other machines, a server install, also give it an access token for clients (at least 32
 characters; on any address but loopback it will not start without one):
 
 ```bash
-GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # port 3000, all interfaces
+GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) MCP_TRANSPORT=http cargo run --release   # port 3000, all interfaces
 ```
 
 See [Set up HTTP with two tokens](../guides/setup-http-token.md). The two flags:
 
 ```bash
-node dist/index.js --help       # usage, on stderr
-node dist/index.js --version    # name and version, on stderr
+target/release/lxagents-gitlab --help       # usage, on stderr
+target/release/lxagents-gitlab --version    # name and version, on stderr
 ```
 
 ## Inspect it
 
 ```bash
-GITLAB_API_KEY=<token> npm run inspect
+GITLAB_API_KEY=<token> npx @modelcontextprotocol/inspector target/release/lxagents-gitlab
 ```
 
 opens the MCP Inspector against the stdio server, so you can list the tools and call one by hand.
@@ -75,8 +75,8 @@ writes to stdout; diagnostics go to stderr, which is why `--help` and `--version
 
 ## Tool changes require a restart
 
-The registry is read once, at startup. Editing `src/controllers/` has no effect on a running process:
-restart the client or the server.
+The registry is compiled in and read once, at startup. Editing `src/controllers/` has no effect until the
+binary is rebuilt: run `cargo build --release`, then restart the client or the server.
 
 ## Related pages
 
