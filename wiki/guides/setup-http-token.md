@@ -32,7 +32,7 @@ token. Use HTTP when several clients should share one running server, or the ser
 | Where it listens | Loopback only: `127.0.0.1` by default, or `HOST` set to `127.0.0.0/8`, `::1` or `localhost` | Anywhere else: `0.0.0.0` by default, or any other `HOST` |
 | `MCP_AUTH_TOKEN` | Not needed. If you set it, every request must carry it | **Required.** It will not start without one of at least 32 characters |
 | Who can reach it | Programs on this machine, through a request addressed to `localhost`, `127.0.0.1` or `[::1]` | Anyone who can open the port and holds the access token |
-| Start it | `GITLAB_API_KEY=<token> npm run start:http` | Steps 1 to 3 below |
+| Start it | `GITLAB_API_KEY=<token> MCP_TRANSPORT=http cargo run --release` | Steps 1 to 3 below |
 
 The two are told apart by where the server listens, so a server cannot be open by mistake: with no access token
 and `HOST` unset it listens on `127.0.0.1`, and with no access token and a `HOST` other machines can reach it exits
@@ -65,12 +65,12 @@ servers the same value, or whoever holds one can use the other.
 
 ## 3. Start the server
 
-Set both variables in the server's environment, then start it. From a checkout, once `npm install` and `npm run build` have run:
+Set both variables in the server's environment, then start it. From a checkout, once `cargo build --release` has run:
 
 ```bash
 export GITLAB_API_KEY=<your GitLab token>
 export MCP_AUTH_TOKEN=<the access token from step 2>
-npm run start:http
+MCP_TRANSPORT=http cargo run --release
 ```
 
 It prints:
@@ -86,7 +86,7 @@ anywhere, it exits 1, says which, and listens on nothing. With `MCP_AUTH_TOKEN` 
 local install instead, on `127.0.0.1`. A missing `GITLAB_API_KEY` is not fatal: the server
 starts, says so on stderr, and every tool refuses naming the variable until it is set.
 
-`MCP_TRANSPORT=http npm start` does the same where the shell accepts a variable prefix; in PowerShell set
+`MCP_TRANSPORT=http cargo run --release` does the same where the shell accepts a variable prefix; in PowerShell set
 `$env:MCP_TRANSPORT = "http"` first.
 
 | Variable | Default | What it does |
@@ -95,10 +95,10 @@ starts, says so on stderr, and every tool refuses naming the variable until it i
 | `MCP_AUTH_TOKEN` | none, **required for a server install** | The access token. At least 32 characters. HTTP will not start without it on an address other than loopback. |
 | `PORT` | `3000` | The port to listen on, the same default as `shared-instruction` and the GitHub server. To run more than one on a machine, give all but one its own `PORT`. |
 | `HOST` | `0.0.0.0` with a token, `127.0.0.1` without | The interface to listen on: with an access token, every one by default, as `shared-instruction` does, and `HOST=127.0.0.1` keeps it to this machine; without one, this machine only. |
-| `MCP_TRANSPORT` | `stdio` | `http` (or `streamable-http`) selects this transport when you start `src/index.ts`. |
+| `MCP_TRANSPORT` | `stdio` | `http` (or `streamable-http`) selects this transport when you start `src/main.rs`. |
 
 ```bash
-PORT=8080 npm run start:http
+PORT=8080 MCP_TRANSPORT=http cargo run --release
 ```
 
 ## 4. Check it with curl

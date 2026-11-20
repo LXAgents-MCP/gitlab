@@ -4,7 +4,7 @@ An MCP server that gives an LLM access to **GitLab.com** — projects, branches,
 releases, issues, merge requests and CI/CD pipelines — through the GitLab REST API.
 
 - **Server id:** `lxagents-gitlab`
-- **Package:** `@lxagents-mcp/gitlab` — private; not published to npm.
+- **Package:** the `lxagents-gitlab` crate — private; not published to crates.io. It builds one binary of the same name.
 - **Transport:** stdio by default: the client starts the server as a subprocess and talks to it through
   a pipe. HTTP with `MCP_TRANSPORT=http`, on port 3000. **A local install** needs no access token: with
   `MCP_AUTH_TOKEN` unset it listens on `127.0.0.1` only and serves requests addressed to this machine.
@@ -21,14 +21,14 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
   both transports, read when a tool is called. `MCP_AUTH_TOKEN` is the access token a client presents to
   the HTTP transport of a server install (at least 32 characters, never sent to GitLab); a local install and
   stdio do not need it.
-- **Requirements:** Node >= 20. TypeScript, Node ESM, compiled to `dist/` with `npm run build`.
+- **Requirements:** Rust 1.88 or newer. Rust (edition 2024) on the official MCP SDK, `rmcp`, with `axum` for HTTP; `cargo build --release` builds `target/release/lxagents-gitlab`.
 
 ## Key features
 
-- **One module, one tool.** A tool is a file in `src/controllers/` named after it; the registry finds it
-  and nothing else needs editing. A test holds files and tools together in both directions.
+- **One module, one tool.** A tool is a file in `src/controllers/` named after it, listed once in
+  `src/controllers/mod.rs`. A test holds files and tools together in both directions.
 - **One place builds URLs.** A project, a branch or tag name and a file path are validated and
-  percent-encoded in `src/models/address.ts` and joined into a URL only in `src/services/api.ts`, so an argument cannot steer a call at another endpoint.
+  percent-encoded in `src/models/address.rs` and joined into a URL only in `src/services/api.rs`, so an argument cannot steer a call at another endpoint.
 - **The key never leaves its header.** It is not an argument, it is read per call, and it is
   removed from every message the server can produce — refusals and crashes alike. Over HTTP a request
   without the access token is refused before anything is read, and the access token is never sent to GitLab.
@@ -39,58 +39,56 @@ releases, issues, merge requests and CI/CD pipelines — through the GitLab REST
   its reset time, a name already taken: each is a sentence, not a status code.
 - **Bounded output.** Lists page at up to 100; a file, a log or a diff is cut at a stated limit and
   says it was cut.
-- **Nothing leaves the machine in the tests.** `fetch` is replaced and any request a test did not
-  expect fails it; the one exception, a redirect check, talks to two servers on loopback.
+- **Nothing leaves the machine in the tests.** Every handler reaches GitLab through an injected backend, which the
+  tests replace, and any request a test did not expect fails it; the one exception, a redirect check, talks to two servers on loopback.
 
 ## Quick start
 
 ```bash
-npm install
-npm run build
-npm test
+cargo build --release
+cargo test
 ```
 
-`npm run build` compiles `src/` to `dist/`, which is what every command below runs; build again after a
-change. The tests run the TypeScript sources through `tsx` and need no build.
+`cargo build --release` builds `target/release/lxagents-gitlab`, which is what a client runs; build again after
+a change. `cargo run --release` builds and runs it in one step.
 
 Serve it to an MCP client over stdio, with the GitLab key in the environment:
 
 ```bash
-GITLAB_API_KEY=<token> npm start
+GITLAB_API_KEY=<token> cargo run --release
 ```
 
 Or over HTTP on this machine only, a local install, with no access token:
 
 ```bash
-GITLAB_API_KEY=<token> npm run start:http   # http://127.0.0.1:3000/mcp, this machine only
+GITLAB_API_KEY=<token> MCP_TRANSPORT=http cargo run --release   # http://127.0.0.1:3000/mcp, this machine only
 ```
 
 Or over HTTP as a server, where clients present an access token of your making (see
 [Set up HTTP with two tokens](wiki/guides/setup-http-token.md)):
 
 ```bash
-GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http   # port 3000, all interfaces
+GITLAB_API_KEY=<token> MCP_AUTH_TOKEN=$(openssl rand -hex 32) MCP_TRANSPORT=http cargo run --release   # port 3000, all interfaces
 ```
 
 Or drive it by hand with the MCP Inspector:
 
 ```bash
-GITLAB_API_KEY=<token> npm run inspect
+GITLAB_API_KEY=<token> npx @modelcontextprotocol/inspector target/release/lxagents-gitlab
 ```
 
 Full instructions are in [`wiki/environments/setup.md`](wiki/environments/setup.md).
 
 ## Connect it
 
-Build it once with `npm run build`, add it to the client's configuration, with the GitLab key in the `env`
+Build it once with `cargo build --release`, add it to the client's configuration, with the GitLab key in the `env`
 block, then **restart the client**. For Claude Desktop, in `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "lxagents-gitlab": {
-      "command": "node",
-      "args": ["/absolute/path/to/gitlab/dist/index.js"],
+      "command": "/absolute/path/to/gitlab/target/release/lxagents-gitlab",
       "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }

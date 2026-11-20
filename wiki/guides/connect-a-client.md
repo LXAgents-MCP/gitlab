@@ -15,7 +15,7 @@ do whatever you granted it.
 ## 2. Register the server
 
 The package is private and is not published, so the client runs the server by path.
-Clone the repository, run `npm install` and `npm run build` once, then add the server to the client.
+Clone the repository, run `cargo build --release` once, then add the server to the client.
 
 **Claude Desktop** — edit `claude_desktop_config.json`:
 
@@ -26,8 +26,7 @@ Clone the repository, run `npm install` and `npm run build` once, then add the s
 {
   "mcpServers": {
     "lxagents-gitlab": {
-      "command": "node",
-      "args": ["/absolute/path/to/gitlab/dist/index.js"],
+      "command": "/absolute/path/to/gitlab/target/release/lxagents-gitlab",
       "env": { "GITLAB_API_KEY": "<your GitLab token>" }
     }
   }
@@ -39,7 +38,7 @@ Clone the repository, run `npm install` and `npm run build` once, then add the s
 ```bash
 claude mcp add lxagents-gitlab \
   --env GITLAB_API_KEY=<your GitLab token> \
-  -- node /absolute/path/to/gitlab/dist/index.js
+  -- /absolute/path/to/gitlab/target/release/lxagents-gitlab
 ```
 
 Or commit a project `.mcp.json` that reads the token from the environment instead of holding it:
@@ -48,8 +47,7 @@ Or commit a project `.mcp.json` that reads the token from the environment instea
 {
   "mcpServers": {
     "lxagents-gitlab": {
-      "command": "node",
-      "args": ["/absolute/path/to/gitlab/dist/index.js"],
+      "command": "/absolute/path/to/gitlab/target/release/lxagents-gitlab",
       "env": { "GITLAB_API_KEY": "${GITLAB_TOKEN}" }
     }
   }
@@ -71,7 +69,7 @@ not there", and it looks like a broken server rather than a stale session.
 
 ## 4. Check that it is there
 
-Ask the client to list the server's tools, or run the MCP Inspector (`npm run inspect`). You should
+Ask the client to list the server's tools, or run the MCP Inspector (`npx @modelcontextprotocol/inspector target/release/lxagents-gitlab`). You should
 see the tools in [MCP surface](../reference/mcp-surface.md), all taking a `repo` as a project's full
 path or numeric id except `repo_create` and `repo_search`.
 

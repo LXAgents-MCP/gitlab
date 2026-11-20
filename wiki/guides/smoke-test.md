@@ -77,7 +77,7 @@ fail:
 Run this once if you will use the HTTP transport. It needs only the server, a GitLab key and an access token;
 the walk above then works unchanged through a client registered as in
 [Set up HTTP with two tokens](setup-http-token.md). Start the server with both variables set:
-`GITLAB_API_KEY=<key> MCP_AUTH_TOKEN=$(openssl rand -hex 32) npm run start:http`, and keep the access token.
+`GITLAB_API_KEY=<key> MCP_AUTH_TOKEN=$(openssl rand -hex 32) MCP_TRANSPORT=http cargo run --release`, and keep the access token.
 
 | # | Do | Expect |
 |---|---|---|
@@ -124,7 +124,7 @@ differently, the tool named is the one to fix.
 | `workflow_status` | A private project's pipeline reads the same as a public one's, and `include_retried` is off by default. |
 | `workflow_logs` | `GET /jobs/:id/trace` answers `text/plain` with a token (an anonymous call is a 401, so this has never been seen); an erased or unstarted job answers 404 or 410; `section_start` markers are removed. |
 | HTTP, any tool | `GITLAB_API_KEY` reaches `gitlab.com` as the bearer credential of every call, and the client's access token appears in none of them. |
-| the image | Build it, run `node dist/index.js --version` in it, connect a client with `docker run --rm -i -e GITLAB_API_KEY`, and check that `docker stop` returns at once. See [Docker](../environments/docker.md). |
+| the image | Build it, run `target/release/lxagents-gitlab --version` in it, connect a client with `docker run --rm -i -e GITLAB_API_KEY`, and check that `docker stop` returns at once. See [Docker](../environments/docker.md). |
 
 ## Reporting what differs
 

@@ -25,7 +25,7 @@ Nothing from the shared set is copied here.
 
 | Path | Holds |
 |---|---|
-| `src/` | The server: `index.ts` and one folder per role — `routes/`, `controllers/`, `services/`, `models/`, `utils/`, `config/` (see [Where the code lives](../../wiki/information/architecture.md#where-the-code-lives)). `src/controllers/` is the tool surface; everything else in `src/` is shared by it. |
+| `src/` | The server: `main.rs` (the binary), `lib.rs` (the library the tests link) and one folder per role — `routes/`, `controllers/`, `services/`, `models/`, `utils/`, `config/` (see [Where the code lives](../../wiki/information/architecture.md#where-the-code-lives)). `src/controllers/` is the tool surface; everything else in `src/` is shared by it. |
 | `test/` | The server's tests. |
 | `.agents/` | This repository's own rules, indexes, agent wiki and memory. |
 | `wiki/` | Human documentation, and the release logs under `wiki/logs/`. |
@@ -35,70 +35,72 @@ Full orientation: [`../wiki/context/repository-map.md`](../wiki/context/reposito
 
 ## Stack and commands
 
-TypeScript, Node ESM, Node >= 20, `strict`. **The build is `tsc` alone**, from `src/` to `dist/` — do not
-add a bundler or a second transpiler without agreement. Tests run the sources through `tsx`.
+Rust, edition 2024, `rust-version` 1.88, on the official MCP SDK (`rmcp`) and `axum`. **The build is `cargo`
+alone**: one package at the root, a library and the `lxagents-gitlab` binary, with `Cargo.lock` committed — do
+not add a build script, a workspace or a second build tool without agreement.
 
 | Task | Command |
 |---|---|
-| Install | `npm install` |
-| Build | `npm run build` — `src/` to `dist/` |
-| Type-check `src/` and `test/` | `npm run typecheck` |
-| Test | `npm test` |
-| Run (stdio) | `npm start` |
-| Run (HTTP) | `npm run start:http` |
-| Inspect the MCP surface | `npm run inspect` |
+| Build | `cargo build --release` — `target/release/lxagents-gitlab` |
+| Format | `cargo fmt` (`cargo fmt --check` before a commit) |
+| Lint `src/` and `test/` | `cargo clippy --all-targets -- -D warnings` |
+| Test | `cargo test` |
+| Run (stdio) | `cargo run --release` |
+| Run (HTTP) | `MCP_TRANSPORT=http cargo run --release` |
+| Inspect the MCP surface | `npx @modelcontextprotocol/inspector target/release/lxagents-gitlab` |
 | Build the image | `docker build -t "lxagents-gitlab:$VERSION" .` — it has never been built here |
 
-**`npm install` before `npm test`, once per checkout.** A fresh clone has no `node_modules`, and
-the suite does not say so: the test files fail with `ERR_MODULE_NOT_FOUND`, which reads as broken
-code rather than an uninstalled tree. Install first, then trust the number.
+**The first `cargo test` in a checkout downloads and compiles every dependency**, which takes minutes and
+needs the network; later runs are quick. A test that waits on the binary (`test/stdio.rs`, `test/http.rs`)
+runs the debug build Cargo makes for the suite, not `target/release/`.
 
 ## Code conventions the codebase already follows
 
-* **ESM only.** `import`/`export`, `.js` extensions in relative specifiers (they resolve to the `.ts`
-  source under `NodeNext`, and are what the compiled file needs), no `require`.
-* **Types in the code, not in JSDoc.** No implicit `any`. A GitLab answer is `ApiBody`
-  (`src/models/api-body.ts`), the one loose type, and a tool checks the field it relies on before reading it.
+* **No `unsafe`, and no `unwrap` on anything from outside.** A GitLab answer is a `serde_json::Value`, the
+  one loose type, and a tool checks the field it relies on before reading it (`src/models/shapes.rs`).
+* **Everything from outside comes through `Ctx`** (`src/services/context.rs`): the environment, the GitLab
+  backend and the clock. A handler never reads `std::env` or opens a connection itself.
 * **Nothing writes to stdout.** On stdio, stdout *is* the JSON-RPC channel. Diagnostics go through
-  `src/utils/log.ts`, which writes to stderr, on the HTTP transport too. There is no `console.log` anywhere
+  `src/utils/log.rs`, which writes to stderr, on the HTTP transport too. There is no `print!` or `println!` anywhere
   in `src/`.
-* **One `McpServer` per connection.** `createServer()` builds a fresh instance; never hoist one to
-  module scope.
-* **Every URL is built in `src/services/api.ts`.** A project, a reference and a file path are validated
-  and percent-encoded in `src/models/address.ts`, and a tool never concatenates its own.
+* **One `GitlabServer` per connection.** It holds no state between calls; over HTTP the service runs
+  stateless, with no session.
+* **Every URL is built in `src/services/api.rs`.** A project, a reference and a file path are validated
+  and percent-encoded in `src/models/address.rs`, and a tool never concatenates its own.
 * **Arguments are checked before the token is read**, so a bad call costs no request and the
   refusal names the argument.
-* **The GitLab key is read per call**, through `src/services/auth.ts` and nowhere else, from `GITLAB_API_KEY`, on
+* **The GitLab key is read per call**, through `src/services/auth.rs` and nowhere else, from `GITLAB_API_KEY`, on
   both transports. It is never an argument, and is scrubbed from every message — refusals and crashes
   alike. **The access token is a different secret**: `MCP_AUTH_TOKEN` guards the HTTP door of a server
   install, is compared and dropped, and is never used against GitLab or read over stdio. A local install,
-  on loopback with no token, is guarded by the `Host` and `Origin` checks in `src/routes/http.ts` instead.
-* **A failure is a thrown `Refused`** that says what to do next. A tool never returns an error
-  payload, and never lets a bare exception reach the client as its explanation.
+  on loopback with no token, is guarded by the `Host` and `Origin` checks in `src/routes/http.rs` instead.
+* **A failure is an `Err(Refused)`** that says what to do next. A tool never returns an error
+  payload, and a panic is caught, redacted and reported as an internal error, never as its explanation.
 * **Comments explain why, not what.**
 
 ## Testing
 
-Every behavioural change ships with a test in `test/`, using `node:test` and
-`node:assert/strict`. The suite must pass before any commit, and **no test reaches GitLab or any host beyond this
-machine**: `fetch` is replaced by `mockApi` in `test/helpers.ts`, which fails the test on any request
-it was not told to expect. The one exception is the redirect test in `test/api.test.ts`, which uses the
-real `fetch` against two servers on loopback, to show that the token is not sent to a second host.
+Every behavioural change ships with a test in `test/`, one integration binary (`test/main.rs`, declared in
+`Cargo.toml` as `suite`). The suite must pass before any commit, and **no test reaches GitLab or any host beyond this
+machine**: the GitLab backend in `Ctx` is the `MockApi` of `test/helpers.rs`, which fails the test on any request
+it was not told to expect. The exceptions are the redirect and size tests in `test/api.rs`, which use the
+real client against servers on loopback, to show that the token is not sent to a second host.
 
 Each tool is tested for: a success that asserts the exact request — method, URL, query, body — and
-checks the payload against the tool's own output schema with `expectOutput`; at least one failure
-status; and argument validation that refuses before any request. `test/surface.ts` is the one
+checks the payload against the tool's own output schema with `expect_output`; at least one failure
+status; and argument validation that refuses before any request. `test/surface.rs` is the one
 place the tool list is pinned. Prefer a test that pins an invariant over one that pins a string.
 
-`npm test` runs `test/*.test.ts` only; the two support files, `helpers.ts` and `surface.ts`, are imported by
-the tests and not counted.
+`cargo test` runs `test/main.rs`, which names every test file as a module; the two support files,
+`helpers.rs` and `surface.rs`, hold no tests.
 
 ## What must not be introduced
 
-* A build step beyond `tsc`, or any compiled output committed to the repository: `dist/` is ignored.
-* A dependency added to serve one call site. The runtime dependencies are the MCP SDK and zod; a
-  third needs its own record under `.agents/memory/decisions/` before it lands, not after.
-* A transport other than stdio and the HTTP one in `src/routes/http.ts`, a listener anywhere else, a route
+* A build step beyond `cargo`, or any build output committed to the repository: `target/` is ignored.
+* A dependency added to serve one call site. The runtime dependencies are listed with their reasons in
+  [`../memory/decisions/rust-runtime-dependencies.md`](../memory/decisions/rust-runtime-dependencies.md); another
+  needs its own record under `.agents/memory/decisions/` before it lands, not after.
+* A transport other than stdio and the HTTP one in `src/routes/http.rs`, a listener anywhere else, a route
   beyond `POST /mcp` and `GET /healthz`, a way for an HTTP request to get through without the access
   token when one is set, HTTP starting without one on an address that is not loopback, a local install
   without the `Host` and `Origin` checks, a client's bearer used as the GitLab key (or the other way round),
@@ -110,16 +112,16 @@ the tests and not counted.
   `--help` and `--version`; another of either is a change to a public surface, not an implementation
   detail.
 * A tool argument that carries a credential, or any way for a caller to choose the host. The API
-  base is a constant in `src/config/config.ts`, which is also why self-managed GitLab instances are not supported.
-* A URL built anywhere but `src/services/api.ts`.
+  base is a constant in `src/config/config.rs`, which is also why self-managed GitLab instances are not supported.
+* A URL built anywhere but `src/services/api.rs`.
 * A third documentation tree. `wiki/` and `.agents/wiki/` are the only two.
 * `content/`, or any copy of the shared set. This repository reads it through the connector.
 
 ## Deployment
 
-Not published: `package.json` is `private`, and the client runs the server by path
-(`node dist/index.js`, after `npm run build`) with the key in the `env` block of its own configuration, or runs it as an
+Not published: `Cargo.toml` sets `publish = false`, and the client runs the server by path
+(`target/release/lxagents-gitlab`, after `cargo build --release`) with the key in the `env` block of its own configuration, or runs it as an
 HTTP service the client reaches with an access token. Making it
-installable from npm is a one-line change the owner approves, and not one to make in passing. A
+installable from crates.io is a one-line change the owner approves, and not one to make in passing. A
 `Dockerfile` builds an image that speaks stdio for a client that runs `docker run -i`, or HTTP when
 told to; publishing it to a registry is the owner's decision as well.
