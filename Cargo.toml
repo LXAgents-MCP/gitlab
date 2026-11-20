@@ -1,6 +1,6 @@
 [package]
 name = "lxagents-gitlab"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 rust-version = "1.88"
 description = "MCP server that gives an LLM access to GitLab — projects, branches, files, commits, tags, releases, issues, merge requests and CI/CD pipelines — through the GitLab REST API. Stdio, or HTTP behind an access token."
