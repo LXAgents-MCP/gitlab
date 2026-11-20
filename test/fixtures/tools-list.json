@@ -1,0 +1,3596 @@
+[
+  {
+    "name": "branch_create",
+    "description": "Create a branch in a GitLab project, pointing at a branch, tag or commit. Use it to start work off the default branch or off another branch. Fails if the name is taken.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "branch": {
+          "type": "string",
+          "description": "Name of the new branch, e.g. 'feat/login'."
+        },
+        "from": {
+          "description": "Branch, tag or commit sha to start from. Default: the project's default branch.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "branch"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "branch",
+        "sha"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "branch_delete",
+    "description": "Delete a branch from a GitLab project. Destructive: commits only that branch holds become unreachable, so confirm with the owner first. The default branch and protected branches cannot be deleted.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "branch": {
+          "type": "string",
+          "description": "Name of the branch to delete."
+        }
+      },
+      "required": [
+        "repo",
+        "branch"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        },
+        "branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "deleted",
+        "branch"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "branch_list",
+    "description": "List the branches of a GitLab project by name, with the sha at each tip and whether it is protected, the default or already merged. Paged. Use it to see what branches exist before creating, merging or deleting one.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "search": {
+          "description": "Only branches whose name contains this; '^feat' matches the start, 'fix$' the end.",
+          "type": "string"
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "sha": {
+                "type": "string"
+              },
+              "protected": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "boolean"
+              },
+              "merged": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name",
+              "sha",
+              "protected",
+              "default",
+              "merged"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "branch_merge",
+    "description": "Merge one branch into another in a GitLab project. GitLab has no direct merge, so this opens a merge request from head into base and accepts it at once; the merged request stays as the record, and if it cannot be merged the request is closed again. Destructive: it moves the base branch, so confirm with the owner first. Use pr_merge when a merge request exists.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "base": {
+          "type": "string",
+          "description": "Branch that receives the merge, e.g. 'main'."
+        },
+        "head": {
+          "type": "string",
+          "description": "Branch to merge into the base."
+        },
+        "message": {
+          "description": "Message for the merge commit. Default: GitLab's.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "base",
+        "head"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "merged": {
+          "type": "boolean"
+        },
+        "up_to_date": {
+          "type": "boolean"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "merge_request": {
+          "type": "number"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "merged",
+        "up_to_date"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "branch_read",
+    "description": "Read one branch of a GitLab project: the commit at its tip, that commit's title and date, whether the branch is protected and whether it is the default. Use it to find a branch's current sha.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch name, e.g. 'main' or 'feat/login'."
+        }
+      },
+      "required": [
+        "repo",
+        "branch"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "protected": {
+          "type": "boolean"
+        },
+        "default": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha",
+        "protected",
+        "default"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "commit_compare",
+    "description": "Compare two branches, tags or commits of a GitLab project: how far ahead or behind the head is of the base, the most recent 50 commits between them, and the changed files with line counts. Use it to see what a branch would bring in before merging.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "base": {
+          "type": "string",
+          "description": "The ref to compare from, e.g. 'main'."
+        },
+        "head": {
+          "type": "string",
+          "description": "The ref to compare, e.g. 'feat/login'."
+        }
+      },
+      "required": [
+        "repo",
+        "base",
+        "head"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "ahead_by": {
+          "type": "number"
+        },
+        "behind_by": {
+          "type": "number"
+        },
+        "total_commits": {
+          "type": "number"
+        },
+        "commits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sha": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "author": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sha",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "file_count": {
+          "type": "number"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "additions": {
+                "type": "number"
+              },
+              "deletions": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "filename",
+              "status",
+              "additions",
+              "deletions"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "ahead_by",
+        "behind_by",
+        "total_commits",
+        "commits",
+        "file_count",
+        "files",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "commit_list",
+    "description": "List commits of a GitLab project, newest first, from a branch, tag or sha, optionally only those touching a path, by an author, or within a date range. Paged. Use commit_read for one commit in full.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "ref": {
+          "description": "Branch, tag or commit sha to list back from. Default: the default branch.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Only commits that touched this file or directory.",
+          "type": "string"
+        },
+        "author": {
+          "description": "Only commits by this author name or email.",
+          "type": "string"
+        },
+        "since": {
+          "description": "Only commits after this ISO 8601 date, e.g. 2026-10-01.",
+          "type": "string"
+        },
+        "until": {
+          "description": "Only commits before this ISO 8601 date.",
+          "type": "string"
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sha": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "author": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sha",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "commit_read",
+    "description": "Read one commit of a GitLab project: its message, author, date, parents, the files it changed with their line counts, and optionally its diff (cut at 20,000 characters). Use it to see what a commit did. Defaults to the tip of the default branch.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "ref": {
+          "description": "Commit sha, branch or tag. Default: the default branch's tip.",
+          "type": "string"
+        },
+        "diff": {
+          "description": "true also returns the commit's diff. Default false.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "parents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "additions": {
+          "type": "number"
+        },
+        "deletions": {
+          "type": "number"
+        },
+        "file_count": {
+          "type": "number"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "additions": {
+                "type": "number"
+              },
+              "deletions": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "filename",
+              "status",
+              "additions",
+              "deletions"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "diff": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha",
+        "message",
+        "parents",
+        "additions",
+        "deletions",
+        "file_count",
+        "files",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "directory_list",
+    "description": "List the files and folders in one directory of a GitLab project, on the default branch or at a branch, tag or commit. Not recursive. Paged. Omit the path for the repository root. Use it to find a path before file_read.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "path": {
+          "description": "Directory inside the repository, e.g. 'src/tools'. Omit for the root.",
+          "type": "string"
+        },
+        "ref": {
+          "description": "Branch, tag or commit sha. Default: the default branch.",
+          "type": "string"
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "items",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "file_create",
+    "description": "Create a new file in a GitLab project as one commit, on a branch (default: the default branch). Fails if the file already exists; use file_update to change it. Content up to 1 MB.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "path": {
+          "type": "string",
+          "description": "Path of the new file, e.g. 'docs/guide.md'."
+        },
+        "content": {
+          "type": "string",
+          "description": "The file's whole content, as text."
+        },
+        "message": {
+          "type": "string",
+          "description": "Commit message."
+        },
+        "branch": {
+          "description": "Branch to commit to. Default: the default branch.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "path",
+        "content",
+        "message"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "branch"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "file_delete",
+    "description": "Delete one file from a GitLab project as one commit, on a branch (default: the default branch). Destructive: the file stays in history, but confirm with the owner first. Pass last_commit_id from file_read to fail if the file changed since.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "path": {
+          "type": "string",
+          "description": "Path of the file to delete."
+        },
+        "message": {
+          "type": "string",
+          "description": "Commit message."
+        },
+        "branch": {
+          "description": "Branch to commit to. Default: the default branch.",
+          "type": "string"
+        },
+        "last_commit_id": {
+          "description": "The file's last_commit_id from file_read. The delete fails if the file has changed since.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "path",
+        "message"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "deleted",
+        "path",
+        "branch"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "file_read",
+    "description": "Read one text file from a GitLab project, on the default branch or at a branch, tag or commit. Returns its content, size, blob id and last commit id. Cut at 25,000 characters; binary files and files over 1 MB are refused. Use directory_list to find a path first.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "path": {
+          "type": "string",
+          "description": "Path of the file inside the repository, e.g. 'src/index.js'."
+        },
+        "ref": {
+          "description": "Branch, tag or commit sha. Default: the default branch.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "path"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "blob_id": {
+          "type": "string"
+        },
+        "last_commit_id": {
+          "type": "string"
+        },
+        "size": {
+          "type": "number"
+        },
+        "text": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "blob_id",
+        "size",
+        "text",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "file_update",
+    "description": "Replace an existing file's whole content in a GitLab project as one commit, on a branch (default: the default branch). Pass last_commit_id from file_read to fail if the file changed since. Fails if the file does not exist; use file_create for a new one. Content up to 1 MB.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "path": {
+          "type": "string",
+          "description": "Path of the file to replace."
+        },
+        "content": {
+          "type": "string",
+          "description": "The file's whole new content, as text."
+        },
+        "message": {
+          "type": "string",
+          "description": "Commit message."
+        },
+        "branch": {
+          "description": "Branch to commit to. Default: the default branch.",
+          "type": "string"
+        },
+        "last_commit_id": {
+          "description": "The file's last_commit_id from file_read. The update fails if the file has changed since.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "path",
+        "content",
+        "message"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "branch"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_assign",
+    "description": "Add, remove or replace the assignees of an issue in a GitLab project. An unknown username refuses the call before anything changes. A free plan keeps one assignee per issue; the result lists any person GitLab did not apply.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Issue number in the project."
+        },
+        "assignees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "GitLab usernames. At most 10. With action set, [] unassigns everyone."
+        },
+        "action": {
+          "description": "add (default) keeps the current assignees and adds these; remove takes these off; set replaces all.",
+          "type": "string",
+          "enum": [
+            "add",
+            "remove",
+            "set"
+          ]
+        }
+      },
+      "required": [
+        "repo",
+        "number",
+        "assignees"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "assignees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "not_applied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "number",
+        "assignees"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_close",
+    "description": "Close an issue of a GitLab project, optionally leaving a comment first. GitLab has no close reason, so say why in `comment`. It only closes: there is no tool to reopen. Use pr_close for a merge request.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Issue number in the project."
+        },
+        "comment": {
+          "description": "A comment to post before closing, e.g. why.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "state": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "state",
+        "html_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_comment",
+    "description": "Add a comment to an issue of a GitLab project. Visible to everyone who can see the issue. On a locked issue only project members can comment. For a merge request use pr_comment.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Issue number in the project."
+        },
+        "body": {
+          "type": "string",
+          "description": "Comment text, in Markdown."
+        }
+      },
+      "required": [
+        "repo",
+        "number",
+        "body"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_label",
+    "description": "Add, remove or replace the labels on an issue in a GitLab project. GitLab creates a label that does not exist yet, so a misspelled label becomes a new one. The result lists the labels now on the issue and any requested label that is not as asked.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Issue number in the project."
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Label names, e.g. ['bug', 'good first issue']. They may not contain a comma. With action set, [] removes every label."
+        },
+        "action": {
+          "description": "add (default) keeps the current labels and adds these; remove takes these off; set replaces all.",
+          "type": "string",
+          "enum": [
+            "add",
+            "remove",
+            "set"
+          ]
+        }
+      },
+      "required": [
+        "repo",
+        "number",
+        "labels"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "not_applied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "number",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_lock",
+    "description": "Lock the discussion of an issue in a GitLab project so only project members can comment, or unlock it. GitLab takes no reason. Needs permission to edit the issue.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Issue number in the project."
+        },
+        "locked": {
+          "description": "true locks (default), false unlocks.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "locked": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "number",
+        "locked"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_open",
+    "description": "Open a new issue in a GitLab project, with optional body, labels, assignees and milestone. GitLab creates a label that does not exist yet, so a misspelled label becomes a new one. A free plan keeps one assignee per issue. The result lists what was actually applied.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "title": {
+          "type": "string",
+          "description": "Issue title."
+        },
+        "body": {
+          "description": "Issue body, in Markdown.",
+          "type": "string"
+        },
+        "labels": {
+          "description": "Label names to apply. They may not contain a comma.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assignees": {
+          "description": "GitLab usernames to assign. An unknown username refuses the call.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "milestone": {
+          "description": "Milestone id (the id GitLab gives the milestone, not its title or its number in the project).",
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "repo",
+        "title"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assignees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "number",
+        "title",
+        "state",
+        "html_url",
+        "labels",
+        "assignees"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "issue_read",
+    "description": "Read one issue of a GitLab project: title, state, author, labels, assignees, milestone and body, and with `comments: true` its first 30 comments, without the system notes GitLab adds when something changes. The number is the issue's number in the project (#42), not its global id; merge requests are numbered separately and are read with pr_read.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Issue number in the project, e.g. 42."
+        },
+        "comments": {
+          "description": "true also returns the first 30 comments. Default false.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assignees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "milestone": {
+          "type": "string"
+        },
+        "comment_count": {
+          "type": "number"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "confidential": {
+          "type": "boolean"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "closed_at": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "author": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "body"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "number",
+        "title",
+        "state",
+        "labels",
+        "assignees",
+        "comment_count",
+        "locked",
+        "confidential",
+        "html_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_approve",
+    "description": "Approve a merge request in a GitLab project as the token's user. GitLab approvals take no message. Whether a person may approve their own merge request, and whether an approval is needed to merge at all, are the project's settings. Approving again changes nothing more.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Merge request number in the project."
+        },
+        "sha": {
+          "description": "The head commit being approved; the approval fails if the branch has moved on. Default: the latest.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "approved_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvals_left": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "number",
+        "approved_by"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_close",
+    "description": "Close a merge request in a GitLab project without merging it, optionally leaving a comment first. Its branch is kept. A merge request that is already merged cannot be closed. There is no tool to reopen it.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Merge request number in the project."
+        },
+        "comment": {
+          "description": "A comment to post before closing, e.g. why.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "state": {
+          "type": "string"
+        },
+        "merged": {
+          "type": "boolean"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "state",
+        "merged",
+        "html_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_comment",
+    "description": "Add a comment to a merge request's discussion in a GitLab project. A general comment only: it is not attached to a line of the diff and is not a review. Visible to everyone who can see the merge request.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Merge request number in the project."
+        },
+        "body": {
+          "type": "string",
+          "description": "Comment text, in Markdown."
+        }
+      },
+      "required": [
+        "repo",
+        "number",
+        "body"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_merge",
+    "description": "Merge a merge request in a GitLab project. How it lands (a merge commit, a fast-forward or a rebase) is the project's setting and cannot be chosen here; `squash` joins its commits into one first. The source branch is removed only if the merge request was set to. Destructive: it moves the target branch, so confirm with the owner first. Pass `sha` to merge only if the branch is still at the commit that was reviewed.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Merge request number in the project."
+        },
+        "squash": {
+          "description": "true squashes the commits into one. Default: the merge request's own setting.",
+          "type": "boolean"
+        },
+        "message": {
+          "description": "Message for the squash commit when squashing, otherwise for the merge commit. Default: GitLab's.",
+          "type": "string"
+        },
+        "sha": {
+          "description": "The head commit the merge must match; a moved branch is refused (409).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "merged": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "merged"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_open",
+    "description": "Open a merge request in a GitLab project from a branch of the same project into a base branch (default: the default branch), optionally as a draft. A draft is a title that starts with 'Draft:', which this adds. Fails if one is already open for that branch. A branch of a fork is not supported.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "title": {
+          "type": "string",
+          "description": "Merge request title."
+        },
+        "head": {
+          "type": "string",
+          "description": "Branch with the changes, e.g. 'feat/login'."
+        },
+        "base": {
+          "description": "Branch to merge into. Default: the project's default branch.",
+          "type": "string"
+        },
+        "body": {
+          "description": "Description, in Markdown.",
+          "type": "string"
+        },
+        "draft": {
+          "description": "true opens it as a draft. Default false.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo",
+        "title",
+        "head"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "draft": {
+          "type": "boolean"
+        },
+        "head": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "title",
+        "state",
+        "draft",
+        "head",
+        "base",
+        "html_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_read",
+    "description": "Read one merge request of a GitLab project: state, draft, whether it can be merged and if not why, branches, labels, reviewers and description; with `files: true` the first 100 changed files with line counts, and with `comments: true` its first 30 comments. The number is the merge request's number in the project (!7), which is separate from issue numbers.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Merge request number in the project, e.g. 7 for !7."
+        },
+        "files": {
+          "description": "true also lists the changed files, with line counts. Default false.",
+          "type": "boolean"
+        },
+        "comments": {
+          "description": "true also returns the first 30 comments, without system notes. Default false.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo",
+        "number"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "draft": {
+          "type": "boolean"
+        },
+        "merged": {
+          "type": "boolean"
+        },
+        "mergeable": {
+          "type": "boolean"
+        },
+        "merge_status": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "head": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "head_sha": {
+          "type": "string"
+        },
+        "changed_files": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assignees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "comment_count": {
+          "type": "number"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "merged_at": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "additions": {
+                "type": "number"
+              },
+              "deletions": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "filename",
+              "status",
+              "additions",
+              "deletions"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "author": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "body"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "number",
+        "title",
+        "state",
+        "draft",
+        "merged",
+        "head",
+        "base",
+        "head_sha",
+        "labels",
+        "assignees",
+        "reviewers",
+        "comment_count",
+        "html_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "pr_review_request",
+    "description": "Request a review of a merge request in a GitLab project from people, who are added to those already asked. An unknown username refuses the call before anything changes. GitLab has no team reviewers. The result lists any person GitLab did not add.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Merge request number in the project."
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "GitLab usernames to ask. At least one, at most 10."
+        }
+      },
+      "required": [
+        "repo",
+        "number",
+        "reviewers"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "number"
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "not_applied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "number",
+        "reviewers"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "release_create",
+    "description": "Create a release for a tag in a GitLab project, creating the tag from a branch or commit if it does not exist. A release date in the future makes it an upcoming release. This is also how a tag is created. GitLab has no draft or prerelease flag and does not write notes.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Tag for the release, e.g. 'v1.2.0'. Created if it does not exist."
+        },
+        "target": {
+          "description": "Branch or commit sha to create the tag from. Default: the default branch. Ignored if the tag exists.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Release title. Default: the tag.",
+          "type": "string"
+        },
+        "body": {
+          "description": "Release notes, in Markdown.",
+          "type": "string"
+        },
+        "released_at": {
+          "description": "ISO 8601 date of the release. A future date makes it an upcoming release; a past one a historical release.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "tag"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "upcoming": {
+          "type": "boolean"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "released_at": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "tag",
+        "upcoming",
+        "assets"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "release_delete",
+    "description": "Delete the release of a tag in a GitLab project, with its notes and asset links. Destructive, so confirm with the owner first. The tag is kept; use tag_delete to remove it.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Tag of the release to delete."
+        }
+      },
+      "required": [
+        "repo",
+        "tag"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "deleted",
+        "tag"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "release_list",
+    "description": "List the releases of a GitLab project, newest release date first, upcoming ones included. Paged. Use release_read for one release's notes and assets.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tag": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "upcoming": {
+                "type": "boolean"
+              },
+              "released_at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "tag",
+              "upcoming"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "release_read",
+    "description": "Read one release of a GitLab project: title, notes, release date, and its asset links and source archives. Give a tag, or omit it for the latest release.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "tag": {
+          "description": "Tag of the release. Omit for the latest release.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "upcoming": {
+          "type": "boolean"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "released_at": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "tag",
+        "upcoming",
+        "assets"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "repo_create",
+    "description": "Create a new repository (a project) on GitLab.com and return its URLs. Use this when the owner asks to start a new GitLab repository, in their own namespace or in a group. Private unless told otherwise. It only creates: it does not clone, push to, change or delete anything. The token is read from the GITLAB_API_KEY environment variable of the server, never from an argument.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Repository name, which is also its URL path: letters, digits, '_', '-' and '.', not starting with '-' or '.'. Example: 'my-new-repo'."
+        },
+        "group": {
+          "description": "Full path of the group or subgroup to create it in. Omit to create it in the personal namespace that owns the token. Example: 'lxagents-mcp' or 'lxagents-mcp/tools'.",
+          "type": "string"
+        },
+        "description": {
+          "description": "One-line description shown on the repository.",
+          "type": "string"
+        },
+        "visibility": {
+          "description": "Default 'private'. 'internal' is visible to any signed-in GitLab.com user. Pass 'public' only when the owner asked for a public repository.",
+          "type": "string",
+          "enum": [
+            "private",
+            "internal",
+            "public"
+          ]
+        },
+        "initialize_with_readme": {
+          "description": "Default true: create an initial commit with a README, so the repository can be cloned straight away. Pass false for a truly empty repository.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "clone_url": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
+        },
+        "default_branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "full_name",
+        "html_url",
+        "clone_url",
+        "visibility"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "repo_delete",
+    "description": "Delete a GitLab project, with its issues, merge requests and wiki. Destructive: confirm with the owner first. GitLab may only mark it for deletion and remove it after a retention period, during which it can be restored. `confirm` must repeat the project's full path. Needs the Owner role.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "confirm": {
+          "type": "string",
+          "description": "The project's full path again, 'group/project'. Anything else deletes nothing."
+        }
+      },
+      "required": [
+        "repo",
+        "confirm"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "full_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "accepted",
+        "full_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "repo_fork",
+    "description": "Fork a GitLab project into the token owner's namespace or into a group. GitLab copies it in the background, so the fork may take a moment to be readable. Use it to work on a repository the owner cannot push to.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "group": {
+          "description": "Full path of the group or namespace to fork into. Omit to fork into the token owner's namespace.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name for the fork. Omit to keep the source's name.",
+          "type": "string"
+        },
+        "path": {
+          "description": "URL path for the fork. Omit to keep the source's path.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "clone_url": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
+        },
+        "default_branch": {
+          "type": "string"
+        },
+        "fork": {
+          "type": "boolean"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "stars": {
+          "type": "number"
+        },
+        "forks": {
+          "type": "number"
+        },
+        "open_issues": {
+          "type": "number"
+        },
+        "license": {
+          "type": "string"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "last_activity_at": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "scheduled_for_deletion": {
+          "type": "string"
+        },
+        "import_status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "full_name",
+        "html_url",
+        "clone_url",
+        "visibility",
+        "fork",
+        "archived",
+        "stars",
+        "forks",
+        "open_issues",
+        "topics"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "repo_read",
+    "description": "Read one GitLab project: description, visibility, default branch, star, fork and open issue counts, license, topics, last activity and parent. Use it to learn about a repository before acting on it.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "clone_url": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
+        },
+        "default_branch": {
+          "type": "string"
+        },
+        "fork": {
+          "type": "boolean"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "stars": {
+          "type": "number"
+        },
+        "forks": {
+          "type": "number"
+        },
+        "open_issues": {
+          "type": "number"
+        },
+        "license": {
+          "type": "string"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "last_activity_at": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "scheduled_for_deletion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "full_name",
+        "html_url",
+        "clone_url",
+        "visibility",
+        "fork",
+        "archived",
+        "stars",
+        "forks",
+        "open_issues",
+        "topics"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "repo_search",
+    "description": "Search GitLab projects by words in their name, path or description, such as 'mcp server'; several words must all match. Use it to find a repository when its group is not known. It sees the projects the token can see; similarity ranking only covers projects the token's user belongs to.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Words to look for in a project's name, path or description, e.g. 'mcp server'."
+        },
+        "sort": {
+          "description": "name, path, created_at, updated_at, last_activity_at, star_count or similarity. Default: newest first.",
+          "type": "string",
+          "enum": [
+            "name",
+            "path",
+            "created_at",
+            "updated_at",
+            "last_activity_at",
+            "star_count",
+            "similarity"
+          ]
+        },
+        "order": {
+          "description": "asc or desc (default). Only applies when sort is given.",
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "full_name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "stars": {
+                "type": "number"
+              },
+              "last_activity_at": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "full_name",
+              "stars",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "total_count": {
+          "type": "number"
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "total_count",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "repo_update",
+    "description": "Change a GitLab project's settings: rename it or move its URL path, set its description, make it private, internal or public, change the default branch, archive or unarchive it, or switch issues on or off. Pass only what should change; at least one setting is required.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "name": {
+          "description": "New display name. It does not change the URL; use `path` for that.",
+          "type": "string"
+        },
+        "path": {
+          "description": "New URL path: letters, digits, '_', '-' and '.'. Changing it changes the project's address.",
+          "type": "string"
+        },
+        "description": {
+          "description": "New description. Pass an empty string to clear it.",
+          "type": "string"
+        },
+        "visibility": {
+          "description": "private, internal or public.",
+          "type": "string",
+          "enum": [
+            "private",
+            "internal",
+            "public"
+          ]
+        },
+        "default_branch": {
+          "description": "Branch to make the default. It must already exist.",
+          "type": "string"
+        },
+        "archived": {
+          "description": "true archives the project (read-only), false unarchives it.",
+          "type": "boolean"
+        },
+        "has_issues": {
+          "description": "Whether the issue tracker is enabled.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "clone_url": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
+        },
+        "default_branch": {
+          "type": "string"
+        },
+        "fork": {
+          "type": "boolean"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "stars": {
+          "type": "number"
+        },
+        "forks": {
+          "type": "number"
+        },
+        "open_issues": {
+          "type": "number"
+        },
+        "license": {
+          "type": "string"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "last_activity_at": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "scheduled_for_deletion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "full_name",
+        "html_url",
+        "clone_url",
+        "visibility",
+        "fork",
+        "archived",
+        "stars",
+        "forks",
+        "open_issues",
+        "topics"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "tag_check",
+    "description": "Say whether a tag exists in a GitLab project, and if so what it points at and whether it is annotated. A missing tag is an answer, not an error. Use it before creating a release or a tag.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Tag name, e.g. 'v1.2.0'."
+        }
+      },
+      "required": [
+        "repo",
+        "tag"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "exists": {
+          "type": "boolean"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "annotated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "exists",
+        "tag"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "tag_delete",
+    "description": "Delete a tag from a GitLab project. Destructive: anything that names the tag, such as a build or a download link, stops working, so confirm with the owner first. It does not delete a release made from the tag. A protected tag cannot be deleted.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Name of the tag to delete."
+        }
+      },
+      "required": [
+        "repo",
+        "tag"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "deleted",
+        "tag"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "tag_get_all",
+    "description": "List the tags of a GitLab project, most recently updated first, with the commit each points at. Paged. Use it to see what versions exist, or to find a tag before reading or releasing it.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "search": {
+          "description": "Only tags whose name contains this; '^v1' matches the start, 'rc$' the end.",
+          "type": "string"
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "sha": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "sha"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "tag_get",
+    "description": "Read one tag of a GitLab project: the commit it points at and, for an annotated tag, its message and date, and the release attached to it if there is one. Use it to find the commit behind a version tag. tag_check only says whether a tag exists.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Tag name, e.g. 'v1.2.0'."
+        }
+      },
+      "required": [
+        "repo",
+        "tag"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "annotated": {
+          "type": "boolean"
+        },
+        "protected": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "has_release": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "tag",
+        "sha",
+        "target",
+        "annotated",
+        "protected",
+        "has_release"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "workflow_list",
+    "description": "List the recent CI/CD pipelines of a GitLab project, newest first, with their id, status, branch or tag, commit and what started them. Paged. A project has one pipeline definition, its .gitlab-ci.yml, so this lists runs and not workflows. Use it to find the pipeline to follow with workflow_status.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "ref": {
+          "description": "Only pipelines on this branch or tag.",
+          "type": "string"
+        },
+        "status": {
+          "description": "Only pipelines in this status, e.g. 'failed' or 'running'.",
+          "type": "string",
+          "enum": [
+            "created",
+            "waiting_for_resource",
+            "preparing",
+            "pending",
+            "running",
+            "success",
+            "failed",
+            "canceled",
+            "skipped",
+            "manual",
+            "scheduled"
+          ]
+        },
+        "page": {
+          "description": "Page number, from 1. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "per_page": {
+          "description": "Results per page, 1 to 100. Default 30.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "status": {
+                "type": "string"
+              },
+              "ref": {
+                "type": "string"
+              },
+              "sha": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "html_url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "ref",
+              "sha",
+              "html_url"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "total_count": {
+          "type": "number"
+        },
+        "page": {
+          "type": "number"
+        },
+        "per_page": {
+          "type": "number"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "page",
+        "per_page",
+        "has_more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "workflow_logs",
+    "description": "Read the logs of the jobs of a GitLab CI/CD pipeline. By default only the failed jobs, up to 5, each cut to its last lines, where a failure is explained; job_id reads one job and only_failed false reads every job. At most 20,000 characters in all. Find pipeline and job ids with workflow_status.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "pipeline_id": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "description": "Pipeline id."
+        },
+        "job_id": {
+          "description": "Read just this job of the pipeline. Default: the failed jobs.",
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "only_failed": {
+          "description": "false reads every job of the pipeline, not only the failed ones. Default true. Ignored with job_id.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repo",
+        "pipeline_id"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "pipeline_id": {
+          "type": "number"
+        },
+        "job_count": {
+          "type": "number"
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "stage": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "allow_failure": {
+                "type": "boolean"
+              },
+              "failure_reason": {
+                "type": "string"
+              },
+              "duration": {
+                "type": "number"
+              },
+              "log": {
+                "type": "string"
+              },
+              "truncated": {
+                "type": "boolean"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "status",
+              "allow_failure",
+              "truncated"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pipeline_id",
+        "job_count",
+        "jobs",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "workflow_run",
+    "description": "Start a CI/CD pipeline of a GitLab project on a branch or tag (default: the default branch), with optional variables. It runs whatever .gitlab-ci.yml does on that ref, which may deploy or publish. The ref's .gitlab-ci.yml must allow a pipeline started through the API. Returns the pipeline id; follow it with workflow_status.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "ref": {
+          "description": "Branch or tag to run it on. Default: the project's default branch.",
+          "type": "string"
+        },
+        "variables": {
+          "description": "CI/CD variables for this pipeline by name, up to 25. Values are sent as text and shown in the pipeline, so never a secret.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "pipeline_id": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "pipeline_id",
+        "status",
+        "ref",
+        "html_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "workflow_status",
+    "description": "Read a GitLab CI/CD pipeline: its status, branch or tag, commit, timing, and each job's result with the reason a failed one failed. Give a pipeline_id, or a ref to read the latest pipeline on that branch or tag. After workflow_run, ask again until the status is success, failed, canceled or skipped.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Project: its full path, such as 'lxagents-mcp/gitlab' or 'group/subgroup/project', or its numeric id."
+        },
+        "pipeline_id": {
+          "description": "Pipeline id, from workflow_run, workflow_list or an earlier workflow_status.",
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "ref": {
+          "description": "Branch or tag; reads its most recent pipeline.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "outputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "boolean"
+        },
+        "pipeline_id": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "finished_at": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "number"
+        },
+        "yaml_errors": {
+          "type": "string"
+        },
+        "html_url": {
+          "type": "string"
+        },
+        "job_count": {
+          "type": "number"
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "stage": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "allow_failure": {
+                "type": "boolean"
+              },
+              "failure_reason": {
+                "type": "string"
+              },
+              "duration": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "status",
+              "allow_failure"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "found",
+        "jobs"
+      ],
+      "additionalProperties": false
+    }
+  }
+]
