@@ -23,7 +23,7 @@ wherever a question comes up, and allowed merging without review.
   counterpart and passes.
 * `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` pass.
 
-**Status:** in progress: tasks 1 to 3 merged or open. The full plan, with the file-for-file map, the design and the test map, is the project
+**Status:** complete. 0.8.0 released 2026-11-20; all four pull requests merged by rebase. The full plan, with the file-for-file map, the design and the test map, is the project
 report `reports/rust-gitlab-plan.md`.
 
 **Detail.** A rewrite in another language, not a redesign: each file keeps its one job, in the same six
@@ -35,10 +35,10 @@ history and the project memory instead. Baseline: 0.7.0, `npm test` 308 passing.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `plan/rust` | |
-| 2 | Rewrite src/ and test/ in Rust | `refactor/rust` | |
-| 3 | Corrected documentation | `docs/rust` | |
-| 4 | Release | `release/0.8.0` | |
+| 1 | Task record | `plan/rust` | #47 |
+| 2 | Rewrite src/ and test/ in Rust | `refactor/rust` | #48 |
+| 3 | Corrected documentation | `docs/rust` | #49 |
+| 4 | Release | `release/0.8.0` | #50 |
 
 Branches stacked: task 1 from `master`, task `k` from task `k-1`. The same chain runs in `github`, `cli`
 and `template`; no chain depends on another.
@@ -82,3 +82,9 @@ Landed: the stack lines, commands and paths in `README.md`, `AGENTS.md` (the ver
 `.agents/rules/repository.md`, `.agents/rules/tool-surface.md`, the repository map, the security
 boundaries, and the living `wiki/` pages. Factual corrections only; no new rule. Released changelogs and
 earlier task records keep their old paths on purpose.
+
+### Task 4 — release/0.8.0
+
+Landed: version 0.8.0 in `Cargo.toml` and `Cargo.lock`, `wiki/logs/0/8/0/CHANGELOG.md`, its row in
+`logs-index.md`, the repository state, and the PR column above. `target/release/lxagents-gitlab --version` prints
+`lxagents-gitlab 0.8.0`. No tag, nothing published.
